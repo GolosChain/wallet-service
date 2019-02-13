@@ -1,0 +1,15 @@
+{
+  "name": "exper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": ""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cyberwayjs": "^20.0.0-beta3.3",
+    "jayson": "^2.1.2"
+  }
+}
