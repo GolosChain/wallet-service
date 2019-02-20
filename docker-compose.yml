@@ -1,0 +1,33 @@
+version: '3.6'
+services:
+  prism-mongo:
+    container_name: prism-mongo
+    image: mongo
+    restart: always
+    volumes:
+      - prism-mongodb-vol:/data/db
+    ports:
+      - 127.0.0.1:27017:27017
+    networks:
+      - services-tier
+
+  prism-node:
+    container_name: prism-node
+    restart: always
+    depends_on:
+      - prism-mongo
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - services-tier
+    ports:
+      - $GLS_CONNECTOR_HOST:$GLS_CONNECTOR_PORT:$GLS_CONNECTOR_PORT
+    env_file:
+      - .env
+
+volumes:
+  prism-mongodb-vol:
+
+networks:
+  services-tier:
