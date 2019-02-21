@@ -1,6 +1,7 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
 const ecc = require('eosjs-ecc');
+const base58check = require('base58check');
 
 
 class Wallet extends BasicController {

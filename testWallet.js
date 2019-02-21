@@ -3,8 +3,8 @@ const jayson = require('jayson');
 const cliWalletPassword = "1";
 
 const client = jayson.client.http({
-
-  port: 3000
+  host: '0.0.0.0',
+  port: 8091
 
 });
 
@@ -101,4 +101,4 @@ let w = new WalletTester();
 
 w.unlock();
 
-w.info();
+// w.info();
