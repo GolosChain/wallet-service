@@ -28,18 +28,16 @@ class Wallet extends BasicController {
         this._cipherKeys = '';
         this._wsServer = '0.0.0.0:8091'
         this._walletFileObject = {};
-        this._walletInit(); // HAVE TO wait it
-    }
 
-    async _walletInit() {
-        this._walletFileObject = await this._readWalletFile(walletPath);
+
+        this._walletFileObject = this._readWalletFile(walletPath);
         this._isNew = this._walletFileObject.cipher_keys.length === 0
     }
 
     async lock() {
         try {
             Logger.info('lock: Starting locking');
-            if (this._checksum === '') {
+            if (!this._checksum) {
                 throw { code: 801, message: 'set_password first' };
             }
 
@@ -84,7 +82,7 @@ class Wallet extends BasicController {
                 throw { code: 801, message: 'set_password first' }
             }
 
-            if (!(this._locked)) {
+            if (!this._locked) {
                 return null;
             }
 
@@ -117,7 +115,6 @@ class Wallet extends BasicController {
         }
     }
 
-    // async setPassword({ password }) {
     async setPassword(password) {
         try {
 
@@ -201,7 +198,6 @@ class Wallet extends BasicController {
             }
             else {
                 Logger.warn('import_key: invalid key');
-                // throw { code: 888, message: 'Invalid Key' };
                 // Just like cli_wallet.
                 return false;
             }
@@ -252,7 +248,7 @@ class Wallet extends BasicController {
         Logger.info('save_wallet_file: wallet.json was saved');
     }
 
-    async _readWalletFile(path) {
+    _readWalletFile(path) {
 
         Logger.info('read_wallet_file: reading wallet.json');
 
@@ -282,7 +278,7 @@ class Wallet extends BasicController {
         }
         
         try {
-            let obj = await JSON.parse(text);
+            let obj = JSON.parse(text);
             Logger.info('read_wallet_file: successfully read new wallet.json file')
             return obj;
         }
