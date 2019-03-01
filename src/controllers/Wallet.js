@@ -38,28 +38,30 @@ class Wallet extends BasicController {
 
     async lock() {
         try {
-            Logger.log('locking')
+            Logger.info('lock: Starting locking');
             if (this._checksum === '') {
                 throw { code: 801, message: 'set_password first' };
             }
 
             if (this._locked) {
-                return 'locked';
+                Logger.info('lock: already locked');
+                return null;
             }
 
-            Logger.log('encrypting')
+            Logger.info('lock: encrypting')
             this._encryptKeys();
             this._keys = {}
             this._checksum = crypto.createHash('sha512').update('').digest('hex');
             this._aesKey = Buffer.from(this._checksum.substr(0, 32));
 
-            Logger.log('Updating wallet.json file');
+            Logger.info('lock: Updating wallet.json file');
             this._updateWalletFile();
             this._locked = true;
-            return 'locked';
+            Logger.info('lock: locked');
+            return null;
         }
         catch (err) {
-            Logger.warn(err.message);
+            Logger.error(err.message);
             return err;
         }
 
@@ -67,13 +69,15 @@ class Wallet extends BasicController {
 
     async unlock(password) {
         try {
+            Logger.info('unlock: unlocking');
+
             if (password.length !== 1) {
                 Logger.warn('unlock: wrong arguments');
                 throw { code: 805, message: 'wrong arguments' }
             }
 
             password = password[0];
-            Logger.log('trying unlock the wallet');
+            Logger.info('unlock: checking');
 
             if (this._isNew) {
                 Logger.warn('unlock: set_password first');
@@ -81,7 +85,7 @@ class Wallet extends BasicController {
             }
 
             if (!(this._locked)) {
-                return 'unlocked'
+                return null;
             }
 
             if (password.length === 0) {
@@ -89,7 +93,7 @@ class Wallet extends BasicController {
                 throw { code: 804, message: 'Invalid password' }
             }
 
-            Logger.log('Decrypting');
+            Logger.info('unlock: decrypting');
 
             let pw = crypto.createHash('sha512').update(password).digest('hex');
             let decryptedWalletObject = await this._aesDecrypt({ text: this._cipherKeys, aesKey: Buffer.from(pw.substr(0, 32)) });
@@ -97,14 +101,15 @@ class Wallet extends BasicController {
 
             this._keys = decryptedWalletObject.keys;
             if (pw !== decryptedWalletObject.checksum) {
-                Logger.warn('unlock :trouble')
-                throw { code: 404, message: 'wtf' }
+                Logger.warn('unlock: invalid password');
+                throw { code: 804, message: 'Invalid password' }
             }
             this._checksum = decryptedWalletObject.checksum;
             this._locked = false;
 
-            Logger.log('Wallet was successfully unlocked ');
-            return { status: 'unlocked', locked: this._locked }
+            Logger.info('unlock: unlocked');
+
+            return null;
         }
         catch (err) {
             Logger.warn(err.message);
@@ -115,6 +120,9 @@ class Wallet extends BasicController {
     // async setPassword({ password }) {
     async setPassword(password) {
         try {
+
+            Logger.info('set_password: checking password');
+
             if (password.length !== 1) {
                 Logger.warn('unlock: wrong arguments');
                 throw { code: 805, message: 'wrong arguments' }
@@ -132,18 +140,21 @@ class Wallet extends BasicController {
                 throw { code: 804, message: 'invalid password' };
             }
 
-            Logger.log('Changing checksum')
+            Logger.info('set_password: changing checksum')
             this._checksum = crypto.createHash('sha512').update(password).digest('hex');
             this._aesKey = Buffer.from(this._checksum.substr(0, 32));
 
+            Logger.info('set_password: encrypting keys')
             await this._encryptKeys();
 
+            Logger.info('set_password: saving changes to wallet.json')
             await this._updateWalletFile();
 
             this._locked = true;
             this._isNew = false;
 
-            return 'set_password'
+            Logger.info('set_password: set_password');
+            return null;
         }
         catch (err) {
             Logger.warn(err.message);
@@ -153,24 +164,29 @@ class Wallet extends BasicController {
 
     async importKey(key) {
         try {
+
+            Logger.info('import_key: checking key');
+
             if (key.length !== 1) {
-                Logger.warn('unlock: wrong arguments');
+                Logger.warn('import_key: wrong arguments');
                 throw { code: 805, message: 'wrong arguments' }
             }
 
             key = key[0];
 
             if (this._isNew) {
-                Logger.warn('unlock: set_password first');
+                Logger.warn('import_key: set_password first');
                 throw { code: 801, message: 'set_password first' }
             }
 
             if (this._locked) {
-                Logger.warn('Wallet must be unlocked');
+                Logger.warn('import_key: Wallet must be unlocked');
                 throw { code: 803, message: 'Wallet must be unlocked' };
             }
 
             if (ecc.PrivateKey.isValid(key)) {
+                Logger.info('import_key: valid private key. adding');
+
                 let pub = ecc.PrivateKey(key).toPublic().toString()
                 let keyMap = {};
                 keyMap[pub] = key;
@@ -178,14 +194,16 @@ class Wallet extends BasicController {
                 this._keys = keyMap;
                 this._encryptKeys();
                 this._updateWalletFile();
-                Logger.log('import_key: private key has been changed');
+                Logger.info('import_key: private key has been changed');
 
 
-                return 'private key has been changed';
+                return true;
             }
             else {
                 Logger.warn('import_key: invalid key');
-                throw { code: 888, message: 'Invalid Key' };
+                // throw { code: 888, message: 'Invalid Key' };
+                // Just like cli_wallet.
+                return false;
             }
         }
         catch (err) {
@@ -195,10 +213,12 @@ class Wallet extends BasicController {
     }
 
     async isLocked() {
-        return { isLocked: this._locked };
+        Logger.info('is_locked: checking');
+        return this._locked;
     }
 
     async _encryptKeys() {
+        Logger.info('encrypt_keys: packing wallet data');
 
         let walletObj = {
             keys: this._keys,
@@ -207,25 +227,35 @@ class Wallet extends BasicController {
 
         let packedObj = Buffer.from(JSON.stringify(walletObj)).toString('hex');
 
+        Logger.info('encrypt_keys: encrypting');
+
         let aesKey = Buffer.from(this._checksum.substr(0, 32));
         this._cipherKeys = await this._aesEncrypt({ text: packedObj, aesKey });
 
+        Logger.info('encrypt_keys: encrypted');
     }
 
     async _updateWalletFile(path = walletPath) {
+        Logger.info('update_wallet_file: saving new up to date json object');
+
         this._saveWalletFile(path, JSON.stringify({
             cipher_keys: this._cipherKeys,
             ws_server: this._wsServer
         }));
+
+        Logger.info('update_wallet_file: done');
     }
 
     async _saveWalletFile(path, text) {
         await fs.writeFileSync(path, text, { encoding: 'utf8', flag: 'w' });
 
-        Logger.log("Wallet.json was updated")
+        Logger.info('save_wallet_file: wallet.json was saved');
     }
 
     async _readWalletFile(path) {
+
+        Logger.info('read_wallet_file: reading wallet.json');
+
         let text = '';
         let defaultWalletObject = {
             cipher_keys: '',
@@ -236,43 +266,48 @@ class Wallet extends BasicController {
             text = fs.readFileSync(path).toString();
         }
         catch (err) {
-            Logger.warn('Unable to read wallet.json.')
+            Logger.warn('read_wallet_file: Unable to read wallet.json.')
 
             if (err.code === 'ENOENT') {
                 this._saveWalletFile(walletPath, JSON.stringify(defaultWalletObject));
-                Logger.info('created new wallet.json file')
+                Logger.info('read_wallet_file: created new wallet.json file')
             }
             else {
                 Logger.error(err.message);
             }
         }
-
+        
         if (text.length === 0) {
             return defaultWalletObject;
         }
-
+        
         try {
             let obj = await JSON.parse(text);
+            Logger.info('read_wallet_file: successfully read new wallet.json file')
             return obj;
         }
         catch (err) {
+            Logger.info('read_wallet_file: errors ocured')
+            Logger.info('read_wallet_file: used default wallet.json file')
             return defaultWalletObject
         }
     }
-
+    
     async _aesEncrypt({ text, aesKey }) {
+        Logger.info('aes_encrypt: encrypting')
         aesKey = (typeof aesKey === 'undefined') ? this._aesKey : aesKey;
-
+        
         let cipher = crypto.createCipheriv(this._aesAlgorithm, aesKey, this._iv);
         let encrypted = cipher.update(text);
         encrypted = Buffer.concat([encrypted, cipher.final()]);
-
+        
+        Logger.info('aes_encrypt: done')
         return encrypted.toString('hex');
     }
-
+    
     async _aesDecrypt({ text, aesKey }) {
-        // DEBUG
-        Logger.log('start aes decrypting');
+        Logger.info('aes_decrypt: decrypting')
+
         aesKey = (typeof aesKey === 'undefined') ? this._aesKey : aesKey;
 
         let encryptedText = Buffer.from(text, 'hex');
@@ -281,8 +316,7 @@ class Wallet extends BasicController {
 
         decrypted = Buffer.concat([decrypted, decipher.final()]);
 
-        // DEBUG
-        Logger.log('ending aes decrypting');
+        Logger.log('aes_decrypt: successfully decrypted');
         return decrypted.toString();
     }
 

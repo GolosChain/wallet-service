@@ -16,7 +16,7 @@ let endpointGLS = {
     port: 3000
 }
 
-let endpoint = endpointGLS;
+let endpoint = endpointCW;
 let unitTest = new UnitTests(endpoint.ip, endpoint.port);
 
 let cfg = {
@@ -30,9 +30,6 @@ let cfg = {
 
 describe("new wallet operations", async () => {
     it("set_password", async () => {
-        // await unitTest.unlock(cfg.password1);
-        await unitTest.isLocked();
-        await unitTest.unlock(cfg.password1);
         await unitTest.setPassword(cfg.password1);
     });
 
