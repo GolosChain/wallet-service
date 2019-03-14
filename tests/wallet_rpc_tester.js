@@ -49,7 +49,6 @@ class WalletTester {
         return await this.rpcCall('info', []);
     }
 
-    // transfer(string from, string to, asset amount, string memo, bool broadcast)
     async transfer(from, to, amount, memo, broadcast) {
         return await this.rpcCall('transfer', [from, to, amount, memo, broadcast]);
     }

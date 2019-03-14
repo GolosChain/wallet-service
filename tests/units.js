@@ -7,7 +7,6 @@ const expect = chai.expect;
 
 class UnitTests {
     constructor(...args) {
-        // console.log(args);
         this._walletTester = new WalletTester(...args);
     }
     // Management methods
@@ -71,13 +70,10 @@ class UnitTests {
         res.result.should.be.a('boolean');
     }
 
-
-
     async info() {
 
     }
 
-    // transfer(string from, string to, asset amount, string memo, bool broadcast)
     async transfer(from, to, amount, memo, broadcast) {
     }
 
