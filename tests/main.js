@@ -45,8 +45,5 @@ describe('new wallet operations', async () => {
         await unitTest.unlock(cfg.password1);
         await unitTest.importKey(cfg.key1);
     });
-
-
 });
-
 

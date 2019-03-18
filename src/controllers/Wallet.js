@@ -49,6 +49,8 @@ class Wallet extends BasicController {
             Logger.info('lock: encrypting')
             this._encryptKeys();
             this._keys = {}
+            // Checksum of empty string is needed to show, that the password hasn't been set yet.
+            // This is needed in _encryptKeys()
             this._checksum = crypto.createHash('sha512').update('').digest('hex');
             this._aesKey = Buffer.from(this._checksum.substr(0, 32));
 
@@ -63,16 +65,16 @@ class Wallet extends BasicController {
 
     }
 
-    async unlock(password) {
+    async unlock(passwords) {
         try {
             Logger.info('unlock: unlocking');
 
-            if (password.length !== 1) {
+            if (passwords.length !== 1 && Array.isArray(passwords)) {
                 Logger.warn('unlock: wrong arguments');
                 throw { code: 805, message: 'Wrong arguments' }
             }
 
-            password = password[0];
+            const password = passwords[0];
             Logger.info('unlock: checking');
 
             if (this._isNew) {
@@ -91,7 +93,7 @@ class Wallet extends BasicController {
 
             Logger.info('unlock: decrypting');
 
-            let pw = crypto.createHash('sha512').update(password).digest('hex');
+            const pw = crypto.createHash('sha512').update(password).digest('hex');
             let decryptedWalletObject = await this._aesDecrypt({ text: this._cipherKeys, aesKey: Buffer.from(pw.substr(0, 32)) });
             decryptedWalletObject = JSON.parse(Buffer.from(decryptedWalletObject, 'hex').toString());
 
@@ -108,21 +110,20 @@ class Wallet extends BasicController {
             return null;
         } catch (err) {
             Logger.warn(err.message);
-            return err;
         }
     }
 
-    async setPassword(password) {
+    async setPassword(passwords) {
         try {
 
             Logger.info('set_password: checking password');
 
-            if (password.length !== 1) {
+            if (passwords.length !== 1 && Array.isArray(passwords)) {
                 Logger.warn('unlock: wrong arguments');
                 throw { code: 805, message: 'Wrong arguments' }
             }
 
-            password = password[0];
+            const password = passwords[0];
 
             if (!this._isNew && this._locked) {
                 Logger.warn('Wallet must be unlocked');
@@ -135,7 +136,9 @@ class Wallet extends BasicController {
             }
 
             Logger.info('set_password: changing checksum')
-            this._checksum = crypto.createHash('sha512').update(password).digest('hex');
+            this._checksum = crypto.createHash('sha512')
+                .update(password)
+                .digest('hex');
             this._aesKey = Buffer.from(this._checksum.substr(0, 32));
 
             Logger.info('set_password: encrypting keys')
@@ -151,21 +154,20 @@ class Wallet extends BasicController {
             return null;
         } catch (err) {
             Logger.warn(err.message);
-            return err;
         }
     }
 
-    async importKey(key) {
+    async importKey(keys) {
         try {
 
             Logger.info('import_key: checking key');
 
-            if (key.length !== 1) {
+            if (keys.length !== 1 && Array.isArray(keys)) {
                 Logger.warn('import_key: wrong arguments');
                 throw { code: 805, message: 'Wrong arguments' }
             }
 
-            key = key[0];
+            const key = keys[0];
 
             if (this._isNew) {
                 Logger.warn('import_key: set password first');
@@ -197,7 +199,6 @@ class Wallet extends BasicController {
             }
         } catch (err) {
             Logger.warn(err.message);
-            return err;
         }
     }
 
@@ -294,7 +295,7 @@ class Wallet extends BasicController {
     async _aesDecrypt({ text, aesKey }) {
         Logger.info('aes_decrypt: decrypting')
 
-        aesKey = (typeof aesKey === 'undefined') ? this._aesKey : aesKey;
+        aesKey = aesKey || this._aesKey;
 
         let encryptedText = Buffer.from(text, 'hex');
         let decipher = crypto.createDecipheriv(this._aesAlgorithm, aesKey, this._iv);

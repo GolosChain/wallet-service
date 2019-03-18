@@ -42,9 +42,6 @@ class WalletTester {
         return await this.rpcCall('import_key', [key]);
     }
 
-
-
-    
     async info() {
         return await this.rpcCall('info', []);
     }
@@ -52,10 +49,10 @@ class WalletTester {
     async transfer(from, to, amount, memo, broadcast) {
         return await this.rpcCall('transfer', [from, to, amount, memo, broadcast]);
     }
+
     async listMyAccounts() {
         // unable to use
     }
-
 };
 
 module.exports = WalletTester;
