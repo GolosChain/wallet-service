@@ -1,34 +1,30 @@
 {
-    "name": "golos_wallet",
-    "version": "0.4.0",
-    "description": "",
-    "main": "./src/index.js",
-    "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/GolosChain/cyberway.golos_wallet.git"
-    },
-    "prettier": {
-        "singleQuote": true,
-        "tabWidth": 4,
-        "semi": true,
-        "trailingComma": "es5",
-        "printWidth": 100
-    },
-    "author": "golos.io",
-    "license": "GPL-3.0",
-    "bugs": {
-        "url": "https://github.com/GolosChain/cyberway.golos_wallet/issues"
-    },
-    "homepage": "https://github.com/GolosChain/cyberway.golos_wallet",
-    "dependencies": {
-        "base58check": "^2.0.0",
-        "eosjs-ecc": "^4.0.4",
-        "gls-core-service": "^3.4.2",
-        "golos-js": "^0.7.7",
-        "moment": "^2.24.0",
-        "then-sleep": "^1.0.1"
-    }
+  "name": "golos_wallet",
+  "version": "0.4.0",
+  "description": "",
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GolosChain/cyberway.golos_wallet.git"
+  },
+  "author": "golos.io",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/GolosChain/cyberway.golos_wallet/issues"
+  },
+  "homepage": "https://github.com/GolosChain/cyberway.golos_wallet",
+  "dependencies": {
+    "base58check": "^2.0.0",
+    "eosjs-ecc": "^4.0.4",
+    "gls-core-service": "^3.4.2",
+    "golos-js": "^0.7.7",
+    "moment": "^2.24.0",
+    "then-sleep": "^1.0.1"
+  },
+  "devDependencies": {
+    "prettier": "^1.16.4"
+  }
 }

@@ -17,9 +17,11 @@ class Connector extends BasicConnector {
                 lock: this._wallet.lock.bind(this._wallet),
                 set_password: this._wallet.setPassword.bind(this._wallet),
                 import_key: this._wallet.importKey.bind(this._wallet),
-                is_locked: this._wallet.isLocked.bind(this._wallet)
+                is_locked: this._wallet.isLocked.bind(this._wallet),
             },
         });
+
+        await super.setDefaultResponse(null);
     }
 }
 
