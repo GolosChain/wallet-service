@@ -34,13 +34,17 @@ class Main {
     }
 
     async _handleTransferAction(action, blockNum) {
-        const transfer = new TransferModel({
+        const transferObject = {
             sender: action.args.from,
             receiver: action.args.to,
             quantity: action.args.quantity
-        });
+        };
+
+        const transfer = new TransferModel(transferObject);
 
         await transfer.save();
+
+        Logger.info('Created transfer object: ' + JSON.stringify(transferObject, null, 2));
 
         await this._handleEvents({ events: action.events });
     }
@@ -61,14 +65,14 @@ class Main {
             return;
         }
 
-        const balanceModel = await BalanceModel.findOne({ name: event.args.account });
+        const balanceObject = await BalanceModel.findOne({ name: event.args.account });
 
-        if (balanceModel) {
-            // Check balance of tokens listed in balanceModel.balance array
+        if (balanceObject) {
+            // Check balance of tokens listed in balanceObject.balances array
             const neededSym = event.args.balance.sym;
             let isPresent = false;
 
-            balanceModel.balances.forEach(async tokenBalance => {
+            balanceObject.balances.forEach(async tokenBalance => {
                 if (tokenBalance.sym === neededSym) {
                     isPresent = true;
                 }
@@ -76,11 +80,13 @@ class Main {
 
             // Modify if such token is present and create new one otherwise
             if (isPresent) {
-                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: { 'balances': [event.args.balance] } });
+                await BalanceModel.updateOne({ _id: balanceObject._id }, { $set: { 'balances': [event.args.balance] } });
             }
             else {
-                await BalanceModel.updateOne({ _id: balanceModel._id }, { $push: { 'balances': event.args.balance } });
+                await BalanceModel.updateOne({ _id: balanceObject._id }, { $push: { 'balances': event.args.balance } });
             }
+
+            Logger.info('Updated balance object of user ' + event.args.account + '.');
         }
         else {
             const newBalance = new BalanceModel({
@@ -89,6 +95,8 @@ class Main {
             });
 
             await newBalance.save();
+
+            Logger.info('Created balance object of user ' + event.args.account + '.');
         }
     }
 }
