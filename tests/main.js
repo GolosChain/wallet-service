@@ -8,13 +8,13 @@ const UnitTests = require('./units');
 
 let endpointCW = {
     ip: '0.0.0.0',
-    port: 8091
-}
+    port: 8091,
+};
 
 let endpointGLS = {
     ip: '127.0.0.1',
-    port: 8092
-}
+    port: 8092,
+};
 
 let endpoint = endpointCW;
 let unitTest = new UnitTests(endpoint.ip, endpoint.port);
@@ -25,8 +25,8 @@ let cfg = {
     password3: 'cccccccc',
 
     key1: '5JiBoYuME7P3zqCATtvyhzW51rbd9yPDtvxgVfmRsyhEUWmMGCs',
-    key2: '5Jn9TkccBkeMUqWLkaQJVz71Tfefo2EMFpxaRjnjqMETBmzZ2sh'
-}
+    key2: '5Jn9TkccBkeMUqWLkaQJVz71Tfefo2EMFpxaRjnjqMETBmzZ2sh',
+};
 
 describe('new wallet operations', async () => {
     it('set_password', async () => {
@@ -46,4 +46,3 @@ describe('new wallet operations', async () => {
         await unitTest.importKey(cfg.key1);
     });
 });
-

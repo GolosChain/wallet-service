@@ -4,7 +4,7 @@ class WalletTester {
     constructor(...args) {
         this._client = jayson.client.http({
             host: args[0],
-            port: args[1]
+            port: args[1],
         });
     }
 
@@ -53,18 +53,17 @@ class WalletTester {
     async listMyAccounts() {
         // unable to use
     }
-};
+}
 
 module.exports = WalletTester;
 
-
 const getRandomArbitrary = (minRandValue, maxRandValue) => {
     return (Math.random() * (maxRandValue - minRandValue) + minRandValue) | 0;
-}
+};
 
 const genRequestId = () => {
     const minIdValue = 1;
     const maxIdValue = 1000000;
 
     return getRandomArbitrary(minIdValue, maxIdValue);
-}
+};

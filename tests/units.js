@@ -4,7 +4,6 @@ const chai = require('chai');
 const should = chai.should();
 const expect = chai.expect;
 
-
 class UnitTests {
     constructor(...args) {
         this._walletTester = new WalletTester(...args);
@@ -70,13 +69,9 @@ class UnitTests {
         res.result.should.be.a('boolean');
     }
 
-    async info() {
+    async info() {}
 
-    }
-
-    async transfer(from, to, amount, memo, broadcast) {
-    }
-
-};
+    async transfer(from, to, amount, memo, broadcast) {}
+}
 
 module.exports = UnitTests;
