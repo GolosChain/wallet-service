@@ -11,11 +11,9 @@ class Main extends BasicMain {
         super(stats, env);
 
         const connector = new Connector();
-        // const cleaner = new Cleaner();
         const prism = new Prism();
 
         this.startMongoBeforeBoot();
-        // this.addNested(cleaner, prism, connector);
         this.addNested(prism, connector);
     }
 

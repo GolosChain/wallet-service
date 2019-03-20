@@ -1,0 +1,18 @@
+{
+  "name": "unit_test",
+  "version": "1.0.0",
+  "description": "unit tests for golos wallet",
+  "main": "main.js",
+  "scripts": {
+    "test": "mocha main.js"
+  },
+  "author": "golos.io",
+  "license": "MIT",
+  "dependencies": {
+    "jayson": "^2.1.2"
+  },
+  "devDependencies": {
+    "mocha": "^6.0.2",
+    "chai": "^4.2.0"
+  }
+}

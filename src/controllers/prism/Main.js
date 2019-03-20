@@ -20,7 +20,6 @@ class Main {
             return;
         }
 
-
         // Add logic
     }
 }

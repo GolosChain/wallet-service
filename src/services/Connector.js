@@ -15,11 +15,13 @@ class Connector extends BasicConnector {
             serverRoutes: {
                 unlock: this._wallet.unlock.bind(this._wallet),
                 lock: this._wallet.lock.bind(this._wallet),
-                setPassword: this._wallet.setPassword.bind(this._wallet),
-                importKey: this._wallet.importKey.bind(this._wallet),
-                isLocked: this._wallet.isLocked.bind(this._wallet)
+                set_password: this._wallet.setPassword.bind(this._wallet),
+                import_key: this._wallet.importKey.bind(this._wallet),
+                is_locked: this._wallet.isLocked.bind(this._wallet),
             },
         });
+
+        await super.setDefaultResponse(null);
     }
 }
 

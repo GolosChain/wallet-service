@@ -15,7 +15,7 @@ class Prism extends BasicService {
 
     async start() {
         const lastBlock = await this._getLastBlockNum();
-        const subscriber = new BlockSubscribe(lastBlock + 1);
+        const subscriber = new BlockSubscribe(lastBlock + 1, { onlyIrreversible: true });
 
         subscriber.on('block', this._handleBlock.bind(this));
         subscriber.on('fork', this._handleFork.bind(this));

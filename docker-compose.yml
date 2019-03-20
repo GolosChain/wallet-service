@@ -22,7 +22,7 @@ services:
     networks:
       - services-tier
     volumes:
-      - ./wallet_data/wallet.json:/usr/src/app/wallet.json
+      - ./wallet.json:/usr/src/app/wallet.json
     ports:
       - $GLS_CONNECTOR_HOST:$GLS_CONNECTOR_PORT:$GLS_CONNECTOR_PORT
     env_file:
