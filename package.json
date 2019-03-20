@@ -26,6 +26,7 @@
     "dependencies": {
         "base58check": "^2.0.0",
         "eosjs-ecc": "^4.0.4",
+        "fs-extra": "^7.0.1",
         "gls-core-service": "^3.4.2",
         "golos-js": "^0.7.7",
         "moment": "^2.24.0",

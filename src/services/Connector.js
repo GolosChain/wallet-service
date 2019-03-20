@@ -20,6 +20,8 @@ class Connector extends BasicConnector {
                 is_locked: this._wallet.isLocked.bind(this._wallet)
             },
         });
+        
+        await super.setDefaultResponse( null );
     }
 }
 

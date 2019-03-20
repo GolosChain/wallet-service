@@ -4,7 +4,7 @@ const Logger = core.utils.Logger;
 const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
-const fs = require('fs');
+const fs = require('fs-extra');
 
 const path = require('path');
 const walletPath = path.join(__dirname, '/../../wallet.json');
@@ -29,7 +29,7 @@ class Wallet extends BasicController {
         this._wsServer = '0.0.0.0:8091'
         this._walletFileObject = {};
 
-
+        // This sync file read inside is ok here. It's incorect to start without wallet.json data.
         this._walletFileObject = this._readWalletFile(walletPath);
         this._isNew = this._walletFileObject.cipher_keys.length === 0
     }
@@ -47,7 +47,7 @@ class Wallet extends BasicController {
             }
 
             Logger.info('lock: encrypting')
-            this._encryptKeys();
+            await this._encryptKeys();
             this._keys = {}
             // Checksum of empty string is needed to show, that the password hasn't been set yet.
             // This is needed in _encryptKeys()
@@ -55,7 +55,7 @@ class Wallet extends BasicController {
             this._aesKey = Buffer.from(this._checksum.substr(0, 32));
 
             Logger.info('lock: updating wallet.json file');
-            this._updateWalletFile();
+            await this._updateWalletFile();
             this._locked = true;
             Logger.info('lock: locked');
             return null;
@@ -187,15 +187,15 @@ class Wallet extends BasicController {
                 keyMap[pub] = key;
 
                 this._keys = keyMap;
-                this._encryptKeys();
-                this._updateWalletFile();
+                await this._encryptKeys();
+                await this._updateWalletFile();
                 Logger.info('import_key: private key has been changed');
 
                 return true;
             } else {
                 Logger.warn('import_key: invalid key');
                 // Just like cli_wallet.
-                return false;
+                throw false;
             }
         } catch (err) {
             Logger.warn(err.message);
@@ -228,7 +228,7 @@ class Wallet extends BasicController {
     async _updateWalletFile(path = walletPath) {
         Logger.info('update_wallet_file: saving new up to date json object');
 
-        this._saveWalletFile(path, JSON.stringify({
+        await this._saveWalletFile(path, JSON.stringify({
             cipher_keys: this._cipherKeys,
             ws_server: this._wsServer
         }));
@@ -237,7 +237,7 @@ class Wallet extends BasicController {
     }
 
     async _saveWalletFile(path, text) {
-        await fs.writeFileSync(path, text, { encoding: 'utf8', flag: 'w' });
+        await fs.writeFile(path, text, { encoding: 'utf8', flag: 'w' });
 
         Logger.info('save_wallet_file: wallet.json was saved');
     }
@@ -258,7 +258,7 @@ class Wallet extends BasicController {
             Logger.warn('read_wallet_file: unable to read wallet.json.')
 
             if (err.code === 'ENOENT') {
-                this._saveWalletFile(walletPath, JSON.stringify(defaultWalletObject));
+                await this._saveWalletFile(walletPath, JSON.stringify(defaultWalletObject));
                 Logger.info('read_wallet_file: created new wallet.json file')
             } else {
                 Logger.error(err.message);
