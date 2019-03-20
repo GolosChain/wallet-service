@@ -34,13 +34,17 @@ class Main {
     }
 
     async _handleTransferAction(action, blockNum) {
-        const transfer = new TransferModel({
+        const transferObject = {
             sender: action.args.from,
             receiver: action.args.to,
             quantity: action.args.quantity
-        });
+        };
+
+        const transfer = new TransferModel(transferObject);
 
         await transfer.save();
+
+        Logger.info('Created transfer object: ' + JSON.stringify(transferObject, null, 2));
 
         await this._handleEvents({ events: action.events });
     }
@@ -81,6 +85,8 @@ class Main {
             else {
                 await BalanceModel.updateOne({ _id: balanceModel._id }, { $push: { 'balances': event.args.balance } });
             }
+
+            Logger.info('Updated balance object of user ' + event.args.account + '.');
         }
         else {
             const newBalance = new BalanceModel({
@@ -89,6 +95,8 @@ class Main {
             });
 
             await newBalance.save();
+
+            Logger.info('Created balance object of user ' + event.args.account + '.');
         }
     }
 }
