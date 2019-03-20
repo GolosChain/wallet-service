@@ -53,6 +53,11 @@ class WalletTester {
     async listMyAccounts() {
         // unable to use
     }
+
+
+    async getBalance({ name }) {
+        return await this.rpcCall('getBalance', { name });
+    }
 }
 
 module.exports = WalletTester;
