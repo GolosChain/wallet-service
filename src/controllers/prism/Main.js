@@ -19,16 +19,21 @@ class Main {
 
         console.log(JSON.stringify(transaction, null, 2));
         transaction.actions.forEach(async action => {
-            if (action.code     === 'cyber.token'   &&
-                action.receiver === 'cyber.token'   &&
-                action.action   === 'transfer'
+            if (action.code === 'cyber.token' &&
+                action.receiver === 'cyber.token'
             ) {
-                await this._disperseTransferAction(action, blockNum);
+                if (action.action === 'transfer') {
+                    await this._handleTransferAction(action, blockNum);
+                }
+
+                if (action.action === 'issue') {
+                    await this._handleIssueAction(action, blockNum);
+                }
             }
         });
     }
 
-    async _disperseTransferAction(action, blockNum) {
+    async _handleTransferAction(action, blockNum) {
         const transfer = new TransferModel({
             sender: action.args.from,
             receiver: action.args.to,
@@ -37,37 +42,54 @@ class Main {
 
         await transfer.save();
 
-        action.events.forEach(async event => {
-            const bModel = await BalanceModel.findOne({ name: event.args.account });
+        await this._handleEvents({ events: action.events });
+    }
 
-            if (bModel) {
-                // Check balance of tokens listed in bModel.balance array
-                const neededSym = event.args.balance.sym;
-                let isPresent = false;
+    async _handleIssueAction(action, blockNum) {
+        await this._handleEvents({ events: action.events });
+    }
 
-                bModel.balances.forEach(async tokenBalance => {
-                    if (tokenBalance.sym === neededSym) {
-                        isPresent = true;
-                    }
-                });
-                
-                // Modify if such token is present and create new one otherwise 
-                if (isPresent) {
-                    await BalanceModel.updateOne({ _id: bModel._id }, { $set: { 'balances': [event.args.balance] } });
+    async _handleEvents({ events }) {
+        events.forEach(async event => {
+            await this._handleBalanceEvent({ event });
+        });
+    }
+
+    async _handleBalanceEvent({ event }) {
+        // Sure given event is balance event
+        if (!(event.code === 'cyber.token' && event.event === 'balance')) {
+            return;
+        }
+
+        const balanceModel = await BalanceModel.findOne({ name: event.args.account });
+
+        if (balanceModel) {
+            // Check balance of tokens listed in balanceModel.balance array
+            const neededSym = event.args.balance.sym;
+            let isPresent = false;
+
+            balanceModel.balances.forEach(async tokenBalance => {
+                if (tokenBalance.sym === neededSym) {
+                    isPresent = true;
                 }
-                else {
-                    await BalanceModel.updateOne({ _id: bModel._id }, { $push: { 'balances': event.args.balance } });
-                }
+            });
+
+            // Modify if such token is present and create new one otherwise
+            if (isPresent) {
+                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: { 'balances': [event.args.balance] } });
             }
             else {
-                const newBalance = new BalanceModel({
-                    name: event.args.account,
-                    balances: [event.args.balance]
-                });
-
-                await newBalance.save();
+                await BalanceModel.updateOne({ _id: balanceModel._id }, { $push: { 'balances': event.args.balance } });
             }
-        });
+        }
+        else {
+            const newBalance = new BalanceModel({
+                name: event.args.account,
+                balances: [event.args.balance]
+            });
+
+            await newBalance.save();
+        }
     }
 }
 
