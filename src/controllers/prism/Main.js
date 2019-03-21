@@ -17,8 +17,7 @@ class Main {
             return;
         }
 
-        console.log(JSON.stringify(transaction, null, 2));
-        transaction.actions.forEach(async action => {
+        for (const action of transaction.actions) {
             if (action.code === 'cyber.token' &&
                 action.receiver === 'cyber.token'
             ) {
@@ -30,10 +29,14 @@ class Main {
                     await this._handleIssueAction(action, blockNum);
                 }
             }
-        });
+        }
     }
 
     async _handleTransferAction(action, blockNum) {
+        if (!action.args) {
+            throw { code: 812, message: 'Invalid action object' };
+        }
+
         const transferObject = {
             sender: action.args.from,
             receiver: action.args.to,
@@ -50,13 +53,13 @@ class Main {
     }
 
     async _handleIssueAction(action, blockNum) {
-        await this._handleEvents({ events: action.events });
+        await this._handleEvents(action);
     }
 
     async _handleEvents({ events }) {
-        events.forEach(async event => {
+        for (const event of events) {
             await this._handleBalanceEvent({ event });
-        });
+        }
     }
 
     async _handleBalanceEvent({ event }) {
@@ -65,28 +68,28 @@ class Main {
             return;
         }
 
-        const balanceModel = await BalanceModel.findOne({ name: event.args.account });
+        const balanceObject = await BalanceModel.findOne({ name: event.args.account });
 
-        if (balanceModel) {
-            // Check balance of tokens listed in balanceModel.balance array
+        if (balanceObject) {
+            // Check balance of tokens listed in balanceObject.balances array
             const neededSym = event.args.balance.sym;
             let isPresent = false;
 
-            balanceModel.balances.forEach(async tokenBalance => {
+            for (const tokenBalance of balanceObject.balances) {
                 if (tokenBalance.sym === neededSym) {
                     isPresent = true;
                 }
-            });
+            }
 
             // Modify if such token is present and create new one otherwise
             if (isPresent) {
-                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: { 'balances': [event.args.balance] } });
+                await BalanceModel.updateOne({ _id: balanceObject._id }, { $set: { 'balances': [event.args.balance] } });
             }
             else {
-                await BalanceModel.updateOne({ _id: balanceModel._id }, { $push: { 'balances': event.args.balance } });
+                await BalanceModel.updateOne({ _id: balanceObject._id }, { $push: { 'balances': event.args.balance } });
             }
 
-            Logger.info('Updated balance object of user ' + event.args.account + '.');
+            Logger.info(`Updated balance object of user ${event.args.account}: ${JSON.stringify(event.args.balance, null, 2)}`);
         }
         else {
             const newBalance = new BalanceModel({
@@ -96,7 +99,7 @@ class Main {
 
             await newBalance.save();
 
-            Logger.info('Created balance object of user ' + event.args.account + '.');
+            Logger.info(`Created balance object of user ${event.args.account}: ${JSON.stringify(event.args.balance, null, 2)}`);
         }
     }
 }
