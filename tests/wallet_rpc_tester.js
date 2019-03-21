@@ -54,9 +54,12 @@ class WalletTester {
         // unable to use
     }
 
-
     async getBalance({ name }) {
         return await this.rpcCall('getBalance', { name });
+    }
+
+    async getHistory({ query }) {
+        return await this.rpcCall('getHistory', { query });
     }
 }
 
