@@ -51,7 +51,7 @@ class WalletTester {
     }
 
     async listMyAccounts() {
-        // unable to use
+        throw { message: 'unable to use yet' };
     }
 
 
