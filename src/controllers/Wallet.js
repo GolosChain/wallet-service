@@ -55,13 +55,13 @@ class Wallet extends BasicController {
             balances: []
         }
 
-        balanceObject.balances.forEach(async tokenBalance => {
+        for (const tokenBalance of balanceObject.balances) {
             res.balances.push({
                 amount: tokenBalance.amount,
                 decs: tokenBalance.decs,
                 sym: tokenBalance.sym
             })
-        });
+        }
 
         return res; 
     }
