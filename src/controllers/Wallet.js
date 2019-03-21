@@ -49,7 +49,7 @@ class Wallet extends BasicController {
         let filter = {};
 
         const checkNameString = (name) => {
-            if (!(typeof name === 'string' || name instanceof String)) {
+            if (!(typeof name === 'string')) {
                 throw { code: 809, message: 'Name must be a non-empty string!' }
             }
         }
@@ -81,8 +81,13 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ name }) {
-        if (!name || !(typeof name === 'string' || name instanceof String)) {
-            throw { code: 809, message: 'Name must be a non-empty string!' }
+
+        if (!name || !(typeof name === 'string')) {
+            throw { code: 809, message: 'Name must be a string!' }
+        }
+
+        if (name.length === 0) {
+            throw { code: 810, message: 'Name can not be empty string!' }
         }
 
         const balanceObject = await BalanceModel.findOne({ name });
@@ -96,13 +101,13 @@ class Wallet extends BasicController {
             balances: []
         }
 
-        balanceObject.balances.forEach(async tokenBalance => {
+        for (const tokenBalance of balanceObject.balances) {
             res.balances.push({
                 amount: tokenBalance.amount,
                 decs: tokenBalance.decs,
                 sym: tokenBalance.sym
             })
-        });
+        }
 
         return res;
     }
