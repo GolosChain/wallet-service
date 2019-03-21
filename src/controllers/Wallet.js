@@ -7,6 +7,9 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
+const TransferModel = require('../models/Transfer');
+const BalanceModel = require('../models/Balance');
+
 const walletPath = path.join(__dirname, '/../../wallet.json');
 
 class Wallet extends BasicController {
@@ -30,6 +33,37 @@ class Wallet extends BasicController {
         // This sync file read inside is ok here. It's incorect to start without wallet.json data.
         this._walletFileObject = this._readWalletFile(walletPath);
         this._isNew = this._walletFileObject.cipher_keys.length === 0;
+    }
+
+    async getBalance({ name }) {
+        if (!name || !(typeof name === 'string')) {
+            throw { code: 809, message: 'Name must be a string!' }
+        }
+
+        if (name.length === 0) {
+            throw { code: 810, message: 'Name can not be empty string!' }
+        }
+
+        const balanceObject = await BalanceModel.findOne({ name });
+
+        if (!balanceObject) {
+            return {};
+        }
+
+        let res = {
+            name,
+            balances: []
+        }
+
+        for (const tokenBalance of balanceObject.balances) {
+            res.balances.push({
+                amount: tokenBalance.amount,
+                decs: tokenBalance.decs,
+                sym: tokenBalance.sym
+            })
+        }
+
+        return res;
     }
 
     async lock() {

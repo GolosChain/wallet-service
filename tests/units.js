@@ -69,9 +69,34 @@ class UnitTests {
         res.result.should.be.a('boolean');
     }
 
-    async info() {}
+    async info() { }
 
-    async transfer(from, to, amount, memo, broadcast) {}
+    async transfer(from, to, amount, memo, broadcast) { }
+
+    async getBalance({ name }) {
+        let res = await this._walletTester.getBalance({ name });
+        console.log(JSON.stringify(res, null, 2));
+
+        res.should.be.a('object');
+        res.should.have.property('id');
+        res.should.have.property('result');
+
+        res.id.should.be.a('number');
+        res.result.should.be.a('object');
+
+        res.result.name.should.be.a('string');
+        res.result.balances.should.be.a('array');
+
+        res.result.balances.forEach(b => {
+            b.should.have.property('amount');
+            b.should.have.property('decs');
+            b.should.have.property('sym');
+
+            b.amount.should.be.a('number');
+            b.decs.should.be.a('number');
+            b.sym.should.be.a('string');
+        });
+    }
 }
 
 module.exports = UnitTests;
