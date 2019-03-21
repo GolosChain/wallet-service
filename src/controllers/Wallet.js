@@ -36,12 +36,12 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ name }) {
-        if (!name || !(typeof name === 'string' || name instanceof String)) {
-            throw { code: 809, message: 'Name must be a string!'}
+        if (!name || !(typeof name === 'string')) {
+            throw { code: 809, message: 'Name must be a string!' }
         }
-        
+
         if (name.length === 0) {
-            throw { code: 810, message: 'Name can not be empty string!'}
+            throw { code: 810, message: 'Name can not be empty string!' }
         }
 
         const balanceObject = await BalanceModel.findOne({ name });
@@ -49,7 +49,7 @@ class Wallet extends BasicController {
         if (!balanceObject) {
             return {};
         }
-        
+
         let res = {
             name,
             balances: []
@@ -63,7 +63,7 @@ class Wallet extends BasicController {
             })
         }
 
-        return res; 
+        return res;
     }
 
     async lock() {
