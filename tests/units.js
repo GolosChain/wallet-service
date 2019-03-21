@@ -97,6 +97,39 @@ class UnitTests {
             b.sym.should.be.a('string');
         });
     }
+
+    async getHistory({ query }) {
+        let res = await this._walletTester.getHistory({ query });
+        console.log(JSON.stringify(res, null, 2));
+
+        res.should.be.a('object');
+        res.should.have.property('id');
+        res.should.have.property('result');
+
+        res.id.should.be.a('number');
+        res.result.should.be.a('object');
+
+        res.result.should.have.property('transfers');
+        res.result.transfers.should.be.a('array');
+
+        for (const transfer of res.result.transfers) {
+            transfer.should.have.property('sender');
+            transfer.should.have.property('receiver');
+            transfer.should.have.property('quantity');
+
+            transfer.sender.should.be.a('string');
+            transfer.receiver.should.be.a('string');
+            transfer.quantity.should.be.a('object');
+
+            transfer.quantity.should.have.property('amount');
+            transfer.quantity.should.have.property('decs');
+            transfer.quantity.should.have.property('sym');
+
+            transfer.quantity.amount.should.be.a('number');
+            transfer.quantity.decs.should.be.a('number');
+            transfer.quantity.sym.should.be.a('string');
+        }
+    }
 }
 
 module.exports = UnitTests;

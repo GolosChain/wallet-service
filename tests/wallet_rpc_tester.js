@@ -54,9 +54,12 @@ class WalletTester {
         throw { message: 'unable to use yet' };
     }
 
-
     async getBalance({ name }) {
         return await this.rpcCall('getBalance', { name });
+    }
+
+    async getHistory({ query }) {
+        return await this.rpcCall('getHistory', { query });
     }
 }
 

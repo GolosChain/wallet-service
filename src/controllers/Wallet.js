@@ -35,7 +35,53 @@ class Wallet extends BasicController {
         this._isNew = this._walletFileObject.cipher_keys.length === 0;
     }
 
+    async getHistory({ query }) {
+        if (!query || !Object.keys(query).length) {
+            Logger.warn('getHistory: invalid argument');
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+
+        if (!query.sender && !query.receiver) {
+            Logger.warn('getHistory: at least one of sender and receiver must be non-empty');
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+
+        let filter = {};
+
+        const checkNameString = (name) => {
+            if (!(typeof name === 'string')) {
+                throw { code: 809, message: 'Name must be a non-empty string!' }
+            }
+        }
+
+        // In case sender field is present it has to be a valid string
+        if (query.sender) {
+            checkNameString(query.sender);
+            filter.sender = query.sender;
+        }
+
+        // In case receiver field is present it has to be a valid string
+        if (query.receiver) {
+            checkNameString(query.receiver);
+            filter.receiver = query.receiver;
+        }
+
+        const transfers = await TransferModel.find(filter);
+        let res = { transfers: [] };
+
+        for (const transfer of transfers) {
+            res.transfers.push({
+                sender: transfer.sender,
+                receiver: transfer.receiver,
+                quantity: transfer.quantity
+            });
+        }
+
+        return res;
+    }
+
     async getBalance({ name }) {
+
         if (!name || !(typeof name === 'string')) {
             throw { code: 809, message: 'Name must be a string!' }
         }
