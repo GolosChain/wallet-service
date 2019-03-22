@@ -71,7 +71,10 @@ class UnitTests {
 
     async info() { }
 
-    async transfer(from, to, amount, memo, broadcast) { }
+    async transfer(from, to, amount, memo, broadcast) {
+        let res = await this._walletTester.transfer(from, to, amount, memo);
+        console.log({ transfer: res });
+    }
 
     async getBalance({ name }) {
         let res = await this._walletTester.getBalance({ name });

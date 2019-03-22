@@ -61,6 +61,10 @@ class WalletTester {
     async getHistory({ query }) {
         return await this.rpcCall('getHistory', { query });
     }
+
+    async transfer(from, to, quantity, memo) {
+        return await this.rpcCall('transfer', [from, to, quantity, memo]);
+    }
 }
 
 module.exports = WalletTester;

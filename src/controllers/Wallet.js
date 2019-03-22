@@ -1,14 +1,19 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
 const Logger = core.utils.Logger;
+
 const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
+
 const fs = require('fs');
 const path = require('path');
 
 const TransferModel = require('../models/Transfer');
 const BalanceModel = require('../models/Balance');
+
+const commun = require('communjs/lib').default;
+const PROVIDER_TYPES = require('communjs/lib/commun').PROVIDER_TYPES;
 
 const walletPath = path.join(__dirname, '/../../wallet.json');
 
@@ -86,10 +91,6 @@ class Wallet extends BasicController {
             throw { code: 809, message: 'Name must be a string!' }
         }
 
-        if (name.length === 0) {
-            throw { code: 810, message: 'Name can not be empty string!' }
-        }
-
         const balanceObject = await BalanceModel.findOne({ name });
 
         if (!balanceObject) {
@@ -110,6 +111,44 @@ class Wallet extends BasicController {
         }
 
         return res;
+    }
+
+    async transfer(args) {
+        if (this._locked) {
+            Logger.warn('Wallet must be unlocked');
+            throw { code: 803, message: 'Wallet must be unlocked' };
+        }
+
+        if (!Array.isArray(args) || args.length < 4) {
+            Logger.warn('transfer: wrong arguments');
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+
+        const from = args[0];
+        const to = args[1];
+        const quantity = args[2];
+        const memo = args[3];
+
+        const checkStringParam = (str) => {
+            if (!str || !(typeof str === 'string')) {
+                throw { code: 810, message: 'Invalid parameter. A non-empty string was expected!' }
+            }
+        }
+
+        checkStringParam(from);
+        checkStringParam(to);
+        checkStringParam(quantity);
+        checkStringParam(memo);
+
+        const privateKey = Object.values(this._keys)[0];
+
+        await commun.accountAuth(from, privateKey, PROVIDER_TYPES.JSSIG);
+
+        const transaction = await commun.cyberToken.transfer({ from }, {
+            from, to, quantity, memo
+        });
+
+        Logger.info(JSON.stringify(transaction, null, 2));
     }
 
     async lock() {
