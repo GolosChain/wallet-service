@@ -82,7 +82,7 @@ class Main {
             }
 
             // Modify if such token is present and create new one otherwise
-            if (neededTokenId) {
+            if (neededTokenId != null) {
                 let objectToModify = {};
                 const idString = 'balances.' + neededTokenId;
                 objectToModify[idString] = event.args.balance;
