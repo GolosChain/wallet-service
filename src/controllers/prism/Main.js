@@ -73,17 +73,21 @@ class Main {
         if (balanceObject) {
             // Check balance of tokens listed in balanceObject.balances array
             const neededSym = event.args.balance.sym;
-            let isPresent = false;
+            let neededTokenId = null;
 
-            for (const tokenBalance of balanceObject.balances) {
-                if (tokenBalance.sym === neededSym) {
-                    isPresent = true;
+            for (let i = 0; i < balanceObject.balances.length; i++) {
+                if (balanceObject.balances[i].sym === neededSym) {
+                    neededTokenId = i;
                 }
             }
 
             // Modify if such token is present and create new one otherwise
-            if (isPresent) {
-                await BalanceModel.updateOne({ _id: balanceObject._id }, { $set: { 'balances': [event.args.balance] } });
+            if (neededTokenId != null) {
+                let objectToModify = {};
+                const idString = 'balances.' + neededTokenId;
+                objectToModify[idString] = event.args.balance;
+
+                await BalanceModel.updateOne({ _id: balanceObject._id }, { $set: objectToModify });
             }
             else {
                 await BalanceModel.updateOne({ _id: balanceObject._id }, { $push: { 'balances': event.args.balance } });
