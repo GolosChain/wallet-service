@@ -145,16 +145,27 @@ class Wallet extends BasicController {
         }
     }
 
-    async unlock(passwords) {
+    async unlock(args) {
         try {
             Logger.info('unlock: unlocking');
 
-            if (passwords.length !== 1 && Array.isArray(passwords)) {
-                Logger.warn('unlock: wrong arguments');
-                throw { code: 805, message: 'Wrong arguments' };
+            let password = "";
+
+            if (Array.isArray(args) && args.length === 1) {
+                password = args[0];
+            }
+            else {
+                if (args && typeof args === 'object' && args.password &&
+                    args.password && typeof args.password === 'string'
+                ) {
+                    password = args.password;
+                }
+                else {
+                    Logger.warn('unlock: wrong arguments');
+                    throw { code: 805, message: 'Wrong arguments' };
+                }
             }
 
-            const password = passwords[0];
             Logger.info('unlock: checking');
 
             if (this._isNew) {
@@ -202,24 +213,34 @@ class Wallet extends BasicController {
         }
     }
 
-    async setPassword(passwords) {
+    async setPassword(args) {
         try {
             Logger.info('set_password: checking password');
 
-            if (passwords.length !== 1 && Array.isArray(passwords)) {
-                Logger.warn('unlock: wrong arguments');
-                throw { code: 805, message: 'Wrong arguments' };
+            let password = "";
+
+            if (Array.isArray(args) && args.length === 1) {
+                password = args[0];
+            }
+            else {
+                if (args && typeof args === 'object' &&
+                    args.password && typeof args.password === 'string'
+                ) {
+                    password = args.password;
+                }
+                else {
+                    Logger.warn('set_password: wrong arguments');
+                    throw { code: 805, message: 'Wrong arguments' };
+                }
             }
 
-            const password = passwords[0];
-
             if (!this._isNew && this._locked) {
-                Logger.warn('Wallet must be unlocked');
+                Logger.warn('set_password: Wallet must be unlocked');
                 throw { code: 803, message: 'Wallet must be unlocked' };
             }
 
             if (password.length === 0) {
-                Logger.warn('Invalid password');
+                Logger.warn('set_password: Invalid password');
                 throw { code: 804, message: 'Invalid password' };
             }
 
@@ -247,16 +268,26 @@ class Wallet extends BasicController {
         }
     }
 
-    async importKey(keys) {
+    async importKey(args) {
         try {
             Logger.info('import_key: checking key');
 
-            if (keys.length !== 1 && Array.isArray(keys)) {
-                Logger.warn('import_key: wrong arguments');
-                throw { code: 805, message: 'Wrong arguments' };
-            }
+            let key = "";
 
-            const key = keys[0];
+            if (Array.isArray(args) && args.length === 1) {
+                key = args[0];
+            }
+            else {
+                if (args && typeof args === 'object' && args.key &&
+                    args.key && typeof args.key === 'string'
+                ) {
+                    key = args.key;
+                }
+                else {
+                    Logger.warn('import_key: wrong arguments');
+                    throw { code: 805, message: 'Wrong arguments' };
+                }
+            }
 
             if (this._isNew) {
                 Logger.warn('import_key: set password first');

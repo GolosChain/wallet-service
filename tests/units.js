@@ -34,39 +34,74 @@ class UnitTests {
     }
 
     async unlock(password) {
-        let res = await this._walletTester.unlock(password);
-        console.log({ unlock: res });
+        const checkRes = async res => {
+            console.log({ unlock: res });
 
-        res.should.be.a('object');
-        res.should.have.property('id');
-        res.should.have.property('result');
+            res.should.be.a('object');
+            res.should.have.property('id');
+            res.should.have.property('result');
 
-        res.id.should.be.a('number');
-        should.equal(res.result, null);
+            res.id.should.be.a('number');
+            should.equal(res.result, null);
+        }
+
+        console.log('unlock: array param');
+        const resArray = await this._walletTester.unlock([password]);
+
+        await checkRes(resArray);
+
+        console.log('unlock: object param');
+        let resObject = await this._walletTester.unlock({ password });
+
+        await checkRes(resObject);
     }
 
     async setPassword(password) {
-        let res = await this._walletTester.setPassword(password);
-        console.log({ set_password: res });
+        const checkRes = async res => {
+            console.log({ set_password: res });
 
-        res.should.be.a('object');
-        res.should.have.property('id');
-        res.should.have.property('result');
+            res.should.be.a('object');
+            res.should.have.property('id');
+            res.should.have.property('result');
 
-        res.id.should.be.a('number');
-        should.equal(res.result, null);
+            res.id.should.be.a('number');
+            should.equal(res.result, null);
+        }
+
+        console.log('set_password: array param');
+        let resArray = await this._walletTester.setPassword([password]);
+
+        await checkRes(resArray);
+
+        await this.unlock(password);
+
+        console.log('set_password: object param');
+        let resObject = await this._walletTester.setPassword({ password });
+
+        await checkRes(resObject);
     }
 
     async importKey(key) {
-        let res = await this._walletTester.importKey(key);
-        console.log({ import_key: res });
+        const checkRes = async res => {
+            console.log({ import_key: res });
 
-        res.should.be.a('object');
-        res.should.have.property('id');
-        res.should.have.property('result');
+            res.should.be.a('object');
+            res.should.have.property('id');
+            res.should.have.property('result');
 
-        res.id.should.be.a('number');
-        res.result.should.be.a('boolean');
+            res.id.should.be.a('number');
+            res.result.should.be.a('boolean');
+        }
+
+        console.log('import_key: array param');
+        let resArray = await this._walletTester.importKey([key]);
+
+        await checkRes(resArray);
+
+        console.log('import_key: object param');
+        let resObject = await this._walletTester.importKey({ key });
+
+        await checkRes(resObject);
     }
 
     async info() { }
