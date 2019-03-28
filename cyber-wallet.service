@@ -2,10 +2,10 @@
 Description=Cyberway Wallet CLI
 
 [Service]
-ExecStart=/home/deploy/cyberway.golos_wallet/src/index.js
+ExecStart=/usr/bin/node /home/deploy/cyberway.golos_wallet/src/index.js
 Restart=always
-User=nobody
-Group=nogroup
+User=deploy
+Group=deploy
 Environment=PATH=/usr/bin:/usr/local/bin
 Environment=NODE_ENV=production
 EnvironmentFile=/home/deploy/cyberway.golos_wallet/.env
@@ -14,8 +14,8 @@ Type=simple
 SyslogIdentifier=golos_wallet
 StandardOutput=syslog
 StandardError=syslog
-LimitNOFILE=infinity
-LimitMEMLOCK=infinity
+#LimitNOFILE=infinity
+#LimitMEMLOCK=infinity
 
 [Install]
 WantedBy=multi-user.target

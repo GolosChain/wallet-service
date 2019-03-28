@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 set -e
-systemctl start cyber-wallet
+sudo systemctl start cyber-wallet
