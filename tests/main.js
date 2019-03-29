@@ -24,8 +24,7 @@ let cfg = {
     password2: 'bbbbbbbb',
     password3: 'cccccccc',
 
-    key1: '5JiBoYuME7P3zqCATtvyhzW51rdd9yPDtvxgVfmRsyhEUWmMGCs',
-    key2: '5Jn9TkccBkeMUqWLkaQJVz71Tfffo2EMFpxaRjnjqMETBmzZ2sh',
+    key1: '5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAbuatmU' // unimportant but VALID key!
 };
 
 describe('new wallet operations', async () => {

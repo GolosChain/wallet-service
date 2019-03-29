@@ -30,16 +30,16 @@ class WalletTester {
         return await this.rpcCall('lock', []);
     }
 
-    async unlock(password) {
-        return await this.rpcCall('unlock', [password]);
+    async unlock(args) {
+        return await this.rpcCall('unlock', args);
     }
 
-    async setPassword(password) {
-        return await this.rpcCall('set_password', [password]);
+    async setPassword(args) {
+        return await this.rpcCall('set_password', args);
     }
 
-    async importKey(key) {
-        return await this.rpcCall('import_key', [key]);
+    async importKey(args) {
+        return await this.rpcCall('import_key', args);
     }
 
     async info() {
