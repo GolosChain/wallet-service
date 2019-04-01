@@ -18,8 +18,9 @@ class Connector extends BasicConnector {
                 set_password: this._wallet.setPassword.bind(this._wallet),
                 import_key: this._wallet.importKey.bind(this._wallet),
                 is_locked: this._wallet.isLocked.bind(this._wallet),
+                filter_account_history: this._wallet.filterAccountHistory.bind(this._wallet),
                 getBalance: this._wallet.getBalance.bind(this._wallet),
-                getHistory: this._wallet.getHistory.bind(this._wallet)
+                getHistory: this._wallet.getHistory.bind(this._wallet),
             },
         });
 

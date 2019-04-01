@@ -15,7 +15,7 @@ module.exports = MongoDB.makeModel(
         quantity: {
             amount: {
                 type: Number,
-                default: 0
+                default: 0,
             },
             decs: {
                 type: Number,
@@ -24,6 +24,15 @@ module.exports = MongoDB.makeModel(
             sym: {
                 type: String,
             },
+        },
+        block: {
+            type: Number,
+        },
+        trx_id: {
+            type: String,
+        },
+        timestamp: {
+            type: String,
         },
     },
     {

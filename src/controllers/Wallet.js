@@ -101,39 +101,33 @@ class Wallet extends BasicController {
         }
 
         let transfers;
-        let ghQuery;
+        let filter;
         let ghres;
 
         switch (query.direction) {
             case 'sender':
-                console.log('here1');
-                ghQuery = {
+                filter = {
                     sender: account,
                 };
 
-                ghres = await this.getHistory({ query: ghQuery });
-                transfers = ghres.transfers;
+                transfers = await TransferModel.find(filter);
                 break;
 
             case 'receiver':
-                ghQuery = {
+                filter = {
                     receiver: account,
                 };
 
-                ghres = await this.getHistory({ query: ghQuery });
-                transfers = ghres.transfers;
-
+                transfers = await TransferModel.find(filter);
                 break;
 
             case 'dual':
-                ghQuery = {
+                filter = {
                     sender: account,
                     receiver: account,
                 };
 
-                ghres = await this.getHistory({ query: ghQuery });
-                transfers = ghres.transfers;
-
+                transfers = await TransferModel.find(filter);
                 break;
 
             default:
@@ -141,35 +135,7 @@ class Wallet extends BasicController {
                     $or: [{ sender: account }, { receiver: account }],
                 });
 
-                const formatQuantity = quantity => {
-                    return (
-                        quantity.amount / 10 ** quantity.decs +
-                        '.' +
-                        '0'.repeat(quantity.decs) +
-                        ' ' +
-                        quantity.sym
-                    );
-                };
-
-                transfers = [];
-
-                for (const transfer of searchResult) {
-                    transfers.push({
-                        op: [
-                            'transfer',
-                            {
-                                from: transfer.sender,
-                                to: transfer.receiver,
-                                amount: formatQuantity(transfer.quantity),
-                                memo: '{}',
-                            },
-                        ],
-                        trx_id: transfer.trx_id,
-                        block: transfer.block,
-                        timestamp: transfer.timestamp,
-                    });
-                }
-
+                transfers = searchResult;
                 break;
         }
 
@@ -185,8 +151,35 @@ class Wallet extends BasicController {
             endId = from + 1;
         }
 
+        const formatQuantity = quantity => {
+            return (
+                quantity.amount / 10 ** quantity.decs +
+                '.' +
+                '0'.repeat(quantity.decs) +
+                ' ' +
+                quantity.sym
+            );
+        };
+
         for (let i = beginId; i < endId; i++) {
-            result.push([i, transfers[i]]);
+            const transfer = transfers[i];
+            result.push([
+                i,
+                {
+                    op: [
+                        'transfer',
+                        {
+                            from: transfer.sender,
+                            to: transfer.receiver,
+                            amount: formatQuantity(transfer.quantity),
+                            memo: '{}',
+                        },
+                    ],
+                    trx_id: transfer.trx_id,
+                    block: transfer.block,
+                    timestamp: transfer.timestamp,
+                },
+            ]);
         }
 
         return result;
