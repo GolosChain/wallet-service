@@ -80,6 +80,99 @@ class Wallet extends BasicController {
         return res;
     }
 
+    async filterAccountHistory(args) {
+        const params = await this._extractArgumentList({
+            args,
+            fields: ['account', 'from', 'limit', 'query'],
+        });
+
+        const { account, from, limit, query } = params;
+
+        if (limit < 0) {
+            Logger.warn('filter_account_history: invalid argument: limit must be positive');
+            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
+        }
+
+        if (from > 0 && limit > from) {
+            Logger.warn(
+                'filter_account_history: invalid argument: limit can not be greater that from'
+            );
+            throw { code: 805, message: 'Wrong arguments: limit can not be greater that from' };
+        }
+
+        let transfers;
+        let ghQuery;
+        let ghres;
+
+        switch (query.direction) {
+            case 'sender':
+                console.log('here1');
+                ghQuery = {
+                    sender: account,
+                };
+
+                ghres = await this.getHistory({ query: ghQuery });
+                transfers = ghres.transfers;
+                break;
+
+            case 'receiver':
+                ghQuery = {
+                    receiver: account,
+                };
+
+                ghres = await this.getHistory({ query: ghQuery });
+                transfers = ghres.transfers;
+
+                break;
+
+            case 'dual':
+                ghQuery = {
+                    sender: account,
+                    receiver: account,
+                };
+
+                ghres = await this.getHistory({ query: ghQuery });
+                transfers = ghres.transfers;
+
+                break;
+
+            default:
+                const searchResult = await TransferModel.find({
+                    $or: [{ sender: account }, { receiver: account }],
+                });
+
+                transfers = [];
+
+                for (const transfer of searchResult) {
+                    transfers.push({
+                        sender: transfer.sender,
+                        receiver: transfer.receiver,
+                        quantity: transfer.quantity,
+                    });
+                }
+
+                break;
+        }
+
+        let result = [];
+        let beginId, endId;
+
+        if (from === -1) {
+            const cmpVal = transfers.length - 1 - limit;
+            beginId = cmpVal >= 0 ? cmpVal : 0;
+            endId = transfers.length;
+        } else {
+            beginId = from - limit;
+            endId = from + 1;
+        }
+
+        for (let i = beginId; i < endId; i++) {
+            result.push([i, transfers[i]]);
+        }
+
+        return result;
+    }
+
     async getBalance({ name }) {
         if (!name || !(typeof name === 'string')) {
             throw { code: 809, message: 'Name must be a string!' };
@@ -406,7 +499,7 @@ class Wallet extends BasicController {
 
     async _extractSingleArgument({ args, fieldName }) {
         if (typeof fieldName !== 'string') {
-            Logger.warn(`_extractSingleParam: invalid argument`);
+            Logger.warn(`_extractSingleArgument: invalid argument`);
             throw { code: 805, message: 'Wrong arguments' };
         }
 
@@ -423,6 +516,42 @@ class Wallet extends BasicController {
         if (!result || typeof result !== 'string') {
             Logger.warn('Wrong arguments');
             throw { code: 805, message: 'Wrong arguments' };
+        }
+
+        return result;
+    }
+
+    async _extractArgumentList({ args, fields }) {
+        if (!Array.isArray(fields)) {
+            Logger.warn(`_extractArgumentList: invalid argument`);
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+        for (const f of fields) {
+            if (typeof f !== 'string') {
+                Logger.warn(`_extractArgumentList: invalid argument`);
+                throw { code: 805, message: 'Wrong arguments' };
+            }
+        }
+
+        let result = {};
+
+        if (args) {
+            if (Array.isArray(args)) {
+                if (args.length !== fields.length) {
+                    Logger.warn(
+                        `_extractArgumentList: invalid argument: args.length !== fields.length`
+                    );
+                    throw { code: 805, message: 'Wrong arguments' };
+                }
+
+                for (const i in args) {
+                    result[fields[i]] = args[i];
+                }
+            } else {
+                for (const f of fields) {
+                    result[f] = args[f];
+                }
+            }
         }
 
         return result;
