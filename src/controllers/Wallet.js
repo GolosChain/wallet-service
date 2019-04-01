@@ -141,13 +141,32 @@ class Wallet extends BasicController {
                     $or: [{ sender: account }, { receiver: account }],
                 });
 
+                const formatQuantity = quantity => {
+                    return (
+                        quantity.amount / 10 ** quantity.decs +
+                        '.' +
+                        '0'.repeat(quantity.decs) +
+                        ' ' +
+                        quantity.sym
+                    );
+                };
+
                 transfers = [];
 
                 for (const transfer of searchResult) {
                     transfers.push({
-                        sender: transfer.sender,
-                        receiver: transfer.receiver,
-                        quantity: transfer.quantity,
+                        op: [
+                            'transfer',
+                            {
+                                from: transfer.sender,
+                                to: transfer.receiver,
+                                amount: formatQuantity(transfer.quantity),
+                                memo: '{}',
+                            },
+                        ],
+                        trx_id: transfer.trx_id,
+                        block: transfer.block,
+                        timestamp: transfer.timestamp,
                     });
                 }
 
