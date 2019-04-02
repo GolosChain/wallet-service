@@ -27,7 +27,7 @@ let cfg = {
     key1: '5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAbuatmU', // unimportant but VALID key!
 };
 
-describe('new wallet operations', async () => {
+describe('wallet management', async () => {
     it('set_password', async () => {
         await unitTest.setPassword(cfg.password1);
     });

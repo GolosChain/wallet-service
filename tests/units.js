@@ -157,30 +157,6 @@ class UnitTests {
             transfer.quantity.sym.should.be.a('string');
         }
     }
-    // {
-    //     "jsonrpc": "2.0",
-    //     "id": 815034,
-    //     "result": [
-    //       [
-    //         5,
-    //         {
-    //           "op": [
-    //             "transfer",
-    //             {
-    //               "from": "cyber.token",
-    //               "to": "korpusenko",
-    //               "amount": "6.0000 ETRAPAN",
-    //               "memo": "{}"
-    //             }
-    //           ],
-    //            "trx_id": "2d41a327a3b1b15aad1c3279364201112e31f42ef8b68c5e98aea12eca296507",
-    //            "block": 905230,
-    //            "timestamp": "2019-04-01T18:34:39.000"
-
-    //         }
-    //       ]
-    //     ]
-    //   }
 
     async filterAccountHistory({ account, from, limit, query }) {
         let res = await this._walletTester.filterAccountHistory({ account, from, limit, query });
