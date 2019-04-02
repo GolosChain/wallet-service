@@ -24,7 +24,7 @@ let cfg = {
     password2: 'bbbbbbbb',
     password3: 'cccccccc',
 
-    key1: '5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAbuatmU' // unimportant but VALID key!
+    key1: '5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAbuatmU', // unimportant but VALID key!
 };
 
 describe('new wallet operations', async () => {
@@ -47,9 +47,15 @@ describe('new wallet operations', async () => {
 });
 
 describe('getBalance test', async () => {
-    it('getBalance', async () => {
+    it('getBalance: test 1', async () => {
         await unitTest.getBalance({ name: 'cyber.token' });
+    });
+
+    it('getBalance: test 2', async () => {
         await unitTest.getBalance({ name: 'destroyer' });
+    });
+
+    it('getBalance: test 3', async () => {
         await unitTest.getBalance({ name: 'korpusenko' });
     });
 });
@@ -61,4 +67,78 @@ describe('getHistory test', async () => {
         await unitTest.getHistory({ query: { receiver: 'korpusenko' } });
         await unitTest.getHistory({ query: { receiver: 'SomeWTFACCOUNT' } });
     }).timeout(10000);
+});
+
+describe('filter_account_history test', async () => {
+    it('filter_account_history: empty', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'cyber.token',
+            from: -1,
+            limit: 100,
+            query: {},
+        });
+    }).timeout(20000);
+
+    it('filter_account_history: dual', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'korpusenko',
+            from: -1,
+            limit: 100,
+            query: { direction: 'dual' },
+        });
+    }).timeout(20000);
+
+    it('filter_account_history: receiver', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'korpusenko',
+            from: -1,
+            limit: 100,
+            query: { direction: 'receiver' },
+        });
+    }).timeout(20000);
+
+    it('filter_account_history: sender', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'cyber.token',
+            from: -1,
+            limit: 100,
+            query: { direction: 'sender' },
+        });
+    }).timeout(20000);
+
+    it('filter_account_history: last one', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'cyber.token',
+            from: -1,
+            limit: 0,
+            query: {},
+        });
+    }).timeout(20000);
+
+    it('filter_account_history: first one', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'cyber.token',
+            from: 0,
+            limit: 0,
+            query: {},
+        });
+    }).timeout(20000);
+
+    it('filter_account_history: one from middle', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'cyber.token',
+            from: 4,
+            limit: 0,
+            query: {},
+        });
+    }).timeout(20000);
+
+    it('filter_account_history: segment from middle', async () => {
+        await unitTest.filterAccountHistory({
+            account: 'cyber.token',
+            from: 4,
+            limit: 3,
+            query: {},
+        });
+    }).timeout(20000);
 });
