@@ -53,11 +53,11 @@ class Wallet extends BasicController {
 
         let filter = {};
 
-        const checkNameString = (name) => {
+        const checkNameString = name => {
             if (!(typeof name === 'string')) {
-                throw { code: 809, message: 'Name must be a non-empty string!' }
+                throw { code: 809, message: 'Name must be a non-empty string!' };
             }
-        }
+        };
 
         // In case sender field is present it has to be a valid string
         if (query.sender) {
@@ -78,7 +78,7 @@ class Wallet extends BasicController {
             res.transfers.push({
                 sender: transfer.sender,
                 receiver: transfer.receiver,
-                quantity: transfer.quantity
+                quantity: transfer.quantity,
             });
         }
 
@@ -86,9 +86,12 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ name }) {
-
         if (!name || !(typeof name === 'string')) {
-            throw { code: 809, message: 'Name must be a string!' }
+            throw { code: 809, message: 'Name must be a string!' };
+        }
+
+        if (name.length === 0) {
+            throw { code: 810, message: 'Name can not be empty string!' };
         }
 
         const balanceObject = await BalanceModel.findOne({ name });
@@ -99,15 +102,15 @@ class Wallet extends BasicController {
 
         let res = {
             name,
-            balances: []
-        }
+            balances: [],
+        };
 
         for (const tokenBalance of balanceObject.balances) {
             res.balances.push({
                 amount: tokenBalance.amount,
                 decs: tokenBalance.decs,
-                sym: tokenBalance.sym
-            })
+                sym: tokenBalance.sym,
+            });
         }
 
         return res;
@@ -184,16 +187,12 @@ class Wallet extends BasicController {
         }
     }
 
-    async unlock(passwords) {
+    async unlock(args) {
         try {
             Logger.info('unlock: unlocking');
 
-            if (passwords.length !== 1 && Array.isArray(passwords)) {
-                Logger.warn('unlock: wrong arguments');
-                throw { code: 805, message: 'Wrong arguments' };
-            }
+            let password = await this._extractSingleArgument({ args, fieldName: 'password' });
 
-            const password = passwords[0];
             Logger.info('unlock: checking');
 
             if (this._isNew) {
@@ -241,24 +240,19 @@ class Wallet extends BasicController {
         }
     }
 
-    async setPassword(passwords) {
+    async setPassword(args) {
         try {
             Logger.info('set_password: checking password');
 
-            if (passwords.length !== 1 && Array.isArray(passwords)) {
-                Logger.warn('unlock: wrong arguments');
-                throw { code: 805, message: 'Wrong arguments' };
-            }
-
-            const password = passwords[0];
+            let password = await this._extractSingleArgument({ args, fieldName: 'password' });
 
             if (!this._isNew && this._locked) {
-                Logger.warn('Wallet must be unlocked');
+                Logger.warn('set_password: Wallet must be unlocked');
                 throw { code: 803, message: 'Wallet must be unlocked' };
             }
 
             if (password.length === 0) {
-                Logger.warn('Invalid password');
+                Logger.warn('set_password: Invalid password');
                 throw { code: 804, message: 'Invalid password' };
             }
 
@@ -286,16 +280,11 @@ class Wallet extends BasicController {
         }
     }
 
-    async importKey(keys) {
+    async importKey(args) {
         try {
             Logger.info('import_key: checking key');
 
-            if (keys.length !== 1 && Array.isArray(keys)) {
-                Logger.warn('import_key: wrong arguments');
-                throw { code: 805, message: 'Wrong arguments' };
-            }
-
-            const key = keys[0];
+            let key = await this._extractSingleArgument({ args, fieldName: 'key' });
 
             if (this._isNew) {
                 Logger.warn('import_key: set password first');
@@ -456,6 +445,30 @@ class Wallet extends BasicController {
         assert.equal(prefixStr, '80');
 
         return { prefix: prefixStr, data: dataStr };
+    }
+
+    async _extractSingleArgument({ args, fieldName }) {
+        if (typeof fieldName !== 'string') {
+            Logger.warn(`_extractSingleParam: invalid argument`);
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+
+        let result;
+
+        if (args) {
+            if (Array.isArray(args)) {
+                result = args[0];
+            } else {
+                result = args[fieldName];
+            }
+        }
+
+        if (!result || typeof result !== 'string') {
+            Logger.warn('Wrong arguments');
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+
+        return result;
     }
 }
 
