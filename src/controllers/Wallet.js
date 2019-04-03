@@ -1,6 +1,8 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
 const Logger = core.utils.Logger;
+const BigNum = core.types.BigNum;
+const ParamsParser = require('../utils/ParamsUtils');
 const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
@@ -15,7 +17,6 @@ const walletPath = path.join(__dirname, '/../../wallet.json');
 class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
-
         this._checksum = '';
         this._keys = {};
         this._locked = true;
@@ -29,6 +30,7 @@ class Wallet extends BasicController {
         this._cipherKeys = '';
         this._wsServer = '0.0.0.0:8091';
         this._walletFileObject = {};
+        this._paramsParser = new ParamsParser();
 
         // This sync file read inside is ok here. It's incorect to start without wallet.json data.
         this._walletFileObject = this._readWalletFile(walletPath);
@@ -81,7 +83,7 @@ class Wallet extends BasicController {
     }
 
     async filterAccountHistory(args) {
-        const params = await this._extractArgumentList({
+        const params = await this._paramsParser.extractArgumentList({
             args,
             fields: ['account', 'from', 'limit', 'query'],
         });
@@ -151,11 +153,11 @@ class Wallet extends BasicController {
             endId = from + 1;
         }
 
+        // Converts transfers quantity data to asset string
+        // Like: "123.000 GLS"
         const formatQuantity = quantity => {
             return (
-                quantity.amount / 10 ** quantity.decs +
-                '.' +
-                '0'.repeat(quantity.decs) +
+                new BigNum(quantity.amount).shiftedBy(-quantity.decs).toString() +
                 ' ' +
                 quantity.sym
             );
@@ -253,7 +255,10 @@ class Wallet extends BasicController {
         try {
             Logger.info('unlock: unlocking');
 
-            let password = await this._extractSingleArgument({ args, fieldName: 'password' });
+            let password = await this._paramsParser.extractSingleArgument({
+                args,
+                fieldName: 'password',
+            });
 
             Logger.info('unlock: checking');
 
@@ -306,7 +311,10 @@ class Wallet extends BasicController {
         try {
             Logger.info('set_password: checking password');
 
-            let password = await this._extractSingleArgument({ args, fieldName: 'password' });
+            let password = await this._paramsParser.extractSingleArgument({
+                args,
+                fieldName: 'password',
+            });
 
             if (!this._isNew && this._locked) {
                 Logger.warn('set_password: Wallet must be unlocked');
@@ -346,7 +354,7 @@ class Wallet extends BasicController {
         try {
             Logger.info('import_key: checking key');
 
-            let key = await this._extractSingleArgument({ args, fieldName: 'key' });
+            let key = await this._paramsParser.extractSingleArgument({ args, fieldName: 'key' });
 
             if (this._isNew) {
                 Logger.warn('import_key: set password first');
@@ -507,66 +515,6 @@ class Wallet extends BasicController {
         assert.equal(prefixStr, '80');
 
         return { prefix: prefixStr, data: dataStr };
-    }
-
-    async _extractSingleArgument({ args, fieldName }) {
-        if (typeof fieldName !== 'string') {
-            Logger.warn(`_extractSingleArgument: invalid argument`);
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        let result;
-
-        if (args) {
-            if (Array.isArray(args)) {
-                result = args[0];
-            } else {
-                result = args[fieldName];
-            }
-        }
-
-        if (!result || typeof result !== 'string') {
-            Logger.warn('Wrong arguments');
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        return result;
-    }
-
-    async _extractArgumentList({ args, fields }) {
-        if (!Array.isArray(fields)) {
-            Logger.warn(`_extractArgumentList: invalid argument`);
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-        for (const f of fields) {
-            if (typeof f !== 'string') {
-                Logger.warn(`_extractArgumentList: invalid argument`);
-                throw { code: 805, message: 'Wrong arguments' };
-            }
-        }
-
-        let result = {};
-
-        if (args) {
-            if (Array.isArray(args)) {
-                if (args.length !== fields.length) {
-                    Logger.warn(
-                        `_extractArgumentList: invalid argument: args.length !== fields.length`
-                    );
-                    throw { code: 805, message: 'Wrong arguments' };
-                }
-
-                for (const i in args) {
-                    result[fields[i]] = args[i];
-                }
-            } else {
-                for (const f of fields) {
-                    result[f] = args[f];
-                }
-            }
-        }
-
-        return result;
     }
 }
 

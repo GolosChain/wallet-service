@@ -32,7 +32,7 @@ module.exports = MongoDB.makeModel(
             type: String,
         },
         timestamp: {
-            type: String,
+            type: Date,
         },
     },
     {

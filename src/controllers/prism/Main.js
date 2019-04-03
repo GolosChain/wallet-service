@@ -40,11 +40,12 @@ class Main {
             throw { code: 812, message: 'Invalid action object' };
         }
 
-        const transferObject = Object.assign({}, trxData, {
+        const transferObject = {
+            ...trxData,
             sender: action.args.from,
             receiver: action.args.to,
             quantity: action.args.quantity,
-        });
+        };
 
         const transfer = new TransferModel(transferObject);
 
