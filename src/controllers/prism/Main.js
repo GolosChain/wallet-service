@@ -3,7 +3,6 @@ const Logger = core.utils.Logger;
 const TransferModel = require('../../models/Transfer');
 const BalanceModel = require('../../models/Balance');
 
-
 class Main {
     async disperse({ transactions, blockNum }) {
         for (const transaction of transactions) {
@@ -17,30 +16,35 @@ class Main {
             return;
         }
 
+        const trxData = {
+            trx_id: transaction.id,
+            block: transaction.block_num,
+            timestamp: transaction.block_time,
+        };
+
         for (const action of transaction.actions) {
-            if (action.code === 'cyber.token' &&
-                action.receiver === 'cyber.token'
-            ) {
+            if (action.code === 'cyber.token' && action.receiver === 'cyber.token') {
                 if (action.action === 'transfer') {
-                    await this._handleTransferAction(action, blockNum);
+                    await this._handleTransferAction(action, trxData);
                 }
 
                 if (action.action === 'issue') {
-                    await this._handleIssueAction(action, blockNum);
+                    await this._handleIssueAction(action, trxData);
                 }
             }
         }
     }
 
-    async _handleTransferAction(action, blockNum) {
+    async _handleTransferAction(action, trxData) {
         if (!action.args) {
             throw { code: 812, message: 'Invalid action object' };
         }
 
         const transferObject = {
+            ...trxData,
             sender: action.args.from,
             receiver: action.args.to,
-            quantity: action.args.quantity
+            quantity: action.args.quantity,
         };
 
         const transfer = new TransferModel(transferObject);
@@ -88,22 +92,35 @@ class Main {
                 objectToModify[idString] = event.args.balance;
 
                 await BalanceModel.updateOne({ _id: balanceObject._id }, { $set: objectToModify });
-            }
-            else {
-                await BalanceModel.updateOne({ _id: balanceObject._id }, { $push: { 'balances': event.args.balance } });
+            } else {
+                await BalanceModel.updateOne(
+                    { _id: balanceObject._id },
+                    { $push: { balances: event.args.balance } }
+                );
             }
 
-            Logger.info(`Updated balance object of user ${event.args.account}: ${JSON.stringify(event.args.balance, null, 2)}`);
-        }
-        else {
+            Logger.info(
+                `Updated balance object of user ${event.args.account}: ${JSON.stringify(
+                    event.args.balance,
+                    null,
+                    2
+                )}`
+            );
+        } else {
             const newBalance = new BalanceModel({
                 name: event.args.account,
-                balances: [event.args.balance]
+                balances: [event.args.balance],
             });
 
             await newBalance.save();
 
-            Logger.info(`Created balance object of user ${event.args.account}: ${JSON.stringify(event.args.balance, null, 2)}`);
+            Logger.info(
+                `Created balance object of user ${event.args.account}: ${JSON.stringify(
+                    event.args.balance,
+                    null,
+                    2
+                )}`
+            );
         }
     }
 }

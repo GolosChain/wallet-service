@@ -1,6 +1,8 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
 const Logger = core.utils.Logger;
+const BigNum = core.types.BigNum;
+const ParamsUtils = require('../utils/ParamsUtils');
 const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
@@ -15,7 +17,6 @@ const walletPath = path.join(__dirname, '/../../wallet.json');
 class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
-
         this._checksum = '';
         this._keys = {};
         this._locked = true;
@@ -29,6 +30,7 @@ class Wallet extends BasicController {
         this._cipherKeys = '';
         this._wsServer = '0.0.0.0:8091';
         this._walletFileObject = {};
+        this._paramsUtils = new ParamsUtils();
 
         // This sync file read inside is ok here. It's incorect to start without wallet.json data.
         this._walletFileObject = this._readWalletFile(walletPath);
@@ -78,6 +80,111 @@ class Wallet extends BasicController {
         }
 
         return res;
+    }
+
+    async filterAccountHistory(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['account', 'from', 'limit', 'query'],
+        });
+
+        const { account, from, limit, query } = params;
+
+        if (limit < 0) {
+            Logger.warn('filter_account_history: invalid argument: limit must be positive');
+            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
+        }
+
+        if (from > 0 && limit > from) {
+            Logger.warn(
+                'filter_account_history: invalid argument: limit can not be greater that from'
+            );
+            throw { code: 805, message: 'Wrong arguments: limit can not be greater that from' };
+        }
+
+        let transfers;
+        let filter;
+        let ghres;
+
+        switch (query.direction) {
+            case 'sender':
+                filter = {
+                    sender: account,
+                };
+
+                transfers = await TransferModel.find(filter);
+                break;
+
+            case 'receiver':
+                filter = {
+                    receiver: account,
+                };
+
+                transfers = await TransferModel.find(filter);
+                break;
+
+            case 'dual':
+                filter = {
+                    sender: account,
+                    receiver: account,
+                };
+
+                transfers = await TransferModel.find(filter);
+                break;
+
+            default:
+                const searchResult = await TransferModel.find({
+                    $or: [{ sender: account }, { receiver: account }],
+                });
+
+                transfers = searchResult;
+                break;
+        }
+
+        let result = [];
+        let beginId, endId;
+
+        if (from === -1) {
+            const cmpVal = transfers.length - 1 - limit;
+            beginId = cmpVal >= 0 ? cmpVal : 0;
+            endId = transfers.length;
+        } else {
+            beginId = from - limit;
+            endId = from + 1;
+        }
+
+        // Converts transfers quantity data to asset string
+        // Like: "123.000 GLS"
+        const formatQuantity = quantity => {
+            return (
+                new BigNum(quantity.amount).shiftedBy(-quantity.decs).toString() +
+                ' ' +
+                quantity.sym
+            );
+        };
+
+        for (let i = beginId; i < endId; i++) {
+            const transfer = transfers[i];
+            result.push([
+                i,
+                {
+                    op: [
+                        'transfer',
+                        {
+                            from: transfer.sender,
+                            to: transfer.receiver,
+                            amount: formatQuantity(transfer.quantity),
+                            memo: '{}',
+                        },
+                    ],
+                    trx_id: transfer.trx_id,
+                    block: transfer.block,
+                    timestamp: transfer.timestamp,
+                },
+            ]);
+        }
+
+        return result;
     }
 
     async getBalance({ name }) {
@@ -148,7 +255,10 @@ class Wallet extends BasicController {
         try {
             Logger.info('unlock: unlocking');
 
-            let password = await this._extractSingleArgument({ args, fieldName: 'password' });
+            const password = await this._paramsUtils.extractSingleArgument({
+                args,
+                fieldName: 'password',
+            });
 
             Logger.info('unlock: checking');
 
@@ -201,7 +311,10 @@ class Wallet extends BasicController {
         try {
             Logger.info('set_password: checking password');
 
-            let password = await this._extractSingleArgument({ args, fieldName: 'password' });
+            const password = await this._paramsUtils.extractSingleArgument({
+                args,
+                fieldName: 'password',
+            });
 
             if (!this._isNew && this._locked) {
                 Logger.warn('set_password: Wallet must be unlocked');
@@ -241,7 +354,7 @@ class Wallet extends BasicController {
         try {
             Logger.info('import_key: checking key');
 
-            let key = await this._extractSingleArgument({ args, fieldName: 'key' });
+            const key = await this._paramsUtils.extractSingleArgument({ args, fieldName: 'key' });
 
             if (this._isNew) {
                 Logger.warn('import_key: set password first');
@@ -288,7 +401,7 @@ class Wallet extends BasicController {
     async _encryptKeys() {
         Logger.info('encrypt_keys: packing wallet data');
 
-        let walletObj = {
+        const walletObj = {
             keys: this._keys,
             checksum: this._checksum,
         };
@@ -402,30 +515,6 @@ class Wallet extends BasicController {
         assert.equal(prefixStr, '80');
 
         return { prefix: prefixStr, data: dataStr };
-    }
-
-    async _extractSingleArgument({ args, fieldName }) {
-        if (typeof fieldName !== 'string') {
-            Logger.warn(`_extractSingleParam: invalid argument`);
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        let result;
-
-        if (args) {
-            if (Array.isArray(args)) {
-                result = args[0];
-            } else {
-                result = args[fieldName];
-            }
-        }
-
-        if (!result || typeof result !== 'string') {
-            Logger.warn('Wrong arguments');
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        return result;
     }
 }
 
