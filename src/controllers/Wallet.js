@@ -2,7 +2,7 @@ const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
 const Logger = core.utils.Logger;
 const BigNum = core.types.BigNum;
-const ParamsParser = require('../utils/ParamsUtils');
+const ParamsUtils = require('../utils/ParamsUtils');
 const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
@@ -30,7 +30,7 @@ class Wallet extends BasicController {
         this._cipherKeys = '';
         this._wsServer = '0.0.0.0:8091';
         this._walletFileObject = {};
-        this._paramsParser = new ParamsParser();
+        this._paramsUtils = new ParamsUtils();
 
         // This sync file read inside is ok here. It's incorect to start without wallet.json data.
         this._walletFileObject = this._readWalletFile(walletPath);
@@ -83,7 +83,7 @@ class Wallet extends BasicController {
     }
 
     async filterAccountHistory(args) {
-        const params = await this._paramsParser.extractArgumentList({
+        const params = await this._paramsUtils.extractArgumentList({
             args,
             fields: ['account', 'from', 'limit', 'query'],
         });
@@ -255,7 +255,7 @@ class Wallet extends BasicController {
         try {
             Logger.info('unlock: unlocking');
 
-            let password = await this._paramsParser.extractSingleArgument({
+            const password = await this._paramsUtils.extractSingleArgument({
                 args,
                 fieldName: 'password',
             });
@@ -311,7 +311,7 @@ class Wallet extends BasicController {
         try {
             Logger.info('set_password: checking password');
 
-            let password = await this._paramsParser.extractSingleArgument({
+            const password = await this._paramsUtils.extractSingleArgument({
                 args,
                 fieldName: 'password',
             });
@@ -354,7 +354,7 @@ class Wallet extends BasicController {
         try {
             Logger.info('import_key: checking key');
 
-            let key = await this._paramsParser.extractSingleArgument({ args, fieldName: 'key' });
+            const key = await this._paramsUtils.extractSingleArgument({ args, fieldName: 'key' });
 
             if (this._isNew) {
                 Logger.warn('import_key: set password first');
@@ -401,7 +401,7 @@ class Wallet extends BasicController {
     async _encryptKeys() {
         Logger.info('encrypt_keys: packing wallet data');
 
-        let walletObj = {
+        const walletObj = {
             keys: this._keys,
             checksum: this._checksum,
         };
