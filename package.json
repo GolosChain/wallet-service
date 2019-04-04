@@ -18,7 +18,7 @@
   "homepage": "https://github.com/GolosChain/cyberway.golos_wallet",
   "dependencies": {
     "base58check": "^2.0.0",
-    "cyber-golos": "^1.1.17",
+    "cyber-golos": "^1.1.18",
     "eosjs-ecc": "^4.0.4",
     "gls-core-service": "^3.4.2",
     "golos-js": "^0.7.7",

@@ -7,8 +7,8 @@ const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
 
-const cyberGolos = require('cyber-golos/lib').default;
-const PROVIDER_TYPES = require('cyber-golos/lib/CyberGolos').PROVIDER_TYPES;
+const cyberGolos = require('cyber-golos').default;
+const { PROVIDER_TYPES } = require('cyber-golos');
 
 const fs = require('fs');
 const path = require('path');
