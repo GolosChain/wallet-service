@@ -93,11 +93,16 @@ class UnitTests {
         await checkRes(resObject);
     }
 
-    async info() {}
+    async info() { }
 
-    async transfer(from, to, amount, memo, broadcast) {
-        let res = await this._walletTester.transfer(from, to, amount, memo);
-        console.log({ transfer: res });
+    async transfer({ from, to, amount, memo, broadcast }) {
+        let res = await this._walletTester.transfer({ from, to, amount, memo });
+        console.log(JSON.stringify(res, null, 2));
+        res.should.be.a('object');
+        res.should.have.property('id');
+        res.should.have.property('result');
+
+        should.equal(res.result, null);
     }
 
     async getBalance({ name }) {
