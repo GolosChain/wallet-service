@@ -142,3 +142,16 @@ describe('filter_account_history test', async () => {
         });
     }).timeout(20000);
 });
+
+describe('transfer tests', async () => {
+    it('transfer: add private key and make transfer', async () => {
+        if (process.env.TRANSFER_ACCOUNT && process.env.TRANSFER_PRIVATE_KEY && process.env.TRANSFER_ASSET) {
+            await unitTest.unlock(cfg.password1);
+            await unitTest.importKey(process.env.TRANSFER_PRIVATE_KEY);
+            await unitTest.transfer({ from: process.env.TRANSFER_ACCOUNT, to: 'destroyer', amount: process.env.TRANSFER_ASSET, memo: '{}' });
+        }
+        else {
+            throw { message: "transfer test must be run with env variables TRANSFER_ACCOUNT, TRANSFER_PRIVATE_KEY and TRANSFER_ASSET"}
+        }
+    }).timeout(20000);
+});

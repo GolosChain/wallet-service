@@ -65,6 +65,10 @@ class WalletTester {
     async filterAccountHistory(args) {
         return await this.rpcCall('filter_account_history', args);
     }
+
+    async transfer(args) {
+        return await this.rpcCall('transfer', args);
+    }
 }
 
 module.exports = WalletTester;

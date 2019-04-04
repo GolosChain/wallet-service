@@ -6,6 +6,10 @@ const ParamsUtils = require('../utils/ParamsUtils');
 const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
+
+const cyberGolos = require('cyber-golos').default;
+const { PROVIDER_TYPES } = require('cyber-golos');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -216,6 +220,61 @@ class Wallet extends BasicController {
         }
 
         return res;
+    }
+
+    async transfer(args) {
+        try {
+            if (this._locked) {
+                Logger.warn('Wallet must be unlocked');
+                throw { code: 803, message: 'Wallet must be unlocked' };
+            }
+
+            const params = await this._paramsUtils.extractArgumentList({
+                args,
+                fields: ['from', 'to', 'amount', 'memo'],
+            });
+
+            const { from, to, amount, memo } = params;
+            const accountName = from;
+            const quantity = amount;
+
+            const checkStringParam = str => {
+                if (!str || !(typeof str === 'string')) {
+                    throw {
+                        code: 810,
+                        message: `Invalid parameter ${str}. A non-empty string was expected!`,
+                    };
+                }
+            };
+
+            checkStringParam(from);
+            checkStringParam(to);
+            checkStringParam(amount);
+            checkStringParam(memo);
+
+            const privateKey = Object.values(this._keys)[0];
+
+            await cyberGolos.accountAuth(accountName, privateKey, PROVIDER_TYPES.JSSIG);
+
+            const transaction = await cyberGolos.cyberToken.transfer(
+                { accountName },
+                {
+                    from,
+                    to,
+                    quantity,
+                    memo,
+                }
+            );
+
+            Logger.info(JSON.stringify(transaction, null, 2));
+
+            return null;
+        } catch (err) {
+            if (err.code && err.message) {
+                Logger.warn({ err });
+            }
+            throw err;
+        }
     }
 
     async lock() {
