@@ -7,14 +7,14 @@ const ecc = require('eosjs-ecc');
 const base58check = require('base58check');
 const crypto = require('crypto');
 
+const cyberGolos = require('cyber-golos/lib').default;
+const PROVIDER_TYPES = require('cyber-golos/lib/CyberGolos').PROVIDER_TYPES;
+
 const fs = require('fs');
 const path = require('path');
 
 const TransferModel = require('../models/Transfer');
 const BalanceModel = require('../models/Balance');
-
-const commun = require('communjs/lib').default;
-const PROVIDER_TYPES = require('communjs/lib/commun').PROVIDER_TYPES;
 
 const walletPath = path.join(__dirname, '/../../wallet.json');
 
@@ -223,41 +223,58 @@ class Wallet extends BasicController {
     }
 
     async transfer(args) {
-        if (this._locked) {
-            Logger.warn('Wallet must be unlocked');
-            throw { code: 803, message: 'Wallet must be unlocked' };
-        }
-
-        if (!Array.isArray(args) || args.length < 4) {
-            Logger.warn('transfer: wrong arguments');
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        const from = args[0];
-        const to = args[1];
-        const quantity = args[2];
-        const memo = args[3];
-
-        const checkStringParam = (str) => {
-            if (!str || !(typeof str === 'string')) {
-                throw { code: 810, message: 'Invalid parameter. A non-empty string was expected!' }
+        try {
+            if (this._locked) {
+                Logger.warn('Wallet must be unlocked');
+                throw { code: 803, message: 'Wallet must be unlocked' };
             }
+
+            const params = await this._paramsUtils.extractArgumentList({
+                args,
+                fields: ['from', 'to', 'amount', 'memo'],
+            });
+
+            const { from, to, amount, memo } = params;
+            const accountName = from;
+            const quantity = amount;
+
+            const checkStringParam = str => {
+                if (!str || !(typeof str === 'string')) {
+                    throw {
+                        code: 810,
+                        message: `Invalid parameter ${str}. A non-empty string was expected!`,
+                    };
+                }
+            };
+
+            checkStringParam(from);
+            checkStringParam(to);
+            checkStringParam(amount);
+            checkStringParam(memo);
+
+            const privateKey = Object.values(this._keys)[0];
+
+            await cyberGolos.accountAuth(accountName, privateKey, PROVIDER_TYPES.JSSIG);
+
+            const transaction = await cyberGolos.cyberToken.transfer(
+                { accountName },
+                {
+                    from,
+                    to,
+                    quantity,
+                    memo,
+                }
+            );
+
+            Logger.info(JSON.stringify(transaction, null, 2));
+
+            return null;
+        } catch (err) {
+            if (err.code && err.message) {
+                Logger.warn({ err });
+            }
+            throw err;
         }
-
-        checkStringParam(from);
-        checkStringParam(to);
-        checkStringParam(quantity);
-        checkStringParam(memo);
-
-        const privateKey = Object.values(this._keys)[0];
-
-        await commun.accountAuth(from, privateKey, PROVIDER_TYPES.JSSIG);
-
-        const transaction = await commun.cyberToken.transfer({ from }, {
-            from, to, quantity, memo
-        });
-
-        Logger.info(JSON.stringify(transaction, null, 2));
     }
 
     async lock() {
