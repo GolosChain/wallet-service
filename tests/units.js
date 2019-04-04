@@ -11,7 +11,6 @@ class UnitTests {
     // Management methods
     async isLocked() {
         let res = await this._walletTester.isLocked();
-        console.log({ is_locked: res });
 
         res.should.be.a('object');
         res.should.have.property('id');
@@ -23,7 +22,6 @@ class UnitTests {
 
     async lock() {
         let res = await this._walletTester.lock();
-        console.log({ lock: res });
 
         res.should.be.a('object');
         res.should.have.property('id');
@@ -35,22 +33,17 @@ class UnitTests {
 
     async unlock(password) {
         const checkRes = async res => {
-            console.log({ unlock: res });
-
             res.should.be.a('object');
             res.should.have.property('id');
             res.should.have.property('result');
 
             res.id.should.be.a('number');
             should.equal(res.result, null);
-        }
-
-        console.log('unlock: array param');
+        };
         const resArray = await this._walletTester.unlock([password]);
 
         await checkRes(resArray);
 
-        console.log('unlock: object param');
         let resObject = await this._walletTester.unlock({ password });
 
         await checkRes(resObject);
@@ -58,24 +51,22 @@ class UnitTests {
 
     async setPassword(password) {
         const checkRes = async res => {
-            console.log({ set_password: res });
-
             res.should.be.a('object');
             res.should.have.property('id');
             res.should.have.property('result');
 
             res.id.should.be.a('number');
             should.equal(res.result, null);
-        }
+        };
 
-        console.log('set_password: array param');
+        // set_password: array param
         let resArray = await this._walletTester.setPassword([password]);
 
         await checkRes(resArray);
 
         await this.unlock(password);
 
-        console.log('set_password: object param');
+        // set_password: object param
         let resObject = await this._walletTester.setPassword({ password });
 
         await checkRes(resObject);
@@ -83,28 +74,26 @@ class UnitTests {
 
     async importKey(key) {
         const checkRes = async res => {
-            console.log({ import_key: res });
-
             res.should.be.a('object');
             res.should.have.property('id');
             res.should.have.property('result');
 
             res.id.should.be.a('number');
             res.result.should.be.a('boolean');
-        }
+        };
 
-        console.log('import_key: array param');
+        // import_key: array param
         let resArray = await this._walletTester.importKey([key]);
 
         await checkRes(resArray);
 
-        console.log('import_key: object param');
+        // import_key: object param
         let resObject = await this._walletTester.importKey({ key });
 
         await checkRes(resObject);
     }
 
-    async info() { }
+    async info() {}
 
     async transfer(from, to, amount, memo, broadcast) {
         let res = await this._walletTester.transfer(from, to, amount, memo);
@@ -113,11 +102,15 @@ class UnitTests {
 
     async getBalance({ name }) {
         let res = await this._walletTester.getBalance({ name });
-        console.log(JSON.stringify(res, null, 2));
 
         res.should.be.a('object');
         res.should.have.property('id');
         res.should.have.property('result');
+
+        if (!Object.keys(res.result).length) {
+            // don't have needed balance
+            return;
+        }
 
         res.id.should.be.a('number');
         res.result.should.be.a('object');
@@ -138,7 +131,6 @@ class UnitTests {
 
     async getHistory({ query }) {
         let res = await this._walletTester.getHistory({ query });
-        console.log(JSON.stringify(res, null, 2));
 
         res.should.be.a('object');
         res.should.have.property('id');
@@ -166,6 +158,43 @@ class UnitTests {
             transfer.quantity.amount.should.be.a('number');
             transfer.quantity.decs.should.be.a('number');
             transfer.quantity.sym.should.be.a('string');
+        }
+    }
+
+    async filterAccountHistory({ account, from, limit, query }) {
+        let res = await this._walletTester.filterAccountHistory({ account, from, limit, query });
+
+        res.should.have.property('result');
+        res.result.should.be.a('array');
+
+        for (const el of res.result) {
+            el.should.be.a('array');
+            el[0].should.be.a('number');
+            el[1].should.be.a('object');
+
+            el[1].should.have.property('op');
+            el[1].op.should.be.a('array');
+
+            el[1].op[0].should.be.a('string');
+            el[1].op[1].should.be.a('object');
+
+            el[1].op[1].should.have.property('from');
+            el[1].op[1].should.have.property('to');
+            el[1].op[1].should.have.property('amount');
+            el[1].op[1].should.have.property('memo');
+
+            el[1].op[1].from.should.be.a('string');
+            el[1].op[1].to.should.be.a('string');
+            el[1].op[1].amount.should.be.a('string');
+            el[1].op[1].memo.should.be.a('string');
+
+            el[1].should.have.property('trx_id');
+            el[1].should.have.property('block');
+            el[1].should.have.property('timestamp');
+
+            el[1].trx_id.should.be.a('string');
+            el[1].block.should.be.a('number');
+            el[1].timestamp.should.be.a('string');
         }
     }
 }

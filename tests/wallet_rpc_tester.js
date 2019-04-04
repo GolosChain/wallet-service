@@ -62,8 +62,12 @@ class WalletTester {
         return await this.rpcCall('getHistory', { query });
     }
 
-    async transfer(from, to, quantity, memo) {
-        return await this.rpcCall('transfer', [from, to, quantity, memo]);
+    async filterAccountHistory(args) {
+        return await this.rpcCall('filter_account_history', args);
+    }
+
+    async transfer(args) {
+        return await this.rpcCall('transfer', args);
     }
 }
 
