@@ -2,6 +2,7 @@ const core = require('gls-core-service');
 const Logger = core.utils.Logger;
 const TransferModel = require('../../models/Transfer');
 const BalanceModel = require('../../models/Balance');
+const TokenModel = require('../../models/Token');
 
 class Main {
     async disperse({ transactions, blockNum }) {
@@ -30,6 +31,10 @@ class Main {
 
                 if (action.action === 'issue') {
                     await this._handleIssueAction(action, trxData);
+                }
+
+                if (action.action === 'create') {
+                    await this._handleCreateAction(action, trxData);
                 }
             }
         }
@@ -60,9 +65,14 @@ class Main {
         await this._handleEvents(action);
     }
 
+    async _handleCreateAction(action, blockNum) {
+        await this._handleEvents(action);
+    }
+
     async _handleEvents({ events }) {
         for (const event of events) {
             await this._handleBalanceEvent({ event });
+            await this._handleCurrencyEvent({ event });
         }
     }
 
@@ -121,6 +131,42 @@ class Main {
                     2
                 )}`
             );
+        }
+    }
+
+    async _handleCurrencyEvent({ event }) {
+        // Sure given event is currency event
+        if (!(event.code === 'cyber.token' && event.event === 'currency')) {
+            return;
+        }
+        const tokenObject = await TokenModel.findOne({ sym: event.args.supply.sym });
+
+        const sym = event.args.supply.sym;
+        const issuer = event.args.issuer;
+
+        let supply = event.args.supply;
+        delete supply.sym;
+
+        let max_supply = event.args.max_supply;
+        delete max_supply.sym;
+
+        const newTokenInfo = {
+            sym,
+            issuer,
+            supply,
+            max_supply,
+        };
+
+        if (tokenObject) {
+            await TokenModel.updateOne({ _id: tokenObject._id }, { $set: newTokenInfo });
+
+            Logger.info(`Updated \"${sym}\" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
+        } else {
+            const newToken = new TokenModel(newTokenInfo);
+
+            await newToken.save();
+
+            Logger.info(`Created \"${sym}\" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
         }
     }
 }
