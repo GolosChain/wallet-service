@@ -15,6 +15,7 @@ const path = require('path');
 
 const TransferModel = require('../models/Transfer');
 const BalanceModel = require('../models/Balance');
+const TokenModel = require('../models/Token');
 
 const walletPath = path.join(__dirname, '/../../wallet.json');
 
@@ -39,6 +40,48 @@ class Wallet extends BasicController {
         // This sync file read inside is ok here. It's incorect to start without wallet.json data.
         this._walletFileObject = this._readWalletFile(walletPath);
         this._isNew = this._walletFileObject.cipher_keys.length === 0;
+    }
+
+    async getTokensInfo(args) {
+        let params;
+
+        if (Array.isArray(args) && args.length !== 0) {
+            params = args;
+        } else {
+            if (typeof args === 'object') {
+                params = args.tokens;
+            } else {
+                Logger.warn(`getTokensInfo: invalid argument ${args}`);
+                throw { code: 805, message: 'Wrong arguments' };
+            }
+        }
+
+        let res = { tokens: [] };
+
+        for (const token of params) {
+            if (typeof token !== 'string') {
+                Logger.warn(`getTokensInfo: invalid argument ${params}: ${token}`);
+                throw { code: 805, message: 'Wrong arguments' };
+            }
+
+            const tokenObject = await TokenModel.findOne({ sym: token });
+
+            if (tokenObject) {
+                const supply = { ...tokenObject.supply, sym: tokenObject.sym };
+                const max_supply = { ...tokenObject.max_supply, sym: tokenObject.sym };
+
+                const tokenInfo = {
+                    sym: tokenObject.sym,
+                    issuer: tokenObject.issuer,
+                    supply,
+                    max_supply,
+                };
+
+                res.tokens.push(tokenInfo);
+            }
+        }
+
+        return res;
     }
 
     async getHistory({ query }) {
