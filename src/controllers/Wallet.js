@@ -157,6 +157,16 @@ class Wallet extends BasicController {
             endId = from + 1;
         }
 
+        // Converts transfers quantity data to asset string
+        // Like: "123.000 GLS"
+        const formatQuantity = quantity => {
+            return (
+                new BigNum(quantity.amount).shiftedBy(-quantity.decs).toString() +
+                ' ' +
+                quantity.sym
+            );
+        };
+
         for (let i = beginId; i < endId; i++) {
             const transfer = transfers[i];
             result.push([
