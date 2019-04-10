@@ -15,6 +15,7 @@ const path = require('path');
 
 const TransferModel = require('../models/Transfer');
 const BalanceModel = require('../models/Balance');
+const TokenModel = require('../models/Token');
 
 const walletPath = path.join(__dirname, '/../../wallet.json');
 
@@ -39,6 +40,48 @@ class Wallet extends BasicController {
         // This sync file read inside is ok here. It's incorect to start without wallet.json data.
         this._walletFileObject = this._readWalletFile(walletPath);
         this._isNew = this._walletFileObject.cipher_keys.length === 0;
+    }
+
+    async getTokensInfo(args) {
+        let params;
+
+        if (Array.isArray(args) && args.length !== 0) {
+            params = args;
+        } else {
+            if (typeof args === 'object') {
+                params = args.tokens;
+            } else {
+                Logger.warn(`getTokensInfo: invalid argument ${args}`);
+                throw { code: 805, message: 'Wrong arguments' };
+            }
+        }
+
+        let res = { tokens: [] };
+
+        for (const token of params) {
+            if (typeof token !== 'string') {
+                Logger.warn(`getTokensInfo: invalid argument ${params}: ${token}`);
+                throw { code: 805, message: 'Wrong arguments' };
+            }
+
+            const tokenObject = await TokenModel.findOne({ sym: token });
+
+            if (tokenObject) {
+                const supply = { ...tokenObject.supply, sym: tokenObject.sym };
+                const max_supply = { ...tokenObject.max_supply, sym: tokenObject.sym };
+
+                const tokenInfo = {
+                    sym: tokenObject.sym,
+                    issuer: tokenObject.issuer,
+                    supply,
+                    max_supply,
+                };
+
+                res.tokens.push(tokenInfo);
+            }
+        }
+
+        return res;
     }
 
     async getHistory({ query }) {
@@ -191,13 +234,13 @@ class Wallet extends BasicController {
         return result;
     }
 
-    async getBalance({ name }) {
+    async getBalance({ name, tokensList }) {
         if (!name || !(typeof name === 'string')) {
-            throw { code: 809, message: 'Name must be a string!' };
+            throw { code: 809, message: 'getBalance: name must be a string!' };
         }
 
         if (name.length === 0) {
-            throw { code: 810, message: 'Name can not be empty string!' };
+            throw { code: 810, message: 'getBalance: name can not be empty string!' };
         }
 
         const balanceObject = await BalanceModel.findOne({ name });
@@ -211,12 +254,44 @@ class Wallet extends BasicController {
             balances: [],
         };
 
+        let tokensMap = {};
+
+        if (tokensList) {
+            if (!Array.isArray(tokensList)) {
+                Logger.warn('getBalance: invalid argument: tokens param must be array of strings');
+                throw {
+                    code: 805,
+                    message: 'getBalance: invalid argument: tokens param must be array of strings',
+                };
+            }
+
+            for (const token of tokensList) {
+                if (typeof token !== 'string') {
+                    throw {
+                        code: 809,
+                        message: 'getBalance: any tokensList element must be a string!',
+                    };
+                }
+                tokensMap[token] = true;
+            }
+        }
+
         for (const tokenBalance of balanceObject.balances) {
-            res.balances.push({
-                amount: tokenBalance.amount,
-                decs: tokenBalance.decs,
-                sym: tokenBalance.sym,
-            });
+            const pushToken = async token => {
+                res.balances.push({
+                    amount: token.amount,
+                    decs: token.decs,
+                    sym: token.sym,
+                });
+            };
+
+            if (tokensList) {
+                if (tokensMap[tokenBalance.sym]) {
+                    await pushToken(tokenBalance);
+                }
+            } else {
+                await pushToken(tokenBalance);
+            }
         }
 
         return res;
