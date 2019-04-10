@@ -5,13 +5,13 @@ const BalanceModel = require('../../models/Balance');
 const TokenModel = require('../../models/Token');
 
 class Main {
-    async disperse({ transactions, blockNum }) {
+    async disperse({ transactions }) {
         for (const transaction of transactions) {
-            await this._disperseTransaction(transaction, blockNum);
+            await this._disperseTransaction(transaction);
         }
     }
 
-    async _disperseTransaction(transaction, blockNum) {
+    async _disperseTransaction(transaction) {
         if (!transaction) {
             Logger.error('Empty transaction! But continue.');
             return;
@@ -25,16 +25,18 @@ class Main {
 
         for (const action of transaction.actions) {
             if (action.code === 'cyber.token' && action.receiver === 'cyber.token') {
-                if (action.action === 'transfer') {
-                    await this._handleTransferAction(action, trxData);
-                }
-
-                if (action.action === 'issue') {
-                    await this._handleIssueAction(action, trxData);
-                }
-
-                if (action.action === 'create') {
-                    await this._handleCreateAction(action, trxData);
+                switch (action.action) {
+                    case 'transfer':
+                        await this._handleTransferAction(action, trxData);
+                        break;
+                    case 'issue':
+                        await this._handleEvents({ events: action.events });
+                        break;
+                    case 'create':
+                        await this._handleEvents({ events: action.events });
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -61,14 +63,6 @@ class Main {
         await this._handleEvents({ events: action.events });
     }
 
-    async _handleIssueAction(action, blockNum) {
-        await this._handleEvents(action);
-    }
-
-    async _handleCreateAction(action, blockNum) {
-        await this._handleEvents(action);
-    }
-
     async _handleEvents({ events }) {
         for (const event of events) {
             await this._handleBalanceEvent({ event });
@@ -77,7 +71,7 @@ class Main {
     }
 
     async _handleBalanceEvent({ event }) {
-        // Sure given event is balance event
+        // Ensure given event is balance event
         if (!(event.code === 'cyber.token' && event.event === 'balance')) {
             return;
         }
@@ -135,7 +129,7 @@ class Main {
     }
 
     async _handleCurrencyEvent({ event }) {
-        // Sure given event is currency event
+        // Ensure given event is currency event
         if (!(event.code === 'cyber.token' && event.event === 'currency')) {
             return;
         }

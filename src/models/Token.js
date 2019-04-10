@@ -6,9 +6,11 @@ module.exports = MongoDB.makeModel(
     {
         sym: {
             type: String,
+            required: true,
         },
         issuer: {
             type: String,
+            required: true,
         },
         supply: {
             type: {
