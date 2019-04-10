@@ -138,10 +138,10 @@ class Main {
         const sym = event.args.supply.sym;
         const issuer = event.args.issuer;
 
-        let supply = event.args.supply;
+        const supply = event.args.supply;
         delete supply.sym;
 
-        let max_supply = event.args.max_supply;
+        const max_supply = event.args.max_supply;
         delete max_supply.sym;
 
         const newTokenInfo = {
@@ -154,13 +154,13 @@ class Main {
         if (tokenObject) {
             await TokenModel.updateOne({ _id: tokenObject._id }, { $set: newTokenInfo });
 
-            Logger.info(`Updated \"${sym}\" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
+            Logger.info(`Updated "${sym}" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
         } else {
             const newToken = new TokenModel(newTokenInfo);
 
             await newToken.save();
 
-            Logger.info(`Created \"${sym}\" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
+            Logger.info(`Created "${sym}" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
         }
     }
 }
