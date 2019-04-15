@@ -123,6 +123,9 @@ class Wallet extends BasicController {
                 sender: transfer.sender,
                 receiver: transfer.receiver,
                 quantity: transfer.quantity,
+                trx_id: transfer.trx_id,
+                block: transfer.block,
+                timestamp: transfer.timestamp,
             });
         }
 
@@ -197,7 +200,7 @@ class Wallet extends BasicController {
             endId = transfers.length;
         } else {
             beginId = from - limit;
-            endId = from + 1;
+            endId = Math.min(from + 1, transfers.length);
         }
 
         // Converts transfers quantity data to asset string
