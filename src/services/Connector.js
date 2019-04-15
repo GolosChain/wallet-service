@@ -13,15 +13,10 @@ class Connector extends BasicConnector {
     async start() {
         await super.start({
             serverRoutes: {
-                unlock: this._wallet.unlock.bind(this._wallet),
-                lock: this._wallet.lock.bind(this._wallet),
-                set_password: this._wallet.setPassword.bind(this._wallet),
-                import_key: this._wallet.importKey.bind(this._wallet),
-                transfer: this._wallet.transfer.bind(this._wallet),
-                is_locked: this._wallet.isLocked.bind(this._wallet),
                 filter_account_history: this._wallet.filterAccountHistory.bind(this._wallet),
                 getBalance: this._wallet.getBalance.bind(this._wallet),
                 getHistory: this._wallet.getHistory.bind(this._wallet),
+                getTokensInfo: this._wallet.getTokensInfo.bind(this._wallet),
             },
         });
 
