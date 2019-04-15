@@ -228,7 +228,10 @@ Golos_wallet -- сервис, который предоставляет улдо
           "amount": 10000,
           "decs": 4,
           "sym": "CUBE"
-        }
+        },
+        "trx_id": "bda08a56d89dd4a8fe1090f3733598f357784038e69dee1d62705bc0538da364",
+        "block": 114868,
+        "timestamp": "2019-04-09T08:52:39.000Z"
       },
       {
         "sender": "cyber.token",
@@ -237,7 +240,10 @@ Golos_wallet -- сервис, который предоставляет улдо
           "amount": 10000,
           "decs": 4,
           "sym": "QUAKE"
-        }
+        },
+        "trx_id": "bda08a56d89dd4a8fe1090f3733598f357784038e69dee1d62705bc0538da364",
+        "block": 114868,
+        "timestamp": "2019-04-09T08:52:39.000Z"
       }
     ]
   }
