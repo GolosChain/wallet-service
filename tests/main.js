@@ -1,9 +1,3 @@
-const chai = require('chai');
-
-const should = chai.should();
-const expect = chai.expect;
-
-const cliWalletPassword = '1';
 const UnitTests = require('./units');
 
 let endpointCW = {
@@ -19,32 +13,6 @@ let endpointGLS = {
 let endpoint = endpointCW;
 let unitTest = new UnitTests(endpoint.ip, endpoint.port);
 
-let cfg = {
-    password1: 'aaaaaaaa',
-    password2: 'bbbbbbbb',
-    password3: 'cccccccc',
-
-    key1: '5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAbuatmU', // unimportant but VALID key!
-};
-
-describe('wallet management', async () => {
-    it('set_password', async () => {
-        await unitTest.setPassword(cfg.password1);
-    });
-
-    it('unlock', async () => {
-        await unitTest.unlock(cfg.password1);
-    });
-
-    it('lock', async () => {
-        await unitTest.lock();
-    });
-
-    it('importKey', async () => {
-        await unitTest.unlock(cfg.password1);
-        await unitTest.importKey(cfg.key1);
-    });
-});
 
 describe('getBalance test', async () => {
     it('getBalance: test 1', async () => {
@@ -143,15 +111,3 @@ describe('filter_account_history test', async () => {
     }).timeout(20000);
 });
 
-describe('transfer tests', async () => {
-    it('transfer: add private key and make transfer', async () => {
-        if (process.env.TRANSFER_ACCOUNT && process.env.TRANSFER_PRIVATE_KEY && process.env.TRANSFER_ASSET) {
-            await unitTest.unlock(cfg.password1);
-            await unitTest.importKey(process.env.TRANSFER_PRIVATE_KEY);
-            await unitTest.transfer({ from: process.env.TRANSFER_ACCOUNT, to: 'destroyer', amount: process.env.TRANSFER_ASSET, memo: '{}' });
-        }
-        else {
-            throw { message: "transfer test must be run with env variables TRANSFER_ACCOUNT, TRANSFER_PRIVATE_KEY and TRANSFER_ASSET"}
-        }
-    }).timeout(20000);
-});

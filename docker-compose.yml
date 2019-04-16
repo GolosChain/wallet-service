@@ -21,8 +21,6 @@ services:
       dockerfile: Dockerfile
     networks:
       - services-tier
-    volumes:
-      - ./wallet.json:/app/wallet.json
     ports:
       - $GLS_CONNECTOR_HOST:$GLS_CONNECTOR_PORT:$GLS_CONNECTOR_PORT
     env_file:
