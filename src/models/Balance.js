@@ -5,21 +5,24 @@ module.exports = MongoDB.makeModel(
     'Balance',
     {
         name: {
-            type: String,    
+            type: String,
         },
         balances: {
             type: [
                 {
                     amount: {
                         type: Number,
-                        default: 0
+                        default: 0,
+                        required: true,
                     },
                     decs: {
                         type: Number,
-                        default: 3
+                        default: 3,
+                        required: true,
                     },
                     sym: {
                         type: String,
+                        required: true,
                     },
                 },
             ],
