@@ -44,9 +44,9 @@ class Main {
             }
 
             if (
-                action.code === 'cyber.token' &&
                 action.receiver === 'gls.vesting' &&
-                action.action == 'transfer'
+                action.action == 'transfer' &&
+                action.code === 'cyber.token'
             ) {
                 await this._handleVestingEvents({ events: action.events });
             }
@@ -77,7 +77,7 @@ class Main {
 
         await transfer.save();
 
-        Logger.info('Created transfer object: ' + JSON.stringify(transferObject, null, 2));
+        Logger.info('Created transfer object: ', transferObject);
 
         await this._handleEvents({ events: action.events });
     }
@@ -97,38 +97,38 @@ class Main {
 
         await vestChange.save();
 
-        Logger.info('Created vesting change object: ' + JSON.stringify(vestChangeObject, null, 2));
+        Logger.info('Created vesting change object:', vestChangeObject);
     }
 
     async _handleEvents({ events }) {
         for (const event of events) {
-            await this._handleBalanceEvent({ event });
-            await this._handleCurrencyEvent({ event });
+            await this._handleBalanceEvent(event);
+            await this._handleCurrencyEvent(event);
         }
     }
 
     async _handleVestingEvents({ events }) {
         for (const event of events) {
-            await this._handleVestingStatEvent({ event });
-            await this._handleVestingBalanceEvent({ event });
+            await this._handleVestingStatEvent(event);
+            await this._handleVestingBalanceEvent(event);
         }
     }
 
-    async _handleBalanceEvent({ event }) {
+    async _handleBalanceEvent(event) {
         // Ensure given event is balance event
         if (!(event.code === 'cyber.token' && event.event === 'balance')) {
             return;
         }
 
-        const balanceObject = await BalanceModel.findOne({ name: event.args.account });
+        const balance = await BalanceModel.findOne({ name: event.args.account });
 
-        if (balanceObject) {
-            // Check balance of tokens listed in balanceObject.balances array
+        if (balance) {
+            // Check balance of tokens listed in balance.balances array
             const neededSym = event.args.balance.sym;
             let neededTokenId = null;
 
-            for (let i = 0; i < balanceObject.balances.length; i++) {
-                if (balanceObject.balances[i].sym === neededSym) {
+            for (let i = 0; i < balance.balances.length; i++) {
+                if (balance.balances[i].sym === neededSym) {
                     neededTokenId = i;
                 }
             }
@@ -139,20 +139,17 @@ class Main {
                 const idString = 'balances.' + neededTokenId;
                 objectToModify[idString] = event.args.balance;
 
-                await BalanceModel.updateOne({ _id: balanceObject._id }, { $set: objectToModify });
+                await BalanceModel.updateOne({ _id: balance._id }, { $set: objectToModify });
             } else {
-                await BalanceModel.updateOne(
-                    { _id: balanceObject._id },
-                    { $push: { balances: event.args.balance } }
-                );
+                await balance.balances.push(event.args.balance);
+                await balance.save();
             }
 
             Logger.info(
-                `Updated balance object of user ${event.args.account}: ${JSON.stringify(
-                    event.args.balance,
-                    null,
-                    2
-                )}`
+                'Updated balance object of user',
+                event.args.account,
+                ':',
+                event.args.balance
             );
         } else {
             const newBalance = new BalanceModel({
@@ -163,16 +160,15 @@ class Main {
             await newBalance.save();
 
             Logger.info(
-                `Created balance object of user ${event.args.account}: ${JSON.stringify(
-                    event.args.balance,
-                    null,
-                    2
-                )}`
+                'Created balance object of user',
+                event.args.account,
+                ':',
+                event.args.balance
             );
         }
     }
 
-    async _handleCurrencyEvent({ event }) {
+    async _handleCurrencyEvent(event) {
         // Ensure given event is currency event
         if (!(event.code === 'cyber.token' && event.event === 'currency')) {
             return;
@@ -198,17 +194,17 @@ class Main {
         if (tokenObject) {
             await TokenModel.updateOne({ _id: tokenObject._id }, { $set: newTokenInfo });
 
-            Logger.info(`Updated "${sym}" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
+            Logger.info('Updated', sym, 'token info:', newTokenInfo);
         } else {
             const newToken = new TokenModel(newTokenInfo);
 
             await newToken.save();
 
-            Logger.info(`Created "${sym}" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
+            Logger.info('Created', sym, 'token info:', newTokenInfo);
         }
     }
 
-    async _handleVestingStatEvent({ event }) {
+    async _handleVestingStatEvent(event) {
         // Ensure given event is stat event
         // TODO: Add correct `event.code` check, when it'll be stable...
         if (!(event.event === 'stat')) {
@@ -224,25 +220,19 @@ class Main {
         };
 
         if (statObject) {
-            console.log('1', { newStats });
             await statObject.updateOne({ _id: statObject._id }, { $set: newStats });
 
-            Logger.info(
-                `Updated "${newStats.sym}" token info: ${JSON.stringify(newStats, null, 2)}`
-            );
+            Logger.info('Updated', newStats.sym, 'token info:', newStats);
         } else {
-            console.log('2', { newStats });
             const newVestingStat = new VestingStat(newStats);
 
             await newVestingStat.save();
 
-            Logger.info(
-                `Created "${newStats.sym}" token info: ${JSON.stringify(newStats, null, 2)}`
-            );
+            Logger.info('Created', newStats.sym, 'token info:', newStats);
         }
     }
 
-    async _handleVestingBalanceEvent({ event }) {
+    async _handleVestingBalanceEvent(event) {
         // Ensure given event is balance event
 
         // TODO: Add correct `event.code` check, when it'll be stable...
@@ -250,7 +240,7 @@ class Main {
             return;
         }
 
-        const vestingBalanceObject = await VestingBalance.findOne({ account: event.args.account });
+        const vestingBalance = await VestingBalance.findOne({ account: event.args.account });
 
         const newVestingBalance = {
             account: event.args.account,
@@ -259,20 +249,22 @@ class Main {
             received: event.args.received,
         };
 
-        if (vestingBalanceObject) {
+        // needed for pretty logs
+        const vestingLogObject = {
+            vesting: event.args,
+        };
+
+        if (vestingBalance) {
             await VestingBalance.updateOne(
-                { _id: vestingBalanceObject._id },
+                { _id: vestingBalance._id },
                 { $set: newVestingBalance }
             );
 
             Logger.info(
-                `Updated vesting balance object of user ${event.args.account}: ${JSON.stringify(
-                    {
-                        vesting: event.args,
-                    },
-                    null,
-                    2
-                )}`
+                'Updated vesting balance object of user',
+                event.args.account,
+                ':',
+                vestingLogObject
             );
         } else {
             const newVestingBalanceObject = new VestingBalance(newVestingBalance);
@@ -280,13 +272,10 @@ class Main {
             await newVestingBalanceObject.save();
 
             Logger.info(
-                `Created vesting balance object of user ${event.args.account}: ${JSON.stringify(
-                    {
-                        vesting: event.args,
-                    },
-                    null,
-                    2
-                )}`
+                'Created vesting balance object of user',
+                event.args.account,
+                ': ',
+                vestingLogObject
             );
         }
     }
