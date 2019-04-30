@@ -3,6 +3,9 @@ const Logger = core.utils.Logger;
 const TransferModel = require('../../models/Transfer');
 const BalanceModel = require('../../models/Balance');
 const TokenModel = require('../../models/Token');
+const VestingStat = require('../../models/VestingStat');
+const VestingBalance = require('../../models/VestingBalance');
+const VestingChange = require('../../models/VestingChange');
 
 class Main {
     async disperse({ transactions }) {
@@ -39,6 +42,22 @@ class Main {
                         break;
                 }
             }
+
+            if (
+                action.code === 'cyber.token' &&
+                action.receiver === 'gls.vesting' &&
+                action.action == 'transfer'
+            ) {
+                await this._handleVestingEvents({ events: action.events });
+            }
+
+            if (
+                action.receiver === 'gls.ctrl' &&
+                action.action === 'changevest' &&
+                action.code === 'gls.ctrl'
+            ) {
+                await this._handleChangeVestAction(action, trxData);
+            }
         }
     }
 
@@ -63,10 +82,35 @@ class Main {
         await this._handleEvents({ events: action.events });
     }
 
+    async _handleChangeVestAction(action, trxData) {
+        if (!action.args) {
+            throw { code: 812, message: 'Invalid action object' };
+        }
+
+        const vestChangeObject = {
+            ...trxData,
+            who: action.args.who,
+            diff: action.args.diff,
+        };
+
+        const vestChange = new VestingChange(vestChangeObject);
+
+        await vestChange.save();
+
+        Logger.info('Created vesting change object: ' + JSON.stringify(vestChangeObject, null, 2));
+    }
+
     async _handleEvents({ events }) {
         for (const event of events) {
             await this._handleBalanceEvent({ event });
             await this._handleCurrencyEvent({ event });
+        }
+    }
+
+    async _handleVestingEvents({ events }) {
+        for (const event of events) {
+            await this._handleVestingStatEvent({ event });
+            await this._handleVestingBalanceEvent({ event });
         }
     }
 
@@ -161,6 +205,89 @@ class Main {
             await newToken.save();
 
             Logger.info(`Created "${sym}" token info: ${JSON.stringify(newTokenInfo, null, 2)}`);
+        }
+    }
+
+    async _handleVestingStatEvent({ event }) {
+        // Ensure given event is stat event
+        // TODO: Add correct `event.code` check, when it'll be stable...
+        if (!(event.event === 'stat')) {
+            return;
+        }
+
+        const statObject = await VestingStat.findOne({ sym: event.args.sym });
+
+        const newStats = {
+            amount: event.args.amount,
+            decs: event.args.decs,
+            sym: event.args.sym,
+        };
+
+        if (statObject) {
+            console.log('1', { newStats });
+            await statObject.updateOne({ _id: statObject._id }, { $set: newStats });
+
+            Logger.info(
+                `Updated "${newStats.sym}" token info: ${JSON.stringify(newStats, null, 2)}`
+            );
+        } else {
+            console.log('2', { newStats });
+            const newVestingStat = new VestingStat(newStats);
+
+            await newVestingStat.save();
+
+            Logger.info(
+                `Created "${newStats.sym}" token info: ${JSON.stringify(newStats, null, 2)}`
+            );
+        }
+    }
+
+    async _handleVestingBalanceEvent({ event }) {
+        // Ensure given event is balance event
+
+        // TODO: Add correct `event.code` check, when it'll be stable...
+        if (!(event.event === 'balance')) {
+            return;
+        }
+
+        const vestingBalanceObject = await VestingBalance.findOne({ account: event.args.account });
+
+        const newVestingBalance = {
+            account: event.args.account,
+            vesting: event.args.vesting,
+            delegated: event.args.delegated,
+            received: event.args.received,
+        };
+
+        if (vestingBalanceObject) {
+            await VestingBalance.updateOne(
+                { _id: vestingBalanceObject._id },
+                { $set: newVestingBalance }
+            );
+
+            Logger.info(
+                `Updated vesting balance object of user ${event.args.account}: ${JSON.stringify(
+                    {
+                        vesting: event.args,
+                    },
+                    null,
+                    2
+                )}`
+            );
+        } else {
+            const newVestingBalanceObject = new VestingBalance(newVestingBalance);
+
+            await newVestingBalanceObject.save();
+
+            Logger.info(
+                `Created vesting balance object of user ${event.args.account}: ${JSON.stringify(
+                    {
+                        vesting: event.args,
+                    },
+                    null,
+                    2
+                )}`
+            );
         }
     }
 }
