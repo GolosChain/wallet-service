@@ -8,6 +8,10 @@ const TransferModel = require('../models/Transfer');
 const BalanceModel = require('../models/Balance');
 const TokenModel = require('../models/Token');
 
+const VestingStat = require('../models/VestingStat');
+const VestingBalance = require('../models/VestingBalance');
+const VestingChange = require('../models/VestingChange');
+
 class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
@@ -270,6 +274,108 @@ class Wallet extends BasicController {
         }
 
         return res;
+    }
+
+    async getVestingInfo() {
+        const vestingStat = await VestingStat.findOne({ sym: 'GOLOS' });
+
+        if (!vestingStat) {
+            return {};
+        }
+
+        const res = {
+            sym: vestingStat.sym,
+            amount: vestingStat.amount,
+            decs: vestingStat.decs,
+        };
+
+        return res;
+    }
+
+    async getVestingBalance({ account }) {
+        if (!account || !(typeof account === 'string')) {
+            throw { code: 809, message: 'getVestingBalance: account name must be a string!' };
+        }
+
+        if (account.length === 0) {
+            throw {
+                code: 810,
+                message: 'getVestingBalance: account name can not be empty string!',
+            };
+        }
+
+        const vestingBalance = await VestingBalance.findOne({ account });
+
+        if (!vestingBalance) {
+            return {};
+        }
+
+        const res = {
+            account,
+            vesting: {
+                sym: vestingBalance.vesting.sym,
+                amount: vestingBalance.vesting.amount,
+                decs: vestingBalance.vesting.decs,
+            },
+            delegated: {
+                sym: vestingBalance.delegated.sym,
+                amount: vestingBalance.delegated.amount,
+                decs: vestingBalance.delegated.decs,
+            },
+            received: {
+                sym: vestingBalance.received.sym,
+                amount: vestingBalance.received.amount,
+                decs: vestingBalance.received.decs,
+            },
+        };
+
+        return res;
+    }
+
+    async getVestingHistory(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['account', 'from', 'limit'],
+        });
+
+        const { account, from, limit } = params;
+
+        if (limit < 0) {
+            Logger.warn('getVestingHistory: invalid argument: limit must be positive');
+            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
+        }
+
+        if (from > 0 && limit > from) {
+            Logger.warn('getVestingHistory: invalid argument: limit can not be greater that from');
+            throw { code: 805, message: 'Wrong arguments: limit can not be greater that from' };
+        }
+
+        let vestingChanges = await VestingChange.find({ who: account });
+        let result = [];
+        let beginId, endId;
+
+        if (from === -1) {
+            const cmpVal = vestingChanges.length - 1 - limit;
+            beginId = cmpVal >= 0 ? cmpVal : 0;
+            endId = vestingChanges.length;
+        } else {
+            beginId = from - limit;
+            endId = Math.min(from + 1, vestingChanges.length);
+        }
+
+        vestingChanges = vestingChanges.slice(beginId, endId);
+
+        for (const v of vestingChanges) {
+            result.push({
+                who: v.who,
+                diff: v.diff,
+                block: v.block,
+                trx_id: v.trx_id,
+                timestamp: v.timestamp,
+            });
+        }
+
+        return result;
     }
 }
 

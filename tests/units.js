@@ -106,6 +106,26 @@ class UnitTests {
             el[1].timestamp.should.be.a('string');
         }
     }
+
+    // vesting 
+
+    async getVestingInfo(args) {
+        let res = await this._walletTester.getVestingInfo(args);
+        
+        res.should.be.a('object');
+    }
+    
+    async getVestingBalance(args) {
+        let res = await this._walletTester.getVestingBalance(args);
+        console.log(res);
+        res.should.be.a('object');
+    }
+    
+    async getVestingHistory(args) {
+        let res = await this._walletTester.getVestingHistory(args);
+        console.log(res);
+        res.should.be.a('object');
+    }
 }
 
 module.exports = UnitTests;
