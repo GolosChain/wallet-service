@@ -22,6 +22,7 @@
     "eosjs-ecc": "^4.0.4",
     "gls-core-service": "^3.42.0",
     "moment": "^2.24.0",
+    "node-nats-streaming": "^0.2.2",
     "then-sleep": "^1.0.1"
   },
   "devDependencies": {
