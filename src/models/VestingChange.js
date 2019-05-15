@@ -39,10 +39,10 @@ module.exports = MongoDB.makeModel(
     },
     {
         index: [
-            // by sender
             {
                 fields: {
                     who: 1,
+                    _id: -1,
                 },
                 options: {
                     unique: false,

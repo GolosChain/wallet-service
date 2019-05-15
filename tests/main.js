@@ -125,11 +125,27 @@ describe('getVestingBalance test', async () => {
 });
 
 describe('getVestingHistory test', async () => {
-    it('getVestingHistory: vesting of testuser', async () => {
+    it('getVestingHistory: vesting of testuser: limit 1', async () => {
         await unitTest.getVestingHistory({
             account: 'testuser',
-            from: -1,
-            limit: 100,
+            sequenceKey: null,
+            limit: 1,
+        });
+    });
+
+    it('getVestingHistory: vesting of testuser: limit > 1', async () => {
+        await unitTest.getVestingHistory({
+            account: 'testuser',
+            sequenceKey: null,
+            limit: 3,
+        });
+    });
+
+    it('getVestingHistory: vesting of unknown user', async () => {
+        await unitTest.getVestingHistory({
+            account: 'asdsatestuser',
+            sequenceKey: null,
+            limit: 1,
         });
     });
 });

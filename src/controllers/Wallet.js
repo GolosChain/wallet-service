@@ -293,7 +293,7 @@ class Wallet extends BasicController {
     }
 
     async getVestingBalance({ account }) {
-        if (!account || !(typeof account === 'string')) {
+        if (!account || typeof account !== 'string') {
             throw { code: 809, message: 'getVestingBalance: account name must be a string!' };
         }
 
@@ -310,7 +310,7 @@ class Wallet extends BasicController {
             return {};
         }
 
-        const res = {
+        return {
             account,
             vesting: {
                 sym: vestingBalance.vesting.sym,
@@ -328,54 +328,47 @@ class Wallet extends BasicController {
                 decs: vestingBalance.received.decs,
             },
         };
-
-        return res;
     }
 
     async getVestingHistory(args) {
         const params = await this._paramsUtils.extractArgumentList({
             args,
-            fields: ['account', 'from', 'limit'],
+            fields: ['account', 'sequenceKey', 'limit'],
         });
 
-        const { account, from, limit } = params;
+        const { account, sequenceKey, limit } = params;
 
         if (limit < 0) {
             Logger.warn('getVestingHistory: invalid argument: limit must be positive');
             throw { code: 805, message: 'Wrong arguments: limit must be positive' };
         }
 
-        if (from > 0 && limit > from) {
-            Logger.warn('getVestingHistory: invalid argument: limit can not be greater that from');
-            throw { code: 805, message: 'Wrong arguments: limit can not be greater that from' };
-        }
+        let vestingChanges;
 
-        let vestingChanges = await VestingChange.find({ who: account });
-        let result = [];
-        let beginId, endId;
-
-        if (from === -1) {
-            const cmpVal = vestingChanges.length - 1 - limit;
-            beginId = cmpVal >= 0 ? cmpVal : 0;
-            endId = vestingChanges.length;
+        if (sequenceKey) {
+            vestingChanges = await VestingChange.find({
+                who: account,
+                _id: { $gt: sequenceKey },
+            })
+                .limit(limit)
+                .sort({ _id: -1 });
         } else {
-            beginId = from - limit;
-            endId = Math.min(from + 1, vestingChanges.length);
+            vestingChanges = await VestingChange.find({ who: account })
+                .limit(limit)
+                .sort({ _id: -1 });
         }
 
-        vestingChanges = vestingChanges.slice(beginId, endId);
+        const items = vestingChanges.map(v => ({
+            id: v._id,
+            who: v.who,
+            diff: v.diff,
+            block: v.block,
+            trx_id: v.trx_id,
+            timestamp: v.timestamp,
+        }));
+        const newSequenceKey = items.length ? items[items.length - 1].id : null;
 
-        for (const v of vestingChanges) {
-            result.push({
-                who: v.who,
-                diff: v.diff,
-                block: v.block,
-                trx_id: v.trx_id,
-                timestamp: v.timestamp,
-            });
-        }
-
-        return result;
+        return { items, sequenceKey: newSequenceKey };
     }
 }
 

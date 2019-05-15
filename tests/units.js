@@ -175,7 +175,7 @@ class UnitTests {
             return;
         }
 
-        for (const c of res.result) {
+        for (const c of res.result.items) {
             c.should.have.property('who');
             c.should.have.property('diff');
             c.should.have.property('trx_id');
@@ -187,6 +187,14 @@ class UnitTests {
             c.block.should.be.a('number');
             c.trx_id.should.be.a('string');
             c.timestamp.should.be.a('string');
+        }
+
+        res.result.should.have.property('sequenceKey');
+
+        if (res.result.sequenceKey !== null) {
+            res.result.sequenceKey.should.satisfy(val => {
+                return typeof val === 'string' || val === null;
+            });
         }
     }
 }
