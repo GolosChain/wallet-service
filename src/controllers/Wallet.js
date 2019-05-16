@@ -366,9 +366,19 @@ class Wallet extends BasicController {
             trx_id: v.trx_id,
             timestamp: v.timestamp,
         }));
-        const newSequenceKey = items.length ? items[items.length - 1].id : null;
 
-        return { items, sequenceKey: newSequenceKey };
+        let newSequenceKey;
+        let itemsSize;
+
+        if (items.length > 0) {
+            newSequenceKey = items[items.length - 1].id;
+            itemsSize = items.length;
+        } else {
+            newSequenceKey = null;
+            itemsSize = null;
+        }
+
+        return { items, itemsSize, sequenceKey: newSequenceKey };
     }
 }
 

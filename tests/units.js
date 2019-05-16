@@ -196,6 +196,14 @@ class UnitTests {
                 return typeof val === 'string' || val === null;
             });
         }
+
+        res.result.should.have.property('itemsSize');
+
+        if (res.result.itemsSize !== null) {
+            res.result.itemsSize.should.satisfy(val => {
+                return typeof val === 'number' || val === null;
+            });
+        }
     }
 }
 
