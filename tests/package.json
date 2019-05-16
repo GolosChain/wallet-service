@@ -12,7 +12,7 @@
     "jayson": "^2.1.2"
   },
   "devDependencies": {
-    "mocha": "^6.0.2",
-    "chai": "^4.2.0"
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4"
   }
 }

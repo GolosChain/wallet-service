@@ -17,6 +17,9 @@ class Connector extends BasicConnector {
                 getBalance: this._wallet.getBalance.bind(this._wallet),
                 getHistory: this._wallet.getHistory.bind(this._wallet),
                 getTokensInfo: this._wallet.getTokensInfo.bind(this._wallet),
+                getVestingInfo: this._wallet.getVestingInfo.bind(this._wallet),
+                getVestingBalance: this._wallet.getVestingBalance.bind(this._wallet),
+                getVestingHistory: this._wallet.getVestingHistory.bind(this._wallet),
             },
         });
 

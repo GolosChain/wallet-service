@@ -13,7 +13,6 @@ let endpointGLS = {
 let endpoint = endpointCW;
 let unitTest = new UnitTests(endpoint.ip, endpoint.port);
 
-
 describe('getBalance test', async () => {
     it('getBalance: test 1', async () => {
         await unitTest.getBalance({ name: 'cyber.token' });
@@ -111,3 +110,42 @@ describe('filter_account_history test', async () => {
     }).timeout(20000);
 });
 
+// VESTING //
+
+describe('getVestingInfo test', async () => {
+    it('getVestingInfo()', async () => {
+        await unitTest.getVestingInfo({});
+    });
+});
+
+describe('getVestingBalance test', async () => {
+    it('getVestingBalance: vesting of testuser', async () => {
+        await unitTest.getVestingBalance({ account: 'testuser' });
+    });
+});
+
+describe('getVestingHistory test', async () => {
+    it('getVestingHistory: vesting of testuser: limit 1', async () => {
+        await unitTest.getVestingHistory({
+            account: 'testuser',
+            sequenceKey: null,
+            limit: 1,
+        });
+    });
+
+    it('getVestingHistory: vesting of testuser: limit > 1', async () => {
+        await unitTest.getVestingHistory({
+            account: 'testuser',
+            sequenceKey: null,
+            limit: 3,
+        });
+    });
+
+    it('getVestingHistory: vesting of unknown user', async () => {
+        await unitTest.getVestingHistory({
+            account: 'asdsatestuser',
+            sequenceKey: null,
+            limit: 1,
+        });
+    });
+});

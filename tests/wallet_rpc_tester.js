@@ -21,39 +21,6 @@ class WalletTester {
         });
     }
 
-    // Management methods
-    async isLocked() {
-        return await this.rpcCall('is_locked', []);
-    }
-
-    async lock() {
-        return await this.rpcCall('lock', []);
-    }
-
-    async unlock(args) {
-        return await this.rpcCall('unlock', args);
-    }
-
-    async setPassword(args) {
-        return await this.rpcCall('set_password', args);
-    }
-
-    async importKey(args) {
-        return await this.rpcCall('import_key', args);
-    }
-
-    async info() {
-        return await this.rpcCall('info', []);
-    }
-
-    async transfer(from, to, amount, memo, broadcast) {
-        return await this.rpcCall('transfer', [from, to, amount, memo, broadcast]);
-    }
-
-    async listMyAccounts() {
-        throw { message: 'unable to use yet' };
-    }
-
     async getBalance({ name }) {
         return await this.rpcCall('getBalance', { name });
     }
@@ -66,8 +33,18 @@ class WalletTester {
         return await this.rpcCall('filter_account_history', args);
     }
 
-    async transfer(args) {
-        return await this.rpcCall('transfer', args);
+    // VESTING
+
+    async getVestingInfo(args) {
+        return await this.rpcCall('getVestingInfo', args);
+    }
+
+    async getVestingBalance(args) {
+        return await this.rpcCall('getVestingBalance', args);
+    }
+
+    async getVestingHistory(args) {
+        return await this.rpcCall('getVestingHistory', args);
     }
 }
 

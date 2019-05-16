@@ -4,6 +4,20 @@ const chai = require('chai');
 const should = chai.should();
 const expect = chai.expect;
 
+const checkAsset = a => {
+    a.should.have.property('sym');
+    a.should.have.property('amount');
+    a.should.have.property('decs');
+
+    a.sym.should.be.a('string');
+    a.amount.should.be.a('number');
+    a.decs.should.be.a('number');
+};
+
+function isEmpty(obj) {
+    return Object.keys(obj).length === 0;
+}
+
 class UnitTests {
     constructor(...args) {
         this._walletTester = new WalletTester(...args);
@@ -104,6 +118,91 @@ class UnitTests {
             el[1].trx_id.should.be.a('string');
             el[1].block.should.be.a('number');
             el[1].timestamp.should.be.a('string');
+        }
+    }
+
+    // vesting
+
+    async getVestingInfo(args) {
+        let res = await this._walletTester.getVestingInfo(args);
+        res.should.be.a('object');
+
+        res.should.have.property('result');
+        res.should.have.property('id');
+        res.should.have.property('jsonrpc');
+
+        if (isEmpty(res.result)) {
+            return;
+        }
+
+        checkAsset(res.result);
+    }
+
+    async getVestingBalance(args) {
+        let res = await this._walletTester.getVestingBalance(args);
+        res.should.be.a('object');
+
+        if (isEmpty(res)) {
+            return;
+        }
+
+        res.should.have.property('result');
+        res.should.have.property('id');
+        res.should.have.property('jsonrpc');
+
+        res = res.result;
+
+        res.should.have.property('account');
+        res.should.have.property('received');
+        res.should.have.property('vesting');
+        res.should.have.property('delegated');
+
+        res.account.should.be.a('string');
+        checkAsset(res.received);
+        checkAsset(res.vesting);
+        checkAsset(res.delegated);
+    }
+
+    async getVestingHistory(args) {
+        let res = await this._walletTester.getVestingHistory(args);
+        res.should.be.a('object');
+
+        res.should.have.property('result');
+        res.should.have.property('id');
+        res.should.have.property('jsonrpc');
+
+        if (isEmpty(res.result)) {
+            return;
+        }
+
+        for (const c of res.result.items) {
+            c.should.have.property('who');
+            c.should.have.property('diff');
+            c.should.have.property('trx_id');
+            c.should.have.property('block');
+            c.should.have.property('timestamp');
+
+            c.who.should.be.a('string');
+            checkAsset(c.diff);
+            c.block.should.be.a('number');
+            c.trx_id.should.be.a('string');
+            c.timestamp.should.be.a('string');
+        }
+
+        res.result.should.have.property('sequenceKey');
+
+        if (res.result.sequenceKey !== null) {
+            res.result.sequenceKey.should.satisfy(val => {
+                return typeof val === 'string' || val === null;
+            });
+        }
+
+        res.result.should.have.property('itemsSize');
+
+        if (res.result.itemsSize !== null) {
+            res.result.itemsSize.should.satisfy(val => {
+                return typeof val === 'number' || val === null;
+            });
         }
     }
 }
