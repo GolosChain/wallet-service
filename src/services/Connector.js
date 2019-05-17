@@ -1,5 +1,6 @@
 const core = require('gls-core-service');
 const BasicConnector = core.services.Connector;
+const env = require('../data/env');
 
 const Wallet = require('../controllers/Wallet');
 
@@ -7,7 +8,7 @@ class Connector extends BasicConnector {
     constructor() {
         super();
 
-        this._wallet = new Wallet();
+        this._wallet = new Wallet({ connector: this });
     }
 
     async start() {
@@ -20,6 +21,9 @@ class Connector extends BasicConnector {
                 getVestingInfo: this._wallet.getVestingInfo.bind(this._wallet),
                 getVestingBalance: this._wallet.getVestingBalance.bind(this._wallet),
                 getVestingHistory: this._wallet.getVestingHistory.bind(this._wallet),
+            },
+            requiredClients: {
+                prism: env.GLS_PRISM_CONNECT,
             },
         });
 
