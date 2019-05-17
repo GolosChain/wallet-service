@@ -105,6 +105,12 @@ class Wallet extends BasicController {
             });
         }
 
+        const { results } = await this.callService('prism', 'getNotifyMeta', {
+            userId: 'tst42gkbkufa',
+        });
+
+        console.log('RESULT:', results);
+
         return res;
     }
 
