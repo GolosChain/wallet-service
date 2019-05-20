@@ -94,10 +94,33 @@ class Wallet extends BasicController {
         const transfers = await TransferModel.find(filter);
         let res = { transfers: [] };
 
+        const getUsername = async account => {
+            const data = {
+                app: 'cyber',
+                userId: account,
+            };
+
+            try {
+                const accountMeta = await this.callService('prism', 'getNotifyMeta', data);
+                return accountMeta.user.username;
+            } catch (error) {
+                Logger.error(
+                    `Error calling prism.getNotifyMeta in ${
+                        this.constructor.name
+                    } with data:\n${JSON.stringify(data, null, 2)}\n`,
+                    JSON.stringify(error, null, 2)
+                );
+                return account;
+            }
+        };
+
         for (const transfer of transfers) {
+            const senderName = await getUsername(transfer.sender);
+            const receiverName = await getUsername(transfer.receiver);
+
             res.transfers.push({
-                sender: transfer.sender,
-                receiver: transfer.receiver,
+                sender: senderName,
+                receiver: receiverName,
                 quantity: transfer.quantity,
                 trx_id: transfer.trx_id,
                 block: transfer.block,
