@@ -21,12 +21,12 @@ class WalletTester {
         });
     }
 
-    async getBalance({ name }) {
-        return await this.rpcCall('getBalance', { name });
+    async getBalance(args) {
+        return await this.rpcCall('getBalance', args);
     }
 
-    async getHistory({ query }) {
-        return await this.rpcCall('getHistory', { query });
+    async getHistory(args) {
+        return await this.rpcCall('getHistory', args);
     }
 
     async filterAccountHistory(args) {

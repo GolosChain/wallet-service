@@ -60,13 +60,20 @@ class Wallet extends BasicController {
         return res;
     }
 
-    async getHistory({ query }) {
-        if (!query || !Object.keys(query).length) {
-            Logger.warn('getHistory: invalid argument');
-            throw { code: 805, message: 'Wrong arguments' };
+    async getHistory(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['sender', 'receiver', 'sequenceKey', 'limit'],
+        });
+
+        const { sender, receiver, sequenceKey, limit } = params;
+
+        if (limit < 0) {
+            Logger.warn('getVestingHistory: invalid argument: limit must be positive');
+            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
         }
 
-        if (!query.sender && !query.receiver) {
+        if (!sender && !receiver) {
             Logger.warn('getHistory: at least one of sender and receiver must be non-empty');
             throw { code: 805, message: 'Wrong arguments' };
         }
@@ -74,25 +81,37 @@ class Wallet extends BasicController {
         let filter = {};
 
         const checkNameString = name => {
-            if (!(typeof name === 'string')) {
+            if (typeof name !== 'string') {
                 throw { code: 809, message: 'Name must be a non-empty string!' };
             }
         };
 
         // In case sender field is present it has to be a valid string
-        if (query.sender) {
-            checkNameString(query.sender);
-            filter.sender = query.sender;
+        if (sender) {
+            checkNameString(sender);
+            filter.sender = sender;
         }
 
         // In case receiver field is present it has to be a valid string
-        if (query.receiver) {
-            checkNameString(query.receiver);
-            filter.receiver = query.receiver;
+        if (receiver) {
+            checkNameString(receiver);
+            filter.receiver = receiver;
         }
 
-        const transfers = await TransferModel.find(filter);
-        let res = { transfers: [] };
+        let transfers;
+
+        if (sequenceKey) {
+            transfers = await TransferModel.find({
+                ...filter,
+                _id: { $gt: sequenceKey },
+            })
+                .limit(limit)
+                .sort({ _id: -1 });
+        } else {
+            transfers = await TransferModel.find(filter)
+                .limit(limit)
+                .sort({ _id: -1 });
+        }
 
         const getUsername = async account => {
             const data = {
@@ -114,11 +133,14 @@ class Wallet extends BasicController {
             }
         };
 
+        const items = [];
+
         for (const transfer of transfers) {
             const senderName = await getUsername(transfer.sender);
             const receiverName = await getUsername(transfer.receiver);
 
-            res.transfers.push({
+            items.push({
+                id: transfer._id,
                 sender: senderName,
                 receiver: receiverName,
                 quantity: transfer.quantity,
@@ -128,7 +150,18 @@ class Wallet extends BasicController {
             });
         }
 
-        return res;
+        let newSequenceKey;
+        let itemsSize;
+
+        if (items.length > 0) {
+            newSequenceKey = items[items.length - 1].id;
+            itemsSize = items.length;
+        } else {
+            newSequenceKey = null;
+            itemsSize = null;
+        }
+
+        return { items, itemsSize, sequenceKey: newSequenceKey };
     }
 
     async filterAccountHistory(args) {

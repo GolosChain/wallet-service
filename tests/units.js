@@ -52,9 +52,9 @@ class UnitTests {
         });
     }
 
-    async getHistory({ query }) {
-        let res = await this._walletTester.getHistory({ query });
-
+    async getHistory(args) {
+        let res = await this._walletTester.getHistory(args);
+        console.log(JSON.stringify(res, null, 2));
         res.should.be.a('object');
         res.should.have.property('id');
         res.should.have.property('result');
@@ -62,10 +62,10 @@ class UnitTests {
         res.id.should.be.a('number');
         res.result.should.be.a('object');
 
-        res.result.should.have.property('transfers');
-        res.result.transfers.should.be.a('array');
+        res.result.should.have.property('items');
+        res.result.items.should.be.a('array');
 
-        for (const transfer of res.result.transfers) {
+        for (const transfer of res.result.items) {
             transfer.should.have.property('sender');
             transfer.should.have.property('receiver');
             transfer.should.have.property('quantity');
@@ -82,6 +82,12 @@ class UnitTests {
             transfer.quantity.decs.should.be.a('number');
             transfer.quantity.sym.should.be.a('string');
         }
+
+        res.result.should.have.property('itemsSize');
+        res.result.itemsSize.should.be.a('number');
+
+        res.result.should.have.property('sequenceKey');
+        res.result.sequenceKey.should.be.a('string');
     }
 
     async filterAccountHistory({ account, from, limit, query }) {
