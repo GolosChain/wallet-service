@@ -22,7 +22,7 @@ class Connector extends BasicConnector {
                 getVestingBalance: this._wallet.getVestingBalance.bind(this._wallet),
                 getVestingHistory: this._wallet.getVestingHistory.bind(this._wallet),
                 convertVestingToToken: this._wallet.convertVestingToToken.bind(this._wallet),
-                convertTokenToVesting: this._wallet.convertTokensToVesting.bind(this._wallet),
+                convertTokensToVesting: this._wallet.convertTokensToVesting.bind(this._wallet),
             },
             requiredClients: {
                 prism: env.GLS_PRISM_CONNECT,

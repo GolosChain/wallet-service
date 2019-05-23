@@ -404,40 +404,30 @@ class Wallet extends BasicController {
         return { items, itemsSize, sequenceKey: newSequenceKey };
     }
 
-    async convertVestingToToken(args) {
-        const params = await this._paramsUtils.extractArgumentList({
-            args,
-            fields: ['amount', 'decs'],
-        });
-
-        const { amount, decs } = params;
-
-        if (!decs || typeof decs !== 'number' || decs !== 6) {
-            Logger.error(
-                `convert: invalid argument ${args}. decs must be equal 6`
-            );
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
+    async _getVestingSupplyAndBalance() {
         const vestingStat = await this.getVestingInfo();
-
-        if (!vestingStat.amount) {
-            Logger.error(`convert: no records about vesting stats in base`);
-            throw { code: 811, message: 'Data is absent in base' };
-        }
-
         const vestingBalance = await this.getBalance({
             name: 'gls.vesting',
             tokensList: ['GOLOS'],
         });
 
-        if (!vestingBalance.balances || !vestingBalance.balances.length) {
-            Logger.error(`convert: no GOLOS balance for gls.vesting account`);
-            throw { code: 811, message: 'Data is absent in base' };
-        }
+        await this._paramsUtils.checkVestingStatAndBalance({ vestingBalance, vestingStat });
 
-        const balance = vestingBalance.balances[0].amount;
-        const supply = vestingStat.amount;
+        return {
+            balance: vestingBalance.balances[0].amount,
+            supply: vestingStat.amount,
+        };
+    }
+
+    async convertVestingToToken(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['amount', 'decs'],
+        });
+        const { amount, decs } = params;
+        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 6 });
+
+        const { balance, supply } = await this._getVestingSupplyAndBalance();
 
         return {
             sym: 'GOLOS',
@@ -446,40 +436,15 @@ class Wallet extends BasicController {
         };
     }
 
-    async convertTokenToVesting(args) {
+    async convertTokensToVesting(args) {
         const params = await this._paramsUtils.extractArgumentList({
             args,
             fields: ['amount', 'decs'],
         });
-
         const { amount, decs } = params;
+        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
 
-        if (!decs || typeof decs !== 'number' || decs !== 3) {
-            Logger.error(
-                `convert: invalid argument ${args}. decs must be equal 3`
-            );
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        const vestingStat = await this.getVestingInfo();
-
-        if (!vestingStat.amount) {
-            Logger.error(`convert: no records about vesting stats in base`);
-            throw { code: 811, message: 'Data is absent in base' };
-        }
-
-        const vestingBalance = await this.getBalance({
-            name: 'gls.vesting',
-            tokensList: ['GOLOS'],
-        });
-
-        if (!vestingBalance.balances || !vestingBalance.balances.length) {
-            Logger.error(`convert: no GOLOS balance for gls.vesting account`);
-            throw { code: 811, message: 'Data is absent in base' };
-        }
-
-        const balance = vestingBalance.balances[0].amount;
-        const supply = vestingStat.amount;
+        const { balance, supply } = await this._getVestingSupplyAndBalance();
 
         return {
             sym: 'GOLOS',

@@ -61,6 +61,27 @@ class ParamsUtils {
 
         return result;
     }
+
+    // convertion methods helpers
+
+    async checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
+        if (!vestingStat.amount) {
+            Logger.error(`convert: no records about vesting stats in base`);
+            throw { code: 811, message: 'Data is absent in base' };
+        }
+
+        if (!vestingBalance.balances || !vestingBalance.balances.length) {
+            Logger.error(`convert: no GOLOS balance for gls.vesting account`);
+            throw { code: 811, message: 'Data is absent in base' };
+        }
+    }
+
+    async checkDecsValue({ decs, requiredValue }) {
+        if (decs !== requiredValue) {
+            Logger.error(`convert: invalid argument ${args}. decs must be equal ${requiredValue}`);
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+    }
 }
 
 module.exports = ParamsUtils;
