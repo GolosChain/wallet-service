@@ -13,26 +13,24 @@ module.exports = MongoDB.makeModel(
             required: true,
         },
         quantity: {
-            amount: {
-                type: Number,
-                default: 0,
-            },
-            decs: {
-                type: Number,
-                default: 3,
-            },
-            sym: {
-                type: String,
-            },
+            type: String,
+            required: true,
+        },
+        memo: {
+            type: String,
+            required: true,
         },
         block: {
             type: Number,
+            required: true,
         },
         trx_id: {
             type: String,
+            required: true,
         },
         timestamp: {
             type: Date,
+            required: true,
         },
     },
     {
