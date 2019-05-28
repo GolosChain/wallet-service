@@ -61,6 +61,10 @@ class ParamsUtils {
 
         return result;
     }
+
+    async getAssetName(asset) {
+        return asset.split(' ')[1];
+    }
 }
 
 module.exports = ParamsUtils;
