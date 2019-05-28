@@ -54,7 +54,7 @@ class UnitTests {
 
     async getHistory(args) {
         let res = await this._walletTester.getHistory(args);
-
+        return console.log(JSON.stringify(res, null, 2));
         res.should.be.a('object');
         res.should.have.property('id');
         res.should.have.property('result');

@@ -132,36 +132,59 @@ class Wallet extends BasicController {
                 return account;
             }
         };
-
+        console.log(1);
         const items = [];
 
         for (const transfer of transfers) {
-            const senderName = await getUsername(transfer.sender);
-            const receiverName = await getUsername(transfer.receiver);
+            // const senderName = await getUsername(transfer.sender);
+            // const receiverName = await getUsername(transfer.receiver);
 
             items.push({
                 id: transfer._id,
-                sender: senderName,
-                receiver: receiverName,
+                // sender: senderName,
+                // receiver: receiverName,
                 quantity: transfer.quantity,
                 trx_id: transfer.trx_id,
                 block: transfer.block,
                 timestamp: transfer.timestamp,
             });
         }
+        console.log(2);
 
         let newSequenceKey;
-        let itemsSize;
+        let itemsCount;
 
         if (items.length > 0) {
             newSequenceKey = items[items.length - 1].id;
-            itemsSize = items.length;
+            itemsCount = items.length;
         } else {
             newSequenceKey = null;
-            itemsSize = null;
+            itemsCount = null;
         }
 
-        return { items, itemsSize, sequenceKey: newSequenceKey };
+        if (itemsCount < limit) {
+            newSequenceKey = null;
+        }
+
+        console.log(2);
+
+        if (itemsCount === limit) {
+            console.log({ newSequenceKey });
+            const nextOne = await TransferModel.find({
+                ...filter,
+                _id: { $gt: newSequenceKey },
+            })
+                .limit(1)
+                .sort({ _id: -1 });
+
+            console.log(3);
+            console.log(nextOne);
+            if (nextOne === null) {
+                newSequenceKey = null;
+            }
+        }
+
+        return { items, itemsCount, sequenceKey: newSequenceKey };
     }
 
     async filterAccountHistory(args) {
@@ -424,17 +447,17 @@ class Wallet extends BasicController {
         }));
 
         let newSequenceKey;
-        let itemsSize;
+        let itemsCount;
 
         if (items.length > 0) {
             newSequenceKey = items[items.length - 1].id;
-            itemsSize = items.length;
+            itemsCount = items.length;
         } else {
             newSequenceKey = null;
-            itemsSize = null;
+            itemsCount = null;
         }
 
-        return { items, itemsSize, sequenceKey: newSequenceKey };
+        return { items, itemsCount, sequenceKey: newSequenceKey };
     }
 }
 
