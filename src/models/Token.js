@@ -13,26 +13,12 @@ module.exports = MongoDB.makeModel(
             required: true,
         },
         supply: {
-            type: {
-                amount: {
-                    type: Number,
-                    default: 0,
-                },
-                decs: {
-                    type: Number,
-                },
-            },
+            type: String,
+            required: true,
         },
         max_supply: {
-            type: {
-                amount: {
-                    type: Number,
-                    default: 0,
-                },
-                decs: {
-                    type: Number,
-                },
-            },
+            type: String,
+            required: true,
         },
     },
     {

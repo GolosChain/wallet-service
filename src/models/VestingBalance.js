@@ -9,58 +9,16 @@ module.exports = MongoDB.makeModel(
             required: true,
         },
         vesting: {
-            type: {
-                amount: {
-                    type: Number,
-                    default: 0,
-                    required: true,
-                },
-                decs: {
-                    type: Number,
-                    default: 3,
-                    required: true,
-                },
-                sym: {
-                    type: String,
-                    required: true,
-                },
-            },
+            type: String,
+            required: true,
         },
         delegated: {
-            type: {
-                amount: {
-                    type: Number,
-                    default: 0,
-                    required: true,
-                },
-                decs: {
-                    type: Number,
-                    default: 3,
-                    required: true,
-                },
-                sym: {
-                    type: String,
-                    required: true,
-                },
-            },
+            type: String,
+            required: true,
         },
         received: {
-            type: {
-                amount: {
-                    type: Number,
-                    default: 0,
-                    required: true,
-                },
-                decs: {
-                    type: Number,
-                    default: 3,
-                    required: true,
-                },
-                sym: {
-                    type: String,
-                    required: true,
-                },
-            },
+            type: String,
+            required: true,
         },
     },
     {

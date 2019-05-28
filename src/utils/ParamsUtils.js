@@ -82,6 +82,10 @@ class ParamsUtils {
             throw { code: 805, message: 'Wrong arguments' };
         }
     }
+
+    async getAssetName(asset) {
+        return asset.split(' ')[1];
+    }
 }
 
 module.exports = ParamsUtils;
