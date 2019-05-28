@@ -30,8 +30,7 @@ describe('getBalance test', async () => {
 describe('getHistory test', async () => {
     it('getHistory', async () => {
         await unitTest.getHistory({ query: { sender: 'cyber.token' } });
-        await unitTest.getHistory({ query: { sender: 'joseph.kalu', receiver: 'korpusenko' } });
-        await unitTest.getHistory({ query: { receiver: 'korpusenko' } });
+        await unitTest.getHistory({ query: { sender: 'tst2elnxbhsn' } });
         await unitTest.getHistory({ query: { receiver: 'SomeWTFACCOUNT' } });
     }).timeout(10000);
 });

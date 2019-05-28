@@ -9,20 +9,8 @@ module.exports = MongoDB.makeModel(
             required: true,
         },
         diff: {
-            amount: {
-                type: Number,
-                default: 0,
-                required: true,
-            },
-            decs: {
-                type: Number,
-                default: 3,
-                required: true,
-            },
-            sym: {
-                type: String,
-                required: true,
-            },
+            type: String,
+            required: true,
         },
         block: {
             type: Number,

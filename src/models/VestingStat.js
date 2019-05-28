@@ -4,18 +4,10 @@ const MongoDB = core.services.MongoDB;
 module.exports = MongoDB.makeModel(
     'VestingStat',
     {
-        amount: {
-            type: Number,
-            required: true,
-        },
-        decs: {
-            type: Number,
-            required: true,
-        },
-        sym: {
+        stat: {
             type: String,
             required: true,
-        },
+        }
     },
     {
         index: [

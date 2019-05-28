@@ -71,6 +71,7 @@ class Main {
             sender: action.args.from,
             receiver: action.args.to,
             quantity: action.args.quantity,
+            memo: action.args.memo,
         };
 
         const transfer = new TransferModel(transferObject);
@@ -121,14 +122,16 @@ class Main {
         }
 
         const balance = await BalanceModel.findOne({ name: event.args.account });
+        const sym = await this._getAssetName(event.args.balance);
 
         if (balance) {
             // Check balance of tokens listed in balance.balances array
-            const neededSym = event.args.balance.sym;
+            const neededSym = sym;
             let neededTokenId = null;
 
             for (let i = 0; i < balance.balances.length; i++) {
-                if (balance.balances[i].sym === neededSym) {
+                const tokenSym = await this._getAssetName(balance.balances[i]);
+                if (tokenSym === neededSym) {
                     neededTokenId = i;
                 }
             }
@@ -173,22 +176,14 @@ class Main {
         if (!(event.code === 'cyber.token' && event.event === 'currency')) {
             return;
         }
-        const tokenObject = await TokenModel.findOne({ sym: event.args.supply.sym });
-
-        const sym = event.args.supply.sym;
-        const issuer = event.args.issuer;
-
-        const supply = event.args.supply;
-        delete supply.sym;
-
-        const max_supply = event.args.max_supply;
-        delete max_supply.sym;
+        const sym = await this._getAssetName(event.args.supply);
+        const tokenObject = await TokenModel.findOne({ sym });
 
         const newTokenInfo = {
             sym,
-            issuer,
-            supply,
-            max_supply,
+            issuer: event.args.issuer,
+            supply: event.args.supply,
+            max_supply: event.args.max_supply,
         };
 
         if (tokenObject) {
@@ -214,21 +209,20 @@ class Main {
         const statObject = await VestingStat.findOne({ sym: event.args.sym });
 
         const newStats = {
-            amount: event.args.amount,
-            decs: event.args.decs,
-            sym: event.args.sym,
+            stat: event.args,
         };
+        const sym = await this._getAssetName(newStats.stat);
 
         if (statObject) {
             await statObject.updateOne({ _id: statObject._id }, { $set: newStats });
 
-            Logger.info('Updated', newStats.sym, 'token info:', newStats);
+            Logger.info('Updated', sym, 'token info:', newStats);
         } else {
             const newVestingStat = new VestingStat(newStats);
 
             await newVestingStat.save();
 
-            Logger.info('Created', newStats.sym, 'token info:', newStats);
+            Logger.info('Created', sym, 'token info:', newStats);
         }
     }
 
@@ -278,6 +272,10 @@ class Main {
                 vestingLogObject
             );
         }
+    }
+
+    async _getAssetName(asset) {
+        return asset.split(' ')[1];
     }
 }
 

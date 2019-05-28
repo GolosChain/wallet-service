@@ -43,14 +43,11 @@ class Wallet extends BasicController {
             const tokenObject = await TokenModel.findOne({ sym: token });
 
             if (tokenObject) {
-                const supply = { ...tokenObject.supply, sym: tokenObject.sym };
-                const max_supply = { ...tokenObject.max_supply, sym: tokenObject.sym };
-
                 const tokenInfo = {
                     sym: tokenObject.sym,
                     issuer: tokenObject.issuer,
-                    supply,
-                    max_supply,
+                    supply: tokenObject.supply,
+                    max_supply: tokenObject.max_supply,
                 };
 
                 res.tokens.push(tokenInfo);
@@ -279,20 +276,13 @@ class Wallet extends BasicController {
         }
 
         for (const tokenBalance of balanceObject.balances) {
-            const pushToken = async token => {
-                res.balances.push({
-                    amount: token.amount,
-                    decs: token.decs,
-                    sym: token.sym,
-                });
-            };
-
             if (tokensList) {
-                if (tokensMap[tokenBalance.sym]) {
-                    await pushToken(tokenBalance);
+                const sym = await this._paramsUtils.getAssetName(tokenBalance);
+                if (tokensMap[sym]) {
+                    res.balances.push(tokenBalance);
                 }
             } else {
-                await pushToken(tokenBalance);
+                res.balances.push(tokenBalance);
             }
         }
 
@@ -335,21 +325,9 @@ class Wallet extends BasicController {
 
         return {
             account,
-            vesting: {
-                sym: vestingBalance.vesting.sym,
-                amount: vestingBalance.vesting.amount,
-                decs: vestingBalance.vesting.decs,
-            },
-            delegated: {
-                sym: vestingBalance.delegated.sym,
-                amount: vestingBalance.delegated.amount,
-                decs: vestingBalance.delegated.decs,
-            },
-            received: {
-                sym: vestingBalance.received.sym,
-                amount: vestingBalance.received.amount,
-                decs: vestingBalance.received.decs,
-            },
+            vesting: vestingBalance.vesting,
+            delegated: vestingBalance.delegated,
+            received: vestingBalance.received,
         };
     }
 
