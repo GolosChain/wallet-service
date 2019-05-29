@@ -18,7 +18,6 @@ module.exports = MongoDB.makeModel(
         },
         memo: {
             type: String,
-            required: true,
         },
         block: {
             type: Number,
