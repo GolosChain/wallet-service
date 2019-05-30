@@ -120,6 +120,7 @@ class Wallet extends BasicController {
                 receiver: receiverName,
                 quantity: transfer.quantity,
                 trx_id: transfer.trx_id,
+                memo: transfer.memo,
                 block: transfer.block,
                 timestamp: transfer.timestamp,
             });
