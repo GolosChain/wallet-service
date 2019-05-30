@@ -142,6 +142,7 @@ class Wallet extends BasicController {
                 // receiver: receiverName,
                 quantity: transfer.quantity,
                 trx_id: transfer.trx_id,
+                memo: transfer.memo,
                 block: transfer.block,
                 timestamp: transfer.timestamp,
             });
@@ -366,7 +367,7 @@ class Wallet extends BasicController {
                 message: 'getVestingBalance: account name can not be empty string!',
             };
         }
-        this._checkAsset();
+
         const vestingBalance = await VestingBalance.findOne({ account });
 
         if (!vestingBalance) {
