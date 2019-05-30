@@ -290,19 +290,13 @@ class Wallet extends BasicController {
     }
 
     async getVestingInfo() {
-        const vestingStat = await VestingStat.findOne({ sym: 'GOLOS' });
+        const vestingStat = await VestingStat.find();
 
         if (!vestingStat) {
             return {};
         }
 
-        const res = {
-            sym: vestingStat.sym,
-            amount: vestingStat.amount,
-            decs: vestingStat.decs,
-        };
-
-        return res;
+        return { stat: vestingStat[0].stat };
     }
 
     async getVestingBalance({ account }) {
@@ -316,7 +310,7 @@ class Wallet extends BasicController {
                 message: 'getVestingBalance: account name can not be empty string!',
             };
         }
-
+        this._checkAsset();
         const vestingBalance = await VestingBalance.findOne({ account });
 
         if (!vestingBalance) {
@@ -389,11 +383,17 @@ class Wallet extends BasicController {
             tokensList: ['GOLOS'],
         });
 
-        await this._paramsUtils.checkVestingStatAndBalance({ vestingBalance, vestingStat });
+        await this._paramsUtils.checkVestingStatAndBalance({
+            vestingBalance,
+            vestingStat: vestingStat.stat,
+        });
+
+        const balance = await this._paramsUtils.checkAsset(vestingBalance.balances[0]);
+        const supply = await this._paramsUtils.checkAsset(vestingStat.stat);
 
         return {
-            balance: vestingBalance.balances[0].amount,
-            supply: vestingStat.amount,
+            balance: balance.amount,
+            supply: supply.amount,
         };
     }
 
@@ -403,8 +403,7 @@ class Wallet extends BasicController {
             fields: ['vesting'],
         });
         const { vesting } = params;
-        const amount = parseInt(vesting.replace('.', ''));
-        const decs = vesting.split('.')[1].length;
+        const { decs, amount } = await this._paramsUtils.checkAsset(vesting);
 
         await this._paramsUtils.checkDecsValue({ decs, requiredValue: 6 });
 
@@ -422,10 +421,8 @@ class Wallet extends BasicController {
             args,
             fields: ['tokens'],
         });
-
-        const { tokens } = params;
-        const amount = parseInt(tokens.replace('.', ''));
-        const decs = tokens.split('.')[1].length;
+        let { tokens } = params;
+        const { decs, amount } = await this._paramsUtils.checkAsset(tokens);
 
         await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
 

@@ -62,10 +62,30 @@ class ParamsUtils {
         return result;
     }
 
+    async checkAsset(asset) {
+        if (typeof asset !== 'string') {
+            return;
+        }
+
+        const parts = asset.split(' ');
+
+        let amountString = parts[0];
+        amountString = amountString.replace('.', '');
+
+        let decsString = parts[0];
+        decsString = decsString.split('.')[1];
+
+        const sym = parts[1];
+        const amount = parseInt(amountString);
+        const decs = decsString.length;
+
+        return { sym, amount, decs };
+    }
+
     // convertion methods helpers
 
     async checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
-        if (!vestingStat.amount) {
+        if (!vestingStat) {
             Logger.error(`convert: no records about vesting stats in base`);
             throw { code: 811, message: 'Data is absent in base' };
         }
@@ -78,7 +98,7 @@ class ParamsUtils {
 
     async checkDecsValue({ decs, requiredValue }) {
         if (decs !== requiredValue) {
-            Logger.error(`convert: invalid argument ${args}. decs must be equal ${requiredValue}`);
+            Logger.error(`convert: invalid argument ${decs}. decs must be equal ${requiredValue}`);
             throw { code: 805, message: 'Wrong arguments' };
         }
     }
