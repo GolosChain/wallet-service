@@ -4,16 +4,6 @@ const chai = require('chai');
 const should = chai.should();
 const expect = chai.expect;
 
-const checkAsset = a => {
-    a.should.have.property('sym');
-    a.should.have.property('amount');
-    a.should.have.property('decs');
-
-    a.sym.should.be.a('string');
-    a.amount.should.be.a('number');
-    a.decs.should.be.a('number');
-};
-
 function isEmpty(obj) {
     return Object.keys(obj).length === 0;
 }
@@ -41,15 +31,9 @@ class UnitTests {
         res.result.name.should.be.a('string');
         res.result.balances.should.be.a('array');
 
-        res.result.balances.forEach(b => {
-            b.should.have.property('amount');
-            b.should.have.property('decs');
-            b.should.have.property('sym');
-
-            b.amount.should.be.a('number');
-            b.decs.should.be.a('number');
-            b.sym.should.be.a('string');
-        });
+        for (const b of res.result.balances) {
+            await _checkAsset(b);
+        }
     }
 
     async getHistory(args) {
@@ -58,6 +42,10 @@ class UnitTests {
         res.should.be.a('object');
         res.should.have.property('id');
         res.should.have.property('result');
+
+        if (isEmpty(res.result)) {
+            return;
+        }
 
         res.id.should.be.a('number');
         res.result.should.be.a('object');
@@ -72,15 +60,9 @@ class UnitTests {
 
             transfer.sender.should.be.a('string');
             transfer.receiver.should.be.a('string');
-            transfer.quantity.should.be.a('object');
+            transfer.quantity.should.be.a('string');
 
-            transfer.quantity.should.have.property('amount');
-            transfer.quantity.should.have.property('decs');
-            transfer.quantity.should.have.property('sym');
-
-            transfer.quantity.amount.should.be.a('number');
-            transfer.quantity.decs.should.be.a('number');
-            transfer.quantity.sym.should.be.a('string');
+            await _checkAsset(transfer.quantity);
         }
 
         res.result.should.have.property('itemsSize');
@@ -141,22 +123,22 @@ class UnitTests {
             return;
         }
 
-        checkAsset(res.result);
+        _checkAsset(res.result);
     }
 
     async getVestingBalance(args) {
         let res = await this._walletTester.getVestingBalance(args);
         res.should.be.a('object');
 
-        if (isEmpty(res)) {
-            return;
-        }
-
         res.should.have.property('result');
         res.should.have.property('id');
         res.should.have.property('jsonrpc');
 
         res = res.result;
+
+        if (isEmpty(res)) {
+            return;
+        }
 
         res.should.have.property('account');
         res.should.have.property('received');
@@ -212,5 +194,16 @@ class UnitTests {
         }
     }
 }
+
+const _checkAsset = async asset => {
+    asset.should.be.a('string');
+
+    const parts = asset.split(' ');
+    const assetAmount = parseInt(parts[0]);
+    const assetName = parts[1];
+
+    assetAmount.should.be.a('number');
+    assetName.should.be.a('string');
+};
 
 module.exports = UnitTests;

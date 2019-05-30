@@ -43,14 +43,11 @@ class Wallet extends BasicController {
             const tokenObject = await TokenModel.findOne({ sym: token });
 
             if (tokenObject) {
-                const supply = { ...tokenObject.supply, sym: tokenObject.sym };
-                const max_supply = { ...tokenObject.max_supply, sym: tokenObject.sym };
-
                 const tokenInfo = {
                     sym: tokenObject.sym,
                     issuer: tokenObject.issuer,
-                    supply,
-                    max_supply,
+                    supply: tokenObject.supply,
+                    max_supply: tokenObject.max_supply,
                 };
 
                 res.tokens.push(tokenInfo);
@@ -103,7 +100,7 @@ class Wallet extends BasicController {
         if (sequenceKey) {
             transfers = await TransferModel.find({
                 ...filter,
-                _id: { $gt: sequenceKey },
+                _id: { $gt: ObjectId(sequenceKey) },
             })
                 .limit(limit)
                 .sort({ _id: -1 });
@@ -335,20 +332,13 @@ class Wallet extends BasicController {
         }
 
         for (const tokenBalance of balanceObject.balances) {
-            const pushToken = async token => {
-                res.balances.push({
-                    amount: token.amount,
-                    decs: token.decs,
-                    sym: token.sym,
-                });
-            };
-
             if (tokensList) {
-                if (tokensMap[tokenBalance.sym]) {
-                    await pushToken(tokenBalance);
+                const sym = await this._paramsUtils.getAssetName(tokenBalance);
+                if (tokensMap[sym]) {
+                    res.balances.push(tokenBalance);
                 }
             } else {
-                await pushToken(tokenBalance);
+                res.balances.push(tokenBalance);
             }
         }
 
@@ -356,19 +346,13 @@ class Wallet extends BasicController {
     }
 
     async getVestingInfo() {
-        const vestingStat = await VestingStat.findOne({ sym: 'GOLOS' });
+        const vestingStat = await VestingStat.find();
 
         if (!vestingStat) {
             return {};
         }
 
-        const res = {
-            sym: vestingStat.sym,
-            amount: vestingStat.amount,
-            decs: vestingStat.decs,
-        };
-
-        return res;
+        return { stat: vestingStat[0].stat };
     }
 
     async getVestingBalance({ account }) {
@@ -382,7 +366,7 @@ class Wallet extends BasicController {
                 message: 'getVestingBalance: account name can not be empty string!',
             };
         }
-
+        this._checkAsset();
         const vestingBalance = await VestingBalance.findOne({ account });
 
         if (!vestingBalance) {
@@ -391,21 +375,9 @@ class Wallet extends BasicController {
 
         return {
             account,
-            vesting: {
-                sym: vestingBalance.vesting.sym,
-                amount: vestingBalance.vesting.amount,
-                decs: vestingBalance.vesting.decs,
-            },
-            delegated: {
-                sym: vestingBalance.delegated.sym,
-                amount: vestingBalance.delegated.amount,
-                decs: vestingBalance.delegated.decs,
-            },
-            received: {
-                sym: vestingBalance.received.sym,
-                amount: vestingBalance.received.amount,
-                decs: vestingBalance.received.decs,
-            },
+            vesting: vestingBalance.vesting,
+            delegated: vestingBalance.delegated,
+            received: vestingBalance.received,
         };
     }
 
@@ -458,6 +430,65 @@ class Wallet extends BasicController {
         }
 
         return { items, itemsCount, sequenceKey: newSequenceKey };
+    }
+
+    async _getVestingSupplyAndBalance() {
+        const vestingStat = await this.getVestingInfo();
+        const vestingBalance = await this.getBalance({
+            name: 'gls.vesting',
+            tokensList: ['GOLOS'],
+        });
+
+        await this._paramsUtils.checkVestingStatAndBalance({
+            vestingBalance,
+            vestingStat: vestingStat.stat,
+        });
+
+        const balance = await this._paramsUtils.checkAsset(vestingBalance.balances[0]);
+        const supply = await this._paramsUtils.checkAsset(vestingStat.stat);
+
+        return {
+            balance: balance.amount,
+            supply: supply.amount,
+        };
+    }
+
+    async convertVestingToToken(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['vesting'],
+        });
+        const { vesting } = params;
+        const { decs, amount } = await this._paramsUtils.checkAsset(vesting);
+
+        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 6 });
+
+        const { balance, supply } = await this._getVestingSupplyAndBalance();
+
+        return {
+            sym: 'GOLOS',
+            amount: Math.round((amount * balance) / supply),
+            decs: 3,
+        };
+    }
+
+    async convertTokensToVesting(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['tokens'],
+        });
+        let { tokens } = params;
+        const { decs, amount } = await this._paramsUtils.checkAsset(tokens);
+
+        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
+
+        const { balance, supply } = await this._getVestingSupplyAndBalance();
+
+        return {
+            sym: 'GOLOS',
+            amount: Math.round((amount * supply) / balance),
+            decs: 6,
+        };
     }
 }
 
