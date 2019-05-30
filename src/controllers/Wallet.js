@@ -311,7 +311,7 @@ class Wallet extends BasicController {
                 message: 'getVestingBalance: account name can not be empty string!',
             };
         }
-        this._checkAsset();
+
         const vestingBalance = await VestingBalance.findOne({ account });
 
         if (!vestingBalance) {
