@@ -290,19 +290,13 @@ class Wallet extends BasicController {
     }
 
     async getVestingInfo() {
-        const vestingStat = await VestingStat.findOne({ sym: 'GOLOS' });
+        const vestingStat = await VestingStat.find();
 
         if (!vestingStat) {
             return {};
         }
 
-        const res = {
-            sym: vestingStat.sym,
-            amount: vestingStat.amount,
-            decs: vestingStat.decs,
-        };
-
-        return res;
+        return { stat: vestingStat[0].stat };
     }
 
     async getVestingBalance({ account }) {
@@ -316,7 +310,7 @@ class Wallet extends BasicController {
                 message: 'getVestingBalance: account name can not be empty string!',
             };
         }
-
+        this._checkAsset();
         const vestingBalance = await VestingBalance.findOne({ account });
 
         if (!vestingBalance) {
@@ -380,6 +374,65 @@ class Wallet extends BasicController {
         }
 
         return { items, itemsSize, sequenceKey: newSequenceKey };
+    }
+
+    async _getVestingSupplyAndBalance() {
+        const vestingStat = await this.getVestingInfo();
+        const vestingBalance = await this.getBalance({
+            name: 'gls.vesting',
+            tokensList: ['GOLOS'],
+        });
+
+        await this._paramsUtils.checkVestingStatAndBalance({
+            vestingBalance,
+            vestingStat: vestingStat.stat,
+        });
+
+        const balance = await this._paramsUtils.checkAsset(vestingBalance.balances[0]);
+        const supply = await this._paramsUtils.checkAsset(vestingStat.stat);
+
+        return {
+            balance: balance.amount,
+            supply: supply.amount,
+        };
+    }
+
+    async convertVestingToToken(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['vesting'],
+        });
+        const { vesting } = params;
+        const { decs, amount } = await this._paramsUtils.checkAsset(vesting);
+
+        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 6 });
+
+        const { balance, supply } = await this._getVestingSupplyAndBalance();
+
+        return {
+            sym: 'GOLOS',
+            amount: Math.round((amount * balance) / supply),
+            decs: 3,
+        };
+    }
+
+    async convertTokensToVesting(args) {
+        const params = await this._paramsUtils.extractArgumentList({
+            args,
+            fields: ['tokens'],
+        });
+        let { tokens } = params;
+        const { decs, amount } = await this._paramsUtils.checkAsset(tokens);
+
+        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
+
+        const { balance, supply } = await this._getVestingSupplyAndBalance();
+
+        return {
+            sym: 'GOLOS',
+            amount: Math.round((amount * supply) / balance),
+            decs: 6,
+        };
     }
 }
 
