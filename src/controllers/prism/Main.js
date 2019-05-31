@@ -26,8 +26,6 @@ class Main {
             timestamp: transaction.block_time,
         };
 
-        console.log(JSON.stringify(transaction, null, 2));
-
         for (const action of transaction.actions) {
             if (action.code === 'cyber.token' && action.receiver === 'cyber.token') {
                 switch (action.action) {

@@ -29,9 +29,9 @@ describe('getBalance test', async () => {
 
 describe('getHistory test', async () => {
     it('getHistory', async () => {
-        await unitTest.getHistory({ query: { sender: 'cyber.token' } });
-        await unitTest.getHistory({ query: { sender: 'tst2elnxbhsn' } });
-        await unitTest.getHistory({ query: { receiver: 'SomeWTFACCOUNT' } });
+        await unitTest.getHistory({ sender: 'tst2elnxbhsn', sequenceKey: null, limit: 3 });
+        await unitTest.getHistory({ sender: 'tst2elnxbhsn', sequenceKey: null, limit: 100 });
+        await unitTest.getHistory({ receiver: 'SomeWTFACCOUNT', sequenceKey: null, limit: 1 });
     }).timeout(10000);
 });
 
@@ -126,15 +126,15 @@ describe('getVestingBalance test', async () => {
 describe('getVestingHistory test', async () => {
     it('getVestingHistory: vesting of testuser: limit 1', async () => {
         await unitTest.getVestingHistory({
-            account: 'testuser',
+            account: 'tst5oxbylczr',
             sequenceKey: null,
-            limit: 1,
+            limit: 2,
         });
     });
 
     it('getVestingHistory: vesting of testuser: limit > 1', async () => {
         await unitTest.getVestingHistory({
-            account: 'testuser',
+            account: 'tst5oxbylczr',
             sequenceKey: null,
             limit: 3,
         });

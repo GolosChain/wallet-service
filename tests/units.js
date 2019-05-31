@@ -38,7 +38,7 @@ class UnitTests {
 
     async getHistory(args) {
         let res = await this._walletTester.getHistory(args);
-        return console.log(JSON.stringify(res, null, 2));
+
         res.should.be.a('object');
         res.should.have.property('id');
         res.should.have.property('result');
@@ -65,11 +65,12 @@ class UnitTests {
             await _checkAsset(transfer.quantity);
         }
 
-        res.result.should.have.property('itemsSize');
-        res.result.itemsSize.should.be.a('number');
-
         res.result.should.have.property('sequenceKey');
-        res.result.sequenceKey.should.be.a('string');
+        if (res.result.sequenceKey !== null) {
+            res.result.sequenceKey.should.satisfy(val => {
+                return typeof val === 'string' || val === null;
+            });
+        }
     }
 
     async filterAccountHistory({ account, from, limit, query }) {
@@ -123,7 +124,7 @@ class UnitTests {
             return;
         }
 
-        _checkAsset(res.result);
+        await _checkAsset(res.result.stat);
     }
 
     async getVestingBalance(args) {
@@ -146,9 +147,9 @@ class UnitTests {
         res.should.have.property('delegated');
 
         res.account.should.be.a('string');
-        checkAsset(res.received);
-        checkAsset(res.vesting);
-        checkAsset(res.delegated);
+        await _checkAsset(res.received);
+        await _checkAsset(res.vesting);
+        await _checkAsset(res.delegated);
     }
 
     async getVestingHistory(args) {
@@ -171,7 +172,7 @@ class UnitTests {
             c.should.have.property('timestamp');
 
             c.who.should.be.a('string');
-            checkAsset(c.diff);
+            await _checkAsset(c.diff);
             c.block.should.be.a('number');
             c.trx_id.should.be.a('string');
             c.timestamp.should.be.a('string');
@@ -182,14 +183,6 @@ class UnitTests {
         if (res.result.sequenceKey !== null) {
             res.result.sequenceKey.should.satisfy(val => {
                 return typeof val === 'string' || val === null;
-            });
-        }
-
-        res.result.should.have.property('itemsSize');
-
-        if (res.result.itemsSize !== null) {
-            res.result.itemsSize.should.satisfy(val => {
-                return typeof val === 'number' || val === null;
             });
         }
     }
