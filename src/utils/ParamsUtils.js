@@ -82,6 +82,12 @@ class ParamsUtils {
         return { sym, amount, decs };
     }
 
+    async convertAssetToString({ sym, amount, decs }) {
+        const divider = 10 ** decs;
+        const leftPart = (amount / divider).toString();
+
+        return leftPart.concat(' ', sym);
+    }
     // convertion methods helpers
 
     async checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
