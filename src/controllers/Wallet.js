@@ -396,21 +396,21 @@ class Wallet extends BasicController {
 
         const items = [];
 
-        for (const v of vestingChanges) {
+        for (const change of vestingChanges) {
             const diffInGolos = await this.convertVestingToToken({
-                vesting: v.diff,
+                vesting: change.diff,
             });
 
             items.push({
-                id: v._id,
-                who: v.who,
+                id: change._id,
+                who: change.who,
                 diff: {
-                    GESTS: v.diff,
+                    GESTS: change.diff,
                     GOLOS: diffInGolos,
                 },
-                block: v.block,
-                trx_id: v.trx_id,
-                timestamp: v.timestamp,
+                block: change.block,
+                trx_id: change.trx_id,
+                timestamp: change.timestamp,
             });
         }
 
@@ -458,13 +458,11 @@ class Wallet extends BasicController {
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
 
-        const res = await this._paramsUtils.convertAssetToString({
+        return this._paramsUtils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * balance) / supply),
             decs: 3,
         });
-
-        return res;
     }
 
     async convertTokensToVesting(args) {
@@ -478,13 +476,11 @@ class Wallet extends BasicController {
         await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
-        const res = await this._paramsUtils.convertAssetToString({
+        return this._paramsUtils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * supply) / balance),
             decs: 6,
         });
-
-        return res;
     }
 }
 

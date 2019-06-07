@@ -1,5 +1,6 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
+const bignum = core.types.BigNum;
 
 class ParamsUtils {
     async extractSingleArgument({ args, fieldName }) {
@@ -62,7 +63,7 @@ class ParamsUtils {
         return result;
     }
 
-    async checkAsset(asset) {
+    checkAsset(asset) {
         if (typeof asset !== 'string') {
             return;
         }
@@ -82,15 +83,15 @@ class ParamsUtils {
         return { sym, amount, decs };
     }
 
-    async convertAssetToString({ sym, amount, decs }) {
-        const divider = 10 ** decs;
-        const leftPart = (amount / divider).toString();
+    convertAssetToString({ sym, amount, decs }) {
+        const divider = new bignum(10).pow(decs);
+        const leftPart = new bignum(amount).div(divider).toString();
 
-        return leftPart.concat(' ', sym);
+        return `${leftPart} ${sym}`;
     }
     // convertion methods helpers
 
-    async checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
+    checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
         if (!vestingStat) {
             Logger.error(`convert: no records about vesting stats in base`);
             throw { code: 811, message: 'Data is absent in base' };
@@ -102,14 +103,14 @@ class ParamsUtils {
         }
     }
 
-    async checkDecsValue({ decs, requiredValue }) {
+    checkDecsValue({ decs, requiredValue }) {
         if (decs !== requiredValue) {
             Logger.error(`convert: invalid argument ${decs}. decs must be equal ${requiredValue}`);
             throw { code: 805, message: 'Wrong arguments' };
         }
     }
 
-    async getAssetName(asset) {
+    getAssetName(asset) {
         return asset.split(' ')[1];
     }
 }
