@@ -348,11 +348,21 @@ class Wallet extends BasicController {
             return {};
         }
 
+        const vestingInGolos = await this.convertVestingToToken({
+            vesting: vestingBalance.vesting,
+        });
+        const delegatedInGolos = await this.convertVestingToToken({
+            vesting: vestingBalance.delegated,
+        });
+        const receivedInGolos = await this.convertVestingToToken({
+            vesting: vestingBalance.received,
+        });
+
         return {
             account,
-            vesting: vestingBalance.vesting,
-            delegated: vestingBalance.delegated,
-            received: vestingBalance.received,
+            vesting: { GESTS: vestingBalance.vesting, GOLOS: vestingInGolos },
+            delegated: { GESTS: vestingBalance.delegated, GOLOS: delegatedInGolos },
+            received: { GESTS: vestingBalance.received, GOLOS: receivedInGolos },
         };
     }
 
@@ -384,14 +394,25 @@ class Wallet extends BasicController {
                 .sort({ _id: -1 });
         }
 
-        const items = vestingChanges.map(v => ({
-            id: v._id,
-            who: v.who,
-            diff: v.diff,
-            block: v.block,
-            trx_id: v.trx_id,
-            timestamp: v.timestamp,
-        }));
+        const items = [];
+
+        for (const change of vestingChanges) {
+            const diffInGolos = await this.convertVestingToToken({
+                vesting: change.diff,
+            });
+
+            items.push({
+                id: change._id,
+                who: change.who,
+                diff: {
+                    GESTS: change.diff,
+                    GOLOS: diffInGolos,
+                },
+                block: change.block,
+                trx_id: change.trx_id,
+                timestamp: change.timestamp,
+            });
+        }
 
         let newSequenceKey;
 
@@ -437,11 +458,11 @@ class Wallet extends BasicController {
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
 
-        return {
+        return this._paramsUtils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * balance) / supply),
             decs: 3,
-        };
+        });
     }
 
     async convertTokensToVesting(args) {
@@ -455,12 +476,11 @@ class Wallet extends BasicController {
         await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
-
-        return {
+        return this._paramsUtils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * supply) / balance),
             decs: 6,
-        };
+        });
     }
 }
 
