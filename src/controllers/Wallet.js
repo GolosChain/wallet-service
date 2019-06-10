@@ -11,6 +11,7 @@ const TokenModel = require('../models/Token');
 const VestingStat = require('../models/VestingStat');
 const VestingBalance = require('../models/VestingBalance');
 const VestingChange = require('../models/VestingChange');
+const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
     constructor(...args) {
@@ -111,21 +112,11 @@ class Wallet extends BasicController {
         }
 
         const getUsername = async account => {
-            const data = {
-                app: 'cyber',
-                userId: account,
-            };
+            const accountMeta = await UserMeta.findOne({ userId: account });
 
-            try {
-                const accountMeta = await this.callService('prism', 'getNotifyMeta', data);
-                return accountMeta.user.username;
-            } catch (error) {
-                Logger.error(
-                    `Error calling prism.getNotifyMeta in ${
-                        this.constructor.name
-                    } with data:\n${JSON.stringify(data, null, 2)}\n`,
-                    JSON.stringify(error, null, 2)
-                );
+            if (accountMeta) {
+                return accountMeta.username;
+            } else {
                 return account;
             }
         };
@@ -133,13 +124,13 @@ class Wallet extends BasicController {
         const items = [];
 
         for (const transfer of transfers) {
-            const senderName = await getUsername(transfer.sender);
-            const receiverName = await getUsername(transfer.receiver);
+            const senderName = getUsername(transfer.sender);
+            const receiverName = getUsername(transfer.receiver);
 
             items.push({
                 id: transfer._id,
-                sender: senderName,
-                receiver: receiverName,
+                sender: await senderName,
+                receiver: await receiverName,
                 quantity: transfer.quantity,
                 trx_id: transfer.trx_id,
                 memo: transfer.memo,
