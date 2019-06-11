@@ -124,13 +124,13 @@ class Wallet extends BasicController {
         const items = [];
 
         for (const transfer of transfers) {
-            const senderName = getUsername(transfer.sender);
-            const receiverName = getUsername(transfer.receiver);
+            const senderName = await getUsername(transfer.sender);
+            const receiverName = await getUsername(transfer.receiver);
 
             items.push({
                 id: transfer._id,
-                sender: await senderName,
-                receiver: await receiverName,
+                sender: senderName,
+                receiver: receiverName,
                 quantity: transfer.quantity,
                 trx_id: transfer.trx_id,
                 memo: transfer.memo,
