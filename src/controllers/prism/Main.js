@@ -6,6 +6,7 @@ const TokenModel = require('../../models/Token');
 const VestingStat = require('../../models/VestingStat');
 const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
+const UserMeta = require('../../models/UserMeta');
 
 class Main {
     async disperse({ transactions }) {
@@ -58,6 +59,14 @@ class Main {
             ) {
                 await this._handleChangeVestAction(action, trxData);
             }
+
+            if (
+                action.receiver == 'gls.social' &&
+                action.code == 'gls.social' &&
+                action.action == 'updatemeta'
+            ) {
+                await this._handleUpdateMetaAction(action, trxData);
+            }
         }
     }
 
@@ -99,6 +108,29 @@ class Main {
         await vestChange.save();
 
         Logger.info('Created vesting change object:', vestChangeObject);
+    }
+
+    async _handleUpdateMetaAction(action, trxData) {
+        if (!action.args) {
+            throw { code: 812, message: 'Invalid action object' };
+        }
+
+        const meta = {
+            userId: action.args.account,
+            username: action.args.meta.name,
+        };
+
+        const savedUserMeta = await UserMeta.findOne({ userId: meta.userId });
+
+        if (savedUserMeta) {
+            await UserMeta.updateOne({ _id: savedUserMeta._id }, { $set: meta });
+            Logger.info(`Changed meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`);
+        }
+        else {
+            const userMeta = new UserMeta(meta);
+            await userMeta.save();
+            Logger.info(`Created meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`);
+        }
     }
 
     async _handleEvents({ events }) {
