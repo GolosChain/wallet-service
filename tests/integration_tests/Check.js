@@ -1,6 +1,5 @@
-const WalletTester = require('./wallet_rpc_tester');
-
 const chai = require('chai');
+const Logger = require('gls-core-service').utils.Logger;
 const should = chai.should();
 const expect = chai.expect;
 
@@ -8,21 +7,20 @@ function isEmpty(obj) {
     return Object.keys(obj).length === 0;
 }
 
-class UnitTests {
-    constructor(...args) {
-        this._walletTester = new WalletTester(...args);
+class Check {
+    constructor({ walletRPC }) {
+        this._walletTester = walletRPC;
     }
 
     async getBalance({ name }) {
-        let res = await this._walletTester.getBalance({ name });
+        const res = await this._walletTester.getBalance({ name });
 
         res.should.be.a('object');
         res.should.have.property('id');
         res.should.have.property('result');
 
         if (!Object.keys(res.result).length) {
-            // don't have needed balance
-            return;
+            throw new Error(`Don't have any saved balance for account: ${{ name }}`);
         }
 
         res.id.should.be.a('number');
@@ -34,17 +32,18 @@ class UnitTests {
         for (const b of res.result.balances) {
             await _checkAsset(b);
         }
+        return res;
     }
 
     async getHistory(args) {
-        let res = await this._walletTester.getHistory(args);
+        const res = await this._walletTester.getHistory(args);
 
         res.should.be.a('object');
         res.should.have.property('id');
         res.should.have.property('result');
 
         if (isEmpty(res.result)) {
-            return;
+            throw `Empty getHistory response: ${{ args }}`;
         }
 
         res.id.should.be.a('number');
@@ -71,13 +70,20 @@ class UnitTests {
                 return typeof val === 'string' || val === null;
             });
         }
+
+        return res;
     }
 
+    // deprecated
     async filterAccountHistory({ account, from, limit, query }) {
-        let res = await this._walletTester.filterAccountHistory({ account, from, limit, query });
+        const res = await this._walletTester.filterAccountHistory({ account, from, limit, query });
 
         res.should.have.property('result');
         res.result.should.be.a('array');
+
+        if (!res.result) {
+            throw `Empty filterAccountHistory response: ${{ account, from, limit, query }}`;
+        }
 
         for (const el of res.result) {
             el.should.be.a('array');
@@ -113,7 +119,7 @@ class UnitTests {
     // vesting
 
     async getVestingInfo(args) {
-        let res = await this._walletTester.getVestingInfo(args);
+        const res = await this._walletTester.getVestingInfo(args);
         res.should.be.a('object');
 
         res.should.have.property('result');
@@ -125,6 +131,8 @@ class UnitTests {
         }
 
         await _checkAsset(res.result.stat);
+
+        return res;
     }
 
     async getVestingBalance(args) {
@@ -147,13 +155,20 @@ class UnitTests {
         res.should.have.property('delegated');
 
         res.account.should.be.a('string');
-        await _checkAsset(res.received);
-        await _checkAsset(res.vesting);
-        await _checkAsset(res.delegated);
+
+        await _checkAsset(res.received.GESTS);
+        await _checkAsset(res.vesting.GESTS);
+        await _checkAsset(res.delegated.GESTS);
+
+        await _checkAsset(res.received.GOLOS);
+        await _checkAsset(res.vesting.GOLOS);
+        await _checkAsset(res.delegated.GOLOS);
+
+        return res;
     }
 
     async getVestingHistory(args) {
-        let res = await this._walletTester.getVestingHistory(args);
+        const res = await this._walletTester.getVestingHistory(args);
         res.should.be.a('object');
 
         res.should.have.property('result');
@@ -172,7 +187,8 @@ class UnitTests {
             c.should.have.property('timestamp');
 
             c.who.should.be.a('string');
-            await _checkAsset(c.diff);
+            await _checkAsset(c.diff.GESTS);
+            await _checkAsset(c.diff.GOLOS);
             c.block.should.be.a('number');
             c.trx_id.should.be.a('string');
             c.timestamp.should.be.a('string');
@@ -185,6 +201,8 @@ class UnitTests {
                 return typeof val === 'string' || val === null;
             });
         }
+
+        return res;
     }
 }
 
@@ -199,4 +217,4 @@ const _checkAsset = async asset => {
     assetName.should.be.a('string');
 };
 
-module.exports = UnitTests;
+module.exports = Check;
