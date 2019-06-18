@@ -10,8 +10,4 @@ module.exports = MongoDB.makeModel('ServiceMeta', {
         type: Date,
         default: null,
     },
-    inRevertProcess: {
-        type: Boolean,
-        default: false,
-    },
 });
