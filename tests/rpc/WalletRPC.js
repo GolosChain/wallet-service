@@ -1,6 +1,6 @@
 const jayson = require('jayson');
 
-class WalletTester {
+class WalletRPC {
     constructor(...args) {
         this._client = jayson.client.http({
             host: args[0],
@@ -48,7 +48,7 @@ class WalletTester {
     }
 }
 
-module.exports = WalletTester;
+module.exports = WalletRPC;
 
 const getRandomArbitrary = (minRandValue, maxRandValue) => {
     return (Math.random() * (maxRandValue - minRandValue) + minRandValue) | 0;
