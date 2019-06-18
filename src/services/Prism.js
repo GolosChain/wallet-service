@@ -21,7 +21,7 @@ class Prism extends BasicService {
             onlyIrreversible: true,
         });
 
-        subscriber.on('block', this._handleBlock.bind(this));
+        subscriber.eachBlock(this._handleBlock.bind(this));
 
         try {
             await subscriber.start();
