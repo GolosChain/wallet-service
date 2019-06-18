@@ -33,8 +33,9 @@ class Prism extends BasicService {
     async _handleBlock(block) {
         try {
             const lastSequence = block.sequence;
+            const lastBlockTime = block.blockTime;
 
-            await this._setLastBlockTimeAndSequence(lastSequence);
+            await this._setLastBlockTimeAndSequence({ lastSequence, lastBlockTime });
             await this._mainPrismController.disperse(block);
         } catch (error) {
             Logger.error(`Cant disperse block - ${error.stack}`);
@@ -43,17 +44,15 @@ class Prism extends BasicService {
     }
 
     async _getLastBlockTimeAndSequence() {
-        const model = await ServiceMetaModel.findOne(
+        return await ServiceMetaModel.findOne(
             {},
-            { lastSequence: true, lastBlockTime: true },
+            { _id: false, lastSequence: true, lastBlockTime: true },
             { lean: true }
         );
-
-        return { ...model };
     }
 
-    async _setLastBlockTimeAndSequence(lastSequence) {
-        await ServiceMetaModel.updateOne({}, { $set: { lastSequence, lastBlockTime: Date.now() } });
+    async _setLastBlockTimeAndSequence({ lastSequence, lastBlockTime }) {
+        await ServiceMetaModel.updateOne({}, { $set: { lastSequence, lastBlockTime } });
     }
 }
 
