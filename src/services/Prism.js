@@ -15,8 +15,6 @@ class Prism extends BasicService {
     async start() {
         const { lastSequence, lastBlockTime } = await this._getLastBlockTimeAndSequence();
 
-        console.log({ lastSequence, lastBlockTime });
-
         const subscriber = new BlockSubscribe({
             lastSequence,
             lastTime: lastBlockTime,
