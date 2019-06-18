@@ -9,9 +9,9 @@ const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
 
 class Main {
-    async disperse({ transactions }) {
+    async disperse({ transactions, blockTime, blockNum }) {
         for (const transaction of transactions) {
-            await this._disperseTransaction(transaction);
+            await this._disperseTransaction({ ...transaction, blockNum, blockTime });
         }
     }
 
@@ -23,8 +23,8 @@ class Main {
 
         const trxData = {
             trx_id: transaction.id,
-            block: transaction.block_num,
-            timestamp: transaction.block_time,
+            block: transaction.blockNum,
+            timestamp: transaction.blockTime,
         };
 
         for (const action of transaction.actions) {
@@ -124,12 +124,15 @@ class Main {
 
         if (savedUserMeta) {
             await UserMeta.updateOne({ _id: savedUserMeta._id }, { $set: meta });
-            Logger.info(`Changed meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`);
-        }
-        else {
+            Logger.info(
+                `Changed meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`
+            );
+        } else {
             const userMeta = new UserMeta(meta);
             await userMeta.save();
-            Logger.info(`Created meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`);
+            Logger.info(
+                `Created meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`
+            );
         }
     }
 
