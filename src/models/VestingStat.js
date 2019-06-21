@@ -7,7 +7,11 @@ module.exports = MongoDB.makeModel(
         stat: {
             type: String,
             required: true,
-        }
+        },
+        sym: {
+            type: String,
+            required: true,
+        },
     },
     {
         index: [
