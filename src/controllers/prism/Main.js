@@ -241,12 +241,13 @@ class Main {
             return;
         }
 
-        const statObject = await VestingStat.findOne({ sym: event.args.sym });
-
+        const sym = await this._getAssetName(event.args);
         const newStats = {
             stat: event.args,
+            sym,
         };
-        const sym = await this._getAssetName(newStats.stat);
+
+        const statObject = await VestingStat.findOne({ sym });
 
         if (statObject) {
             await statObject.updateOne({ _id: statObject._id }, { $set: newStats });
