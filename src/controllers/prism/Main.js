@@ -62,9 +62,9 @@ class Main {
             }
 
             if (
-                action.receiver == 'gls.social' &&
-                action.code == 'gls.social' &&
-                action.action == 'updatemeta'
+                action.receiver === 'gls.social' &&
+                action.code === 'gls.social' &&
+                action.action === 'updatemeta'
             ) {
                 await this._handleUpdateMetaAction(action, trxData);
             }
@@ -267,7 +267,7 @@ class Main {
         // Ensure given event is balance event
 
         // TODO: Add correct `event.code` check, when it'll be stable...
-        if (!(event.event === 'balance')) {
+        if (event.event !== 'balance') {
             return;
         }
 

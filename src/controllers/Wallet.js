@@ -33,7 +33,7 @@ class Wallet extends BasicController {
             }
         }
 
-        let res = { tokens: [] };
+        const res = { tokens: [] };
 
         for (const token of params) {
             if (typeof token !== 'string') {
@@ -67,32 +67,24 @@ class Wallet extends BasicController {
         const { sender, receiver, sequenceKey, limit } = params;
 
         if (limit < 0) {
-            Logger.warn('getVestingHistory: invalid argument: limit must be positive');
             throw { code: 805, message: 'Wrong arguments: limit must be positive' };
         }
 
         if (!sender && !receiver) {
-            Logger.warn('getHistory: at least one of sender and receiver must be non-empty');
             throw { code: 805, message: 'Wrong arguments' };
         }
 
         let filter = {};
 
-        const checkNameString = name => {
-            if (typeof name !== 'string') {
-                throw { code: 809, message: 'Name must be a non-empty string!' };
-            }
-        };
-
         // In case sender field is present it has to be a valid string
         if (sender) {
-            checkNameString(sender);
+            this._checkNameString(sender);
             filter.sender = sender;
         }
 
         // In case receiver field is present it has to be a valid string
         if (receiver) {
-            checkNameString(receiver);
+            this._checkNameString(receiver);
             filter.receiver = receiver;
         }
 
@@ -111,21 +103,11 @@ class Wallet extends BasicController {
                 .sort({ _id: -1 });
         }
 
-        const getUsername = async account => {
-            const accountMeta = await UserMeta.findOne({ userId: account });
-
-            if (accountMeta) {
-                return accountMeta.username;
-            } else {
-                return account;
-            }
-        };
-
         const items = [];
 
         for (const transfer of transfers) {
-            const senderName = await getUsername(transfer.sender);
-            const receiverName = await getUsername(transfer.receiver);
+            const senderName = await this._getUsername(transfer.sender);
+            const receiverName = await this._getUsername(transfer.receiver);
 
             items.push({
                 id: transfer._id,
@@ -159,20 +141,15 @@ class Wallet extends BasicController {
         const { account, from, limit, query } = params;
 
         if (limit < 0) {
-            Logger.warn('filter_account_history: invalid argument: limit must be positive');
             throw { code: 805, message: 'Wrong arguments: limit must be positive' };
         }
 
         if (from > 0 && limit > from) {
-            Logger.warn(
-                'filter_account_history: invalid argument: limit can not be greater that from'
-            );
-            throw { code: 805, message: 'Wrong arguments: limit can not be greater that from' };
+            throw { code: 805, message: `Wrong arguments: limit can't be greater than from` };
         }
 
         let transfers;
         let filter;
-        let ghres;
 
         switch (query.direction) {
             case 'sender':
@@ -209,7 +186,6 @@ class Wallet extends BasicController {
                 break;
         }
 
-        let result = [];
         let beginId, endId;
 
         if (from === -1) {
@@ -221,15 +197,7 @@ class Wallet extends BasicController {
             endId = Math.min(from + 1, transfers.length);
         }
 
-        // Converts transfers quantity data to asset string
-        // Like: "123.000 GLS"
-        const formatQuantity = quantity => {
-            return (
-                new BigNum(quantity.amount).shiftedBy(-quantity.decs).toString() +
-                ' ' +
-                quantity.sym
-            );
-        };
+        const result = [];
 
         for (let i = beginId; i < endId; i++) {
             const transfer = transfers[i];
@@ -241,7 +209,7 @@ class Wallet extends BasicController {
                         {
                             from: transfer.sender,
                             to: transfer.receiver,
-                            amount: formatQuantity(transfer.quantity),
+                            amount: this._formatQuantity(transfer.quantity),
                             memo: '{}',
                         },
                     ],
@@ -256,12 +224,8 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ name, tokensList }) {
-        if (!name || !(typeof name === 'string')) {
-            throw { code: 809, message: 'getBalance: name must be a string!' };
-        }
-
-        if (name.length === 0) {
-            throw { code: 810, message: 'getBalance: name can not be empty string!' };
+        if (!name || typeof name !== 'string') {
+            throw { code: 809, message: 'getBalance: name must be non-empty string' };
         }
 
         const balanceObject = await BalanceModel.findOne({ name });
@@ -312,13 +276,13 @@ class Wallet extends BasicController {
     }
 
     async getVestingInfo() {
-        const vestingStat = await VestingStat.find();
+        const vestingStat = await VestingStat.findOne();
 
         if (!vestingStat) {
             return {};
         }
 
-        return { stat: vestingStat[0].stat };
+        return { stat: vestingStat.stat };
     }
 
     async getVestingBalance({ account }) {
@@ -461,17 +425,42 @@ class Wallet extends BasicController {
             args,
             fields: ['tokens'],
         });
-        let { tokens } = params;
+        const { tokens } = params;
         const { decs, amount } = await this._paramsUtils.checkAsset(tokens);
 
         await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
+
         return this._paramsUtils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * supply) / balance),
             decs: 6,
         });
+    }
+
+    _checkNameString(name) {
+        if (typeof name !== 'string') {
+            throw { code: 809, message: 'Name must be a non-empty string!' };
+        }
+    }
+
+    async _getUsername(account) {
+        const accountMeta = await UserMeta.findOne({ userId: account });
+
+        if (accountMeta) {
+            return accountMeta.username;
+        }
+
+        return account;
+    }
+
+    // Converts transfers quantity data to asset string
+    // Like: "123.000 GLS"
+    _formatQuantity(quantity) {
+        return (
+            new BigNum(quantity.amount).shiftedBy(-quantity.decs).toString() + ' ' + quantity.sym
+        );
     }
 }
 

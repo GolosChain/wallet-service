@@ -29,17 +29,18 @@ class ParamsUtils {
 
     async extractArgumentList({ args, fields }) {
         if (!Array.isArray(fields)) {
-            Logger.warn(`_extractArgumentList: invalid argument`);
+            Logger.warn('_extractArgumentList: invalid argument');
             throw { code: 805, message: 'Wrong arguments' };
         }
+
         for (const f of fields) {
             if (typeof f !== 'string') {
-                Logger.warn(`_extractArgumentList: invalid argument ${f}`);
+                Logger.warn('_extractArgumentList: invalid argument:', f);
                 throw { code: 805, message: 'Wrong arguments' };
             }
         }
 
-        let result = {};
+        const result = {};
 
         if (args) {
             if (Array.isArray(args)) {
@@ -93,12 +94,12 @@ class ParamsUtils {
 
     checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
         if (!vestingStat) {
-            Logger.error(`convert: no records about vesting stats in base`);
+            Logger.error('convert: no records about vesting stats in base');
             throw { code: 811, message: 'Data is absent in base' };
         }
 
         if (!vestingBalance.balances || !vestingBalance.balances.length) {
-            Logger.error(`convert: no GOLOS balance for gls.vesting account`);
+            Logger.error('convert: no GOLOS balance for gls.vesting account');
             throw { code: 811, message: 'Data is absent in base' };
         }
     }
