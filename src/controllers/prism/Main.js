@@ -31,6 +31,7 @@ class Main {
             if (action.code === 'cyber.token' && action.receiver === 'cyber.token') {
                 switch (action.action) {
                     case 'transfer':
+                    case 'payment':
                         await this._handleTransferAction(action, trxData);
                         break;
                     case 'issue':
@@ -46,8 +47,8 @@ class Main {
 
             if (
                 action.receiver === 'gls.vesting' &&
-                action.action == 'transfer' &&
-                action.code === 'cyber.token'
+                (action.action === 'transfer' || action.action === 'delegate') &&
+                (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
                 await this._handleVestingEvents({ events: action.events });
             }
@@ -241,9 +242,9 @@ class Main {
             return;
         }
 
-        const sym = await this._getAssetName(event.args);
+        const sym = await this._getAssetName(event.args.supply);
         const newStats = {
-            stat: event.args,
+            stat: event.args.supply,
             sym,
         };
 
