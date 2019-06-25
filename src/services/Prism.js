@@ -23,11 +23,7 @@ class Prism extends BasicService {
 
         subscriber.eachBlock(this._handleBlock.bind(this));
 
-        try {
-            await subscriber.start();
-        } catch (error) {
-            Logger.error(`Cant start block subscriber - ${error.stack}`);
-        }
+        await subscriber.start();
     }
 
     async _handleBlock(block) {
@@ -38,7 +34,7 @@ class Prism extends BasicService {
             await this._setLastBlockTimeAndSequence({ lastSequence, lastBlockTime });
             await this._mainPrismController.disperse(block);
         } catch (error) {
-            Logger.error(`Cant disperse block - ${error.stack}`);
+            Logger.error('Cant disperse block:', error);
             process.exit(1);
         }
     }
