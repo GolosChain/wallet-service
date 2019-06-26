@@ -33,7 +33,7 @@ module.exports = MongoDB.makeModel(
         },
         type: {
             type: String,
-            enum: ['transfer', 'author', 'curator', 'benefeciary'],
+            enum: ['transfer', 'author', 'curators', 'benefeciary'],
             default: 'transfer',
         },
 
