@@ -270,6 +270,7 @@ class Main {
             stat: event.args.supply,
         };
         const sym = await this._getAssetName(newStats.stat);
+        const statObject = await VestingStat.findOne({ sym });
 
         if (statObject) {
             await statObject.updateOne({ _id: statObject._id }, { $set: newStats });
