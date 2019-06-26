@@ -266,10 +266,13 @@ class Main {
             return;
         }
 
+        const sym = await this._getAssetName(event.args.supply);
+
         const newStats = {
             stat: event.args.supply,
+            sym,
         };
-        const sym = await this._getAssetName(newStats.stat);
+
         const statObject = await VestingStat.findOne({ sym });
 
         if (statObject) {
