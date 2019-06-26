@@ -49,6 +49,7 @@ class Main {
             if (
                 action.receiver === 'gls.vesting' &&
                 (action.action === 'transfer' || action.action === 'delegate') &&
+                (action.action === 'transfer' || action.action === 'undelegate') &&
                 (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
                 await this._handleVestingEvents({ events: action.events });
