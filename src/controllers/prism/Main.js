@@ -79,7 +79,7 @@ class Main {
 
         const parseReward = memo => {
             const regexp = new RegExp(
-                /send to: (.*); *(?<type>[\S]*).*(?<contentType>post|comment) (?<author>.*):(?<permlink>.*)/
+                /send to: (.*); *(?<type>author|curators|benefeciary*).*(?<contentType>post|comment) (?<author>.*):(?<permlink>.*)/
             );
 
             const result = memo.match(regexp);
