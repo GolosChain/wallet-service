@@ -32,6 +32,7 @@ class Main {
                 switch (action.action) {
                     case 'transfer':
                     case 'payment':
+                        // TODO: разобраться с тем, какой receiver у чувака
                         await this._handleTransferAction(action, trxData);
                         break;
                     case 'issue':
@@ -76,13 +77,35 @@ class Main {
             throw { code: 812, message: 'Invalid action object' };
         }
 
-        const transferObject = {
+        const parseReward = memo => {
+            const regexp = new RegExp(
+                /send to: (.*); *(?<type>[\S]*).*(?<contentType>post|comment) (?<author>.*):(?<permlink>.*)/
+            );
+
+            const result = memo.match(regexp);
+
+            if (result) {
+                return result.groups;
+            }
+            return false;
+        };
+
+        let transferObject = {
             ...trxData,
             sender: action.args.from,
             receiver: action.args.to,
             quantity: action.args.quantity,
             memo: action.args.memo,
         };
+
+        const rewardData = parseReward(action.args.memo);
+
+        if (rewardData) {
+            transferObject = {
+                ...transferObject,
+                ...rewardData,
+            };
+        }
 
         const transfer = new TransferModel(transferObject);
 
@@ -212,6 +235,7 @@ class Main {
         if (!(event.code === 'cyber.token' && event.event === 'currency')) {
             return;
         }
+
         const sym = await this._getAssetName(event.args.supply);
         const tokenObject = await TokenModel.findOne({ sym });
 
@@ -242,13 +266,10 @@ class Main {
             return;
         }
 
-        const sym = await this._getAssetName(event.args.supply);
         const newStats = {
             stat: event.args.supply,
-            sym,
         };
-
-        const statObject = await VestingStat.findOne({ sym });
+        const sym = await this._getAssetName(newStats.stat);
 
         if (statObject) {
             await statObject.updateOne({ _id: statObject._id }, { $set: newStats });

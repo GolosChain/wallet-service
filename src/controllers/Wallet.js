@@ -61,7 +61,7 @@ class Wallet extends BasicController {
     async getHistory(args) {
         const params = await this._paramsUtils.extractArgumentList({
             args,
-            fields: ['sender', 'receiver', 'sequenceKey', 'limit'],
+            fields: ['sender', 'receiver', 'sequenceKey', 'limit', 'type'],
         });
 
         const { sender, receiver, sequenceKey, limit } = params;
@@ -71,6 +71,17 @@ class Wallet extends BasicController {
         }
 
         if (!sender && !receiver) {
+            throw { code: 805, message: 'Wrong arguments' };
+        }
+
+        let type = params.type;
+
+        if (!type) {
+            type = 'all';
+        }
+
+        if (!['transfer', 'author', 'curator', 'benefeciary', 'all'].includes(type)) {
+            Logger.warn('getHistory: unknown transfer type --', type);
             throw { code: 805, message: 'Wrong arguments' };
         }
 
@@ -86,6 +97,10 @@ class Wallet extends BasicController {
         if (receiver) {
             this._checkNameString(receiver);
             filter.receiver = receiver;
+        }
+
+        if (type !== 'all') {
+            filter.type = type;
         }
 
         let transfers;
@@ -118,6 +133,12 @@ class Wallet extends BasicController {
                 memo: transfer.memo,
                 block: transfer.block,
                 timestamp: transfer.timestamp,
+                type: transfer.type,
+                contentType: transfer.contentType,
+                contentId: {
+                    author: transfer.author,
+                    permlink: transfer.permlink,
+                },
             });
         }
 

@@ -8,6 +8,6 @@ module.exports = MongoDB.makeModel('ServiceMeta', {
     },
     lastBlockTime: {
         type: Date,
-        default: null,
+        default: new Date(null),
     },
 });

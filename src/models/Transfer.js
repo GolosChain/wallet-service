@@ -31,6 +31,19 @@ module.exports = MongoDB.makeModel(
             type: Date,
             required: true,
         },
+        type: {
+            type: String,
+            enum: ['transfer', 'author', 'curator', 'benefeciary'],
+            default: 'transfer',
+        },
+
+        // following fields are for reward transfers
+        contentType: {
+            type: String,
+            enum: ['post', 'comment'],
+        },
+        author: String,
+        permlink: String,
     },
     {
         index: [
