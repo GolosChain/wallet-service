@@ -1,12 +1,14 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
 const TransferModel = require('../../models/Transfer');
+const DelegationModel = require('../../models/Delegation');
 const BalanceModel = require('../../models/Balance');
 const TokenModel = require('../../models/Token');
 const VestingStat = require('../../models/VestingStat');
 const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
+const bignum = core.types.BigNum;
 
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
@@ -50,7 +52,19 @@ class Main {
                 (action.action === 'transfer' || action.action === 'delegate') &&
                 (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
-                await this._handleVestingEvents({ events: action.events });
+                await this._handleVestingEvents({ events: action.events, action: action.action });
+
+                switch (action.action) {
+                    case 'delegate':
+                    case 'undelegate':
+                        await this._handleDelegationEvent({
+                            event: action.args,
+                            type: action.action,
+                        });
+                        break;
+                    default:
+                    // do nothing
+                }
             }
 
             if (
@@ -144,11 +158,55 @@ class Main {
         }
     }
 
-    async _handleVestingEvents({ events }) {
+    async _handleVestingEvents({ events, action }) {
         for (const event of events) {
             await this._handleVestingStatEvent(event);
             await this._handleVestingBalanceEvent(event);
         }
+    }
+
+    async _handleDelegationEvent({
+        event: { from, to, quantity, interest_rate: interestRate },
+        type = 'delegate',
+    }) {
+        const existingModel = await DelegationModel.findOne({
+            from,
+            to,
+            interestRate,
+            isActual: true,
+        });
+        if (!existingModel) {
+            const newModel = new DelegationModel({
+                from,
+                to,
+                quantity,
+                interestRate,
+                isActual: true,
+            });
+
+            await newModel.save();
+            Logger.info(
+                'Created new delegation record',
+                JSON.stringify(newModel.toObject(), null, 4)
+            );
+            return;
+        }
+        const { quantity: quantityDiff, name } = this._getAssetQuantityAndName(quantity);
+        let updatedSum;
+        const prevQuantity = this._getAssetQuantity(existingModel.quantity);
+        if (type === 'delegate') {
+            updatedSum = prevQuantity.plus(quantityDiff);
+        } else if (type === 'undelegate') {
+            updatedSum = prevQuantity.minus(quantityDiff);
+            if (updatedSum.toNumber() === 0) {
+                existingModel.isActual = false;
+            }
+        }
+
+        existingModel.quantity = `${updatedSum.toFixed(6)} ${name}`;
+        await existingModel.save();
+
+        Logger.info('Updated delegation record', JSON.stringify(existingModel.toObject(), null, 4));
     }
 
     async _handleBalanceEvent(event) {
@@ -311,8 +369,20 @@ class Main {
         }
     }
 
-    async _getAssetName(asset) {
+    _getAssetName(asset) {
         return asset.split(' ')[1];
+    }
+
+    _getAssetQuantity(asset) {
+        const quantityString = asset.split(' ')[0];
+        return new bignum(quantityString);
+    }
+
+    _getAssetQuantityAndName(asset) {
+        return {
+            quantity: this._getAssetQuantity(asset),
+            name: this._getAssetName(asset),
+        };
     }
 }
 
