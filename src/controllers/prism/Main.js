@@ -8,7 +8,7 @@ const VestingStat = require('../../models/VestingStat');
 const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
-const bignum = core.types.BigNum;
+const BigNum = core.types.BigNum;
 
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
@@ -191,9 +191,9 @@ class Main {
             );
             return;
         }
-        const { quantity: quantityDiff, name } = this._getAssetQuantityAndName(quantity);
+        const { quantity: quantityDiff, name } = this._parseAsset(quantity);
         let updatedSum;
-        const prevQuantity = this._getAssetQuantity(existingModel.quantity);
+        const { quantity: prevQuantity } = this._parseAsset(existingModel.quantity);
         if (type === 'delegate') {
             updatedSum = prevQuantity.plus(quantityDiff);
         } else if (type === 'undelegate') {
@@ -216,15 +216,14 @@ class Main {
         }
 
         const balance = await BalanceModel.findOne({ name: event.args.account });
-        const sym = await this._getAssetName(event.args.balance);
-
+        const { sym } = this._parseAsset(event.args.balance);
         if (balance) {
             // Check balance of tokens listed in balance.balances array
             const neededSym = sym;
             let neededTokenId = null;
 
             for (let i = 0; i < balance.balances.length; i++) {
-                const tokenSym = await this._getAssetName(balance.balances[i]);
+                const { sym: tokenSym } = await this._parseAsset(balance.balances[i]);
                 if (tokenSym === neededSym) {
                     neededTokenId = i;
                 }
@@ -270,7 +269,7 @@ class Main {
         if (!(event.code === 'cyber.token' && event.event === 'currency')) {
             return;
         }
-        const sym = await this._getAssetName(event.args.supply);
+        const { sym } = await this._parseAsset(event.args.supply);
         const tokenObject = await TokenModel.findOne({ sym });
 
         const newTokenInfo = {
@@ -300,7 +299,7 @@ class Main {
             return;
         }
 
-        const sym = await this._getAssetName(event.args.supply);
+        const { sym } = await this._parseAsset(event.args.supply);
         const newStats = {
             stat: event.args.supply,
             sym,
@@ -369,19 +368,13 @@ class Main {
         }
     }
 
-    _getAssetName(asset) {
-        return asset.split(' ')[1];
-    }
-
-    _getAssetQuantity(asset) {
-        const quantityString = asset.split(' ')[0];
-        return new bignum(quantityString);
-    }
-
-    _getAssetQuantityAndName(asset) {
+    _parseAsset(asset = {}) {
+        const [quantityRaw, sym] = asset.split(' ');
+        const quantity = new BigNum(quantityRaw);
         return {
-            quantity: this._getAssetQuantity(asset),
-            name: this._getAssetName(asset),
+            quantityRaw,
+            quantity,
+            sym,
         };
     }
 }

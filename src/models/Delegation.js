@@ -17,6 +17,7 @@ module.exports = MongoDB.makeModel(
             required: true,
         },
         interestRate: {
+            // number 0/1 is a blockchain-inherited notation
             type: Number,
             enum: [0, 1],
         },
@@ -32,9 +33,6 @@ module.exports = MongoDB.makeModel(
                     from: 1,
                     to: 1,
                     _id: -1,
-                },
-                options: {
-                    unique: false,
                 },
             },
         ],
