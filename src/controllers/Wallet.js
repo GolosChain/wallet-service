@@ -23,16 +23,16 @@ class Wallet extends BasicController {
     async getDelegationState({ userId, direction = 'all' }) {
         const filter = {};
 
-        if (direction === 'in') {
-            filter.to = userId;
-        }
-
-        if (direction === 'out') {
+        if (direction !== 'in') {
             filter.from = userId;
         }
 
+        if (direction !== 'out') {
+            filter.to = userId;
+        }
+
         const delegations = await DelegationModel.find(
-            { isActual: true, ...filter },
+            { $and: [{ isActual: true }, { $or: [{ from: filter.from }, { to: filter.to }] }] },
             { _id: false, from: true, to: true, quantity: true, interestRate: true },
             { lean: true }
         );
