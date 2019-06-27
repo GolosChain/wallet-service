@@ -170,7 +170,7 @@ class Main {
         type = 'delegate',
     }) {
         const delegationModel = await this._findOrCreateDelegationModel({ from, to, interestRate });
-        const { quantity: quantityDiff, name } = this._parseAsset(quantity);
+        const { quantity: quantityDiff, sym } = this._parseAsset(quantity);
         const { quantity: prevQuantity } = this._parseAsset(delegationModel.quantity);
 
         let updatedSum;
@@ -184,7 +184,7 @@ class Main {
             delegationModel.isActual = false;
         }
 
-        delegationModel.quantity = `${updatedSum.toFixed(6)} ${name}`;
+        delegationModel.quantity = `${updatedSum.toFixed(6)} ${sym}`;
         await delegationModel.save();
 
         Logger.info(
