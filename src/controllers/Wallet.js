@@ -5,6 +5,7 @@ const BigNum = core.types.BigNum;
 const ParamsUtils = require('../utils/ParamsUtils');
 
 const TransferModel = require('../models/Transfer');
+const DelegationModel = require('../models/Delegation');
 const BalanceModel = require('../models/Balance');
 const TokenModel = require('../models/Token');
 
@@ -17,6 +18,37 @@ class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
         this._paramsUtils = new ParamsUtils();
+    }
+
+    async getDelegationState({ userId, direction = 'all' }) {
+        const filter = {};
+
+        if (direction === 'in') {
+            filter.to = userId;
+        }
+
+        if (direction === 'out') {
+            filter.from = userId;
+        }
+
+        const delegations = await DelegationModel.find(
+            { isActual: true, ...filter },
+            { _id: false, from: true, to: true, quantity: true, interestRate: true },
+            { lean: true }
+        );
+
+        for (const delegation of delegations) {
+            const gestsQuantity = delegation.quantity;
+            const quantity = {
+                GESTS: gestsQuantity,
+            };
+
+            quantity.GOLOS = await this.convertVestingToToken({ vesting: gestsQuantity });
+
+            delegation.quantity = quantity;
+        }
+
+        return delegations;
     }
 
     async getTokensInfo(args) {

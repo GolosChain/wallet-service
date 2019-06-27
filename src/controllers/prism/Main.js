@@ -1,12 +1,14 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
 const TransferModel = require('../../models/Transfer');
+const DelegationModel = require('../../models/Delegation');
 const BalanceModel = require('../../models/Balance');
 const TokenModel = require('../../models/Token');
 const VestingStat = require('../../models/VestingStat');
 const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
+const BigNum = core.types.BigNum;
 
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
@@ -32,7 +34,6 @@ class Main {
                 switch (action.action) {
                     case 'transfer':
                     case 'payment':
-                        // TODO: разобраться с тем, какой receiver у чувака
                         await this._handleTransferAction(action, trxData);
                         break;
                     case 'issue':
@@ -53,7 +54,19 @@ class Main {
                     action.action === 'undelegate') &&
                 (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
-                await this._handleVestingEvents({ events: action.events });
+                await this._handleVestingEvents({ events: action.events, action: action.action });
+
+                switch (action.action) {
+                    case 'delegate':
+                    case 'undelegate':
+                        await this._handleDelegationEvent({
+                            event: action.args,
+                            type: action.action,
+                        });
+                        break;
+                    default:
+                    // do nothing
+                }
             }
 
             if (
@@ -176,6 +189,59 @@ class Main {
         }
     }
 
+    async _handleDelegationEvent({
+        event: { from, to, quantity, interest_rate: interestRate },
+        type = 'delegate',
+    }) {
+        const delegationModel = await this._findOrCreateDelegationModel({ from, to, interestRate });
+        const { quantity: quantityDiff, sym } = this._parseAsset(quantity);
+        const { quantity: prevQuantity } = this._parseAsset(delegationModel.quantity);
+
+        let updatedSum;
+        if (type === 'delegate') {
+            updatedSum = prevQuantity.plus(quantityDiff);
+        } else {
+            updatedSum = prevQuantity.minus(quantityDiff);
+        }
+
+        if (updatedSum.eq(0)) {
+            delegationModel.isActual = false;
+        }
+
+        delegationModel.quantity = `${updatedSum.toFixed(6)} ${sym}`;
+        await delegationModel.save();
+
+        Logger.info(
+            'Updated delegation record',
+            JSON.stringify(delegationModel.toObject(), null, 4)
+        );
+    }
+
+    async _findOrCreateDelegationModel({ from, to, interestRate: interestRateRaw }) {
+        const existingModel = await DelegationModel.findOne({
+            from,
+            to,
+            isActual: true,
+        });
+
+        if (existingModel) {
+            return existingModel;
+        }
+
+        const interestRate = interestRateRaw / 100;
+
+        const newModel = new DelegationModel({
+            from,
+            to,
+            interestRate,
+            isActual: true,
+        });
+
+        const savedModel = await newModel.save();
+        Logger.info('Created new delegation record', JSON.stringify(newModel.toObject(), null, 4));
+        return savedModel;
+    }
+
     async _handleBalanceEvent(event) {
         // Ensure given event is balance event
         if (!(event.code === 'cyber.token' && event.event === 'balance')) {
@@ -183,15 +249,14 @@ class Main {
         }
 
         const balance = await BalanceModel.findOne({ name: event.args.account });
-        const sym = await this._getAssetName(event.args.balance);
-
+        const { sym } = this._parseAsset(event.args.balance);
         if (balance) {
             // Check balance of tokens listed in balance.balances array
             const neededSym = sym;
             let neededTokenId = null;
 
             for (let i = 0; i < balance.balances.length; i++) {
-                const tokenSym = await this._getAssetName(balance.balances[i]);
+                const { sym: tokenSym } = await this._parseAsset(balance.balances[i]);
                 if (tokenSym === neededSym) {
                     neededTokenId = i;
                 }
@@ -238,7 +303,7 @@ class Main {
             return;
         }
 
-        const sym = await this._getAssetName(event.args.supply);
+        const { sym } = await this._parseAsset(event.args.supply);
         const tokenObject = await TokenModel.findOne({ sym });
 
         const newTokenInfo = {
@@ -268,8 +333,7 @@ class Main {
             return;
         }
 
-        const sym = await this._getAssetName(event.args.supply);
-
+        const { sym } = await this._parseAsset(event.args.supply);
         const newStats = {
             stat: event.args.supply,
             sym,
@@ -338,8 +402,17 @@ class Main {
         }
     }
 
-    async _getAssetName(asset) {
-        return asset.split(' ')[1];
+    _parseAsset(asset) {
+        if (!asset) {
+            throw new Error('Asset is not defined');
+        }
+        const [quantityRaw, sym] = asset.split(' ');
+        const quantity = new BigNum(quantityRaw);
+        return {
+            quantityRaw,
+            quantity,
+            sym,
+        };
     }
 }
 
