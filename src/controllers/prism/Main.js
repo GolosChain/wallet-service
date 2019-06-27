@@ -193,17 +193,18 @@ class Main {
         );
     }
 
-    async _findOrCreateDelegationModel({ from, to, interestRate }) {
+    async _findOrCreateDelegationModel({ from, to, interestRate: interestRateRaw }) {
         const existingModel = await DelegationModel.findOne({
             from,
             to,
-            interestRate,
             isActual: true,
         });
 
         if (existingModel) {
             return existingModel;
         }
+
+        const interestRate = interestRateRaw / 100;
 
         const newModel = new DelegationModel({
             from,
