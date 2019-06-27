@@ -1,8 +1,6 @@
 const core = require('gls-core-service');
-const { Logger, metrics } = core.utils;
-const ParallelPool = core.utils.ParallelPool;
+const { metrics } = core.utils;
 const BulkSaver = require('../../utils/BulkSaver');
-// const LimitedCache = require('../../utils/LimitedCache');
 const UserMetaModel = require('../../models/UserMeta');
 const BalanceModel = require('../../models/Balance');
 const VestingBalanceModel = require('../../models/VestingBalance');
@@ -12,7 +10,6 @@ const TransferModel = require('../../models/Transfer');
 class Genesis {
     constructor() {
         this._isDone = false;
-        // this._commentsCache = new LimitedCache({ fetch: this._fetchCommentInfo.bind(this) });
 
         this._usersBulk = new BulkSaver(UserMetaModel, 'profiles');
         this._balancesBulk = new BulkSaver(BalanceModel, 'balances');
