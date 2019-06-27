@@ -21,7 +21,7 @@ class Wallet extends BasicController {
     }
 
     async getDelegationState({ userId, direction = 'all' }) {
-        let filter = {};
+        const filter = {};
 
         if (direction === 'in') {
             filter.to = userId;

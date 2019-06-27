@@ -180,7 +180,7 @@ class Main {
             updatedSum = prevQuantity.minus(quantityDiff);
         }
 
-        if (updatedSum.toNumber() === 0) {
+        if (updatedSum.eq(0)) {
             delegationModel.isActual = false;
         }
 
@@ -377,7 +377,10 @@ class Main {
         }
     }
 
-    _parseAsset(asset = {}) {
+    _parseAsset(asset) {
+        if (!asset) {
+            throw new Error('Asset is not defined');
+        }
         const [quantityRaw, sym] = asset.split(' ');
         const quantity = new BigNum(quantityRaw);
         return {
