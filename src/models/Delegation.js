@@ -14,7 +14,7 @@ module.exports = MongoDB.makeModel(
         },
         quantity: {
             type: String,
-            required: true,
+            default: '0.000000 GOLOS',
         },
         interestRate: {
             // number 0/1 is a blockchain-inherited notation

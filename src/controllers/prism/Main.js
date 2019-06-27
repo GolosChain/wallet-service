@@ -169,44 +169,52 @@ class Main {
         event: { from, to, quantity, interest_rate: interestRate },
         type = 'delegate',
     }) {
+        const delegationModel = await this._findOrCreateDelegationModel({ from, to, interestRate });
+        const { quantity: quantityDiff, name } = this._parseAsset(quantity);
+        const { quantity: prevQuantity } = this._parseAsset(delegationModel.quantity);
+
+        let updatedSum;
+        if (type === 'delegate') {
+            updatedSum = prevQuantity.plus(quantityDiff);
+        } else {
+            updatedSum = prevQuantity.minus(quantityDiff);
+        }
+
+        if (updatedSum.toNumber() === 0) {
+            delegationModel.isActual = false;
+        }
+
+        delegationModel.quantity = `${updatedSum.toFixed(6)} ${name}`;
+        await delegationModel.save();
+
+        Logger.info(
+            'Updated delegation record',
+            JSON.stringify(delegationModel.toObject(), null, 4)
+        );
+    }
+
+    async _findOrCreateDelegationModel({ from, to, interestRate }) {
         const existingModel = await DelegationModel.findOne({
             from,
             to,
             interestRate,
             isActual: true,
         });
-        if (!existingModel) {
-            const newModel = new DelegationModel({
-                from,
-                to,
-                quantity,
-                interestRate,
-                isActual: true,
-            });
 
-            await newModel.save();
-            Logger.info(
-                'Created new delegation record',
-                JSON.stringify(newModel.toObject(), null, 4)
-            );
-            return;
-        }
-        const { quantity: quantityDiff, name } = this._parseAsset(quantity);
-        let updatedSum;
-        const { quantity: prevQuantity } = this._parseAsset(existingModel.quantity);
-        if (type === 'delegate') {
-            updatedSum = prevQuantity.plus(quantityDiff);
-        } else if (type === 'undelegate') {
-            updatedSum = prevQuantity.minus(quantityDiff);
-            if (updatedSum.toNumber() === 0) {
-                existingModel.isActual = false;
-            }
+        if (existingModel) {
+            return existingModel;
         }
 
-        existingModel.quantity = `${updatedSum.toFixed(6)} ${name}`;
-        await existingModel.save();
+        const newModel = new DelegationModel({
+            from,
+            to,
+            interestRate,
+            isActual: true,
+        });
 
-        Logger.info('Updated delegation record', JSON.stringify(existingModel.toObject(), null, 4));
+        const savedModel = await newModel.save();
+        Logger.info('Created new delegation record', JSON.stringify(newModel.toObject(), null, 4));
+        return savedModel;
     }
 
     async _handleBalanceEvent(event) {
