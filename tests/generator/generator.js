@@ -1,4 +1,4 @@
-xconst fs = require('fs');
+const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv').config();
 const User = require('./User');
