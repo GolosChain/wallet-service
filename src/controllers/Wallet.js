@@ -445,9 +445,8 @@ class Wallet extends BasicController {
 
         if (type === 'string') {
             return resultString;
-        } else {
-            return this._paramsUtils.parseAsset(resultString);
         }
+        return this._paramsUtils.parseAsset(resultString);
     }
 
     async convertTokensToVesting(args) {
