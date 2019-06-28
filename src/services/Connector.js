@@ -25,7 +25,7 @@ class Connector extends BasicConnector {
                                 type: 'string',
                             },
                             currencies: {
-                                type: ['array'],
+                                type: 'array',
                                 default: ['all'],
                             },
                             type: {
