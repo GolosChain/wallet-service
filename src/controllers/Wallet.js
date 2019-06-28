@@ -311,9 +311,9 @@ class Wallet extends BasicController {
             return {};
         }
 
-        vestingBalance.vesting = Utils.parseAsset(vestingBalance.vesting);
-        vestingBalance.delegated = Utils.parseAsset(vestingBalance.delegated);
-        vestingBalance.received = Utils.parseAsset(vestingBalance.received);
+        vestingBalance.vesting = Utils.parseAsset(vestingBalance.vesting).quantityRaw;
+        vestingBalance.delegated = Utils.parseAsset(vestingBalance.delegated).quantityRaw;
+        vestingBalance.received = Utils.parseAsset(vestingBalance.received).quantityRaw;
 
         const { quantityRaw: vestingInGolos } = await this.convertVestingToToken({
             vesting: vestingBalance.vesting,
