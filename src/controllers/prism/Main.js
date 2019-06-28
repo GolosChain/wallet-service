@@ -1,5 +1,6 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
+const Utils = require('../../utils/Utils');
 const TransferModel = require('../../models/Transfer');
 const DelegationModel = require('../../models/Delegation');
 const BalanceModel = require('../../models/Balance');
@@ -8,7 +9,6 @@ const VestingStat = require('../../models/VestingStat');
 const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
-const BigNum = core.types.BigNum;
 
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
@@ -194,8 +194,8 @@ class Main {
         type = 'delegate',
     }) {
         const delegationModel = await this._findOrCreateDelegationModel({ from, to, interestRate });
-        const { quantity: quantityDiff, sym } = this._parseAsset(quantity);
-        const { quantity: prevQuantity } = this._parseAsset(delegationModel.quantity);
+        const { quantity: quantityDiff, sym } = Utils.parseAsset(quantity);
+        const { quantity: prevQuantity } = Utils.parseAsset(delegationModel.quantity);
 
         let updatedSum;
         if (type === 'delegate') {
@@ -249,14 +249,14 @@ class Main {
         }
 
         const balance = await BalanceModel.findOne({ name: event.args.account });
-        const { sym } = this._parseAsset(event.args.balance);
+        const { sym } = Utils.parseAsset(event.args.balance);
         if (balance) {
             // Check balance of tokens listed in balance.balances array
             const neededSym = sym;
             let neededTokenId = null;
 
             for (let i = 0; i < balance.balances.length; i++) {
-                const { sym: tokenSym } = await this._parseAsset(balance.balances[i]);
+                const { sym: tokenSym } = await Utils.parseAsset(balance.balances[i]);
                 if (tokenSym === neededSym) {
                     neededTokenId = i;
                 }
@@ -303,7 +303,7 @@ class Main {
             return;
         }
 
-        const { sym } = await this._parseAsset(event.args.supply);
+        const { sym } = await Utils.parseAsset(event.args.supply);
         const tokenObject = await TokenModel.findOne({ sym });
 
         const newTokenInfo = {
@@ -333,7 +333,7 @@ class Main {
             return;
         }
 
-        const { sym } = await this._parseAsset(event.args.supply);
+        const { sym } = await Utils.parseAsset(event.args.supply);
         const newStats = {
             stat: event.args.supply,
             sym,
@@ -400,19 +400,6 @@ class Main {
                 vestingLogObject
             );
         }
-    }
-
-    _parseAsset(asset) {
-        if (!asset) {
-            throw new Error('Asset is not defined');
-        }
-        const [quantityRaw, sym] = asset.split(' ');
-        const quantity = new BigNum(quantityRaw);
-        return {
-            quantityRaw,
-            quantity,
-            sym,
-        };
     }
 }
 

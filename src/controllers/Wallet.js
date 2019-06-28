@@ -1,8 +1,7 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
 const Logger = core.utils.Logger;
-const BigNum = core.types.BigNum;
-const ParamsUtils = require('../utils/ParamsUtils');
+const Utils = require('../utils/Utils');
 
 const TransferModel = require('../models/Transfer');
 const DelegationModel = require('../models/Delegation');
@@ -15,24 +14,19 @@ const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
-    constructor(...args) {
-        super(...args);
-        this._paramsUtils = new ParamsUtils();
-    }
-
     async getDelegationState({ userId, direction = 'all' }) {
         const filter = {};
 
-        if (direction === 'in') {
-            filter.to = userId;
-        }
-
-        if (direction === 'out') {
+        if (direction !== 'in') {
             filter.from = userId;
         }
 
+        if (direction !== 'out') {
+            filter.to = userId;
+        }
+
         const delegations = await DelegationModel.find(
-            { isActual: true, ...filter },
+            { $and: [{ isActual: true }, { $or: [{ from: filter.from }, { to: filter.to }] }] },
             { _id: false, from: true, to: true, quantity: true, interestRate: true },
             { lean: true }
         );
@@ -91,7 +85,7 @@ class Wallet extends BasicController {
     }
 
     async getHistory(args) {
-        const params = await this._paramsUtils.extractArgumentList({
+        const params = await Utils.extractArgumentList({
             args,
             fields: ['sender', 'receiver', 'sequenceKey', 'limit', 'type'],
         });
@@ -186,7 +180,7 @@ class Wallet extends BasicController {
     }
 
     async filterAccountHistory(args) {
-        const params = await this._paramsUtils.extractArgumentList({
+        const params = await Utils.extractArgumentList({
             args,
             fields: ['account', 'from', 'limit', 'query'],
         });
@@ -262,7 +256,7 @@ class Wallet extends BasicController {
                         {
                             from: transfer.sender,
                             to: transfer.receiver,
-                            amount: this._formatQuantity(transfer.quantity),
+                            amount: Utils.formatQuantity(transfer.quantity),
                             memo: '{}',
                         },
                     ],
@@ -276,52 +270,45 @@ class Wallet extends BasicController {
         return result;
     }
 
-    async getBalance({ name, tokensList }) {
-        if (!name || typeof name !== 'string') {
-            throw { code: 809, message: 'getBalance: name must be non-empty string' };
-        }
-
-        const balanceObject = await BalanceModel.findOne({ name });
+    async getBalance({ userId, currencies, type }) {
+        const balanceObject = await BalanceModel.findOne({ name: userId });
 
         if (!balanceObject) {
             return {};
         }
 
         let res = {
-            name,
-            balances: [],
+            userId,
         };
 
         let tokensMap = {};
 
-        if (tokensList) {
-            if (!Array.isArray(tokensList)) {
-                Logger.warn('getBalance: invalid argument: tokens param must be array of strings');
-                throw {
-                    code: 805,
-                    message: 'getBalance: invalid argument: tokens param must be array of strings',
-                };
-            }
+        if (type !== 'liquid') {
+            const {
+                vesting: total,
+                delegated: outDelegate,
+                received: inDelegated,
+            } = await this._getVestingBalance({ account: userId });
 
-            for (const token of tokensList) {
-                if (typeof token !== 'string') {
-                    throw {
-                        code: 809,
-                        message: 'getBalance: any tokensList element must be a string!',
-                    };
-                }
-                tokensMap[token] = true;
-            }
+            res.vesting = { total, outDelegate, inDelegated };
         }
 
-        for (const tokenBalance of balanceObject.balances) {
-            if (tokensList) {
-                const sym = await this._paramsUtils.getAssetName(tokenBalance);
-                if (tokensMap[sym]) {
-                    res.balances.push(tokenBalance);
+        if (type !== 'vesting') {
+            res.liquid = {};
+            if (currencies.includes('all')) {
+                const allCurrencies = await TokenModel.find({});
+                for (const currency of allCurrencies) {
+                    tokensMap[currency.sym] = true;
                 }
-            } else {
-                res.balances.push(tokenBalance);
+            } else
+                for (const token of currencies) {
+                    tokensMap[token] = true;
+                }
+            for (const tokenBalance of balanceObject.balances) {
+                const { sym, quantityRaw } = await Utils.parseAsset(tokenBalance);
+                if (tokensMap[sym]) {
+                    res.liquid[sym] = quantityRaw;
+                }
             }
         }
 
@@ -338,32 +325,28 @@ class Wallet extends BasicController {
         return { stat: vestingStat.stat };
     }
 
-    async getVestingBalance({ account }) {
-        if (!account || typeof account !== 'string') {
-            throw { code: 809, message: 'getVestingBalance: account name must be a string!' };
-        }
-
-        if (account.length === 0) {
-            throw {
-                code: 810,
-                message: 'getVestingBalance: account name can not be empty string!',
-            };
-        }
-
+    async _getVestingBalance({ account }) {
         const vestingBalance = await VestingBalance.findOne({ account });
 
         if (!vestingBalance) {
             return {};
         }
 
-        const vestingInGolos = await this.convertVestingToToken({
+        vestingBalance.vesting = Utils.parseAsset(vestingBalance.vesting);
+        vestingBalance.delegated = Utils.parseAsset(vestingBalance.delegated);
+        vestingBalance.received = Utils.parseAsset(vestingBalance.received);
+
+        const { quantityRaw: vestingInGolos } = await this.convertVestingToToken({
             vesting: vestingBalance.vesting,
+            type: 'parsed',
         });
-        const delegatedInGolos = await this.convertVestingToToken({
+        const { quantityRaw: delegatedInGolos } = await this.convertVestingToToken({
             vesting: vestingBalance.delegated,
+            type: 'parsed',
         });
-        const receivedInGolos = await this.convertVestingToToken({
+        const { quantityRaw: receivedInGolos } = await this.convertVestingToToken({
             vesting: vestingBalance.received,
+            type: 'parsed',
         });
 
         return {
@@ -375,7 +358,7 @@ class Wallet extends BasicController {
     }
 
     async getVestingHistory(args) {
-        const params = await this._paramsUtils.extractArgumentList({
+        const params = await Utils.extractArgumentList({
             args,
             fields: ['account', 'sequenceKey', 'limit'],
         });
@@ -436,17 +419,18 @@ class Wallet extends BasicController {
     async _getVestingSupplyAndBalance() {
         const vestingStat = await this.getVestingInfo();
         const vestingBalance = await this.getBalance({
-            name: 'gls.vesting',
-            tokensList: ['GOLOS'],
+            userId: 'gls.vesting',
+            currencies: ['GOLOS'],
+            type: 'liquid',
         });
 
-        await this._paramsUtils.checkVestingStatAndBalance({
+        await Utils.checkVestingStatAndBalance({
             vestingBalance,
             vestingStat: vestingStat.stat,
         });
 
-        const balance = await this._paramsUtils.checkAsset(vestingBalance.balances[0]);
-        const supply = await this._paramsUtils.checkAsset(vestingStat.stat);
+        const balance = await Utils.checkAsset(vestingBalance.liquid.GOLOS);
+        const supply = await Utils.checkAsset(vestingStat.stat);
 
         return {
             balance: balance.amount,
@@ -455,37 +439,44 @@ class Wallet extends BasicController {
     }
 
     async convertVestingToToken(args) {
-        const params = await this._paramsUtils.extractArgumentList({
+        const params = await Utils.extractArgumentList({
             args,
-            fields: ['vesting'],
+            fields: ['vesting', 'type'],
         });
-        const { vesting } = params;
-        const { decs, amount } = await this._paramsUtils.checkAsset(vesting);
+        if (!params.type) {
+            params.type = 'string';
+        }
+        const { vesting, type } = params;
+        const { decs, amount } = await Utils.checkAsset(vesting);
 
-        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 6 });
+        await Utils.checkDecsValue({ decs, requiredValue: 6 });
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
-
-        return this._paramsUtils.convertAssetToString({
+        const resultString = Utils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * balance) / supply),
             decs: 3,
         });
+
+        if (type === 'string') {
+            return resultString;
+        }
+        return Utils.parseAsset(resultString);
     }
 
     async convertTokensToVesting(args) {
-        const params = await this._paramsUtils.extractArgumentList({
+        const params = await Utils.extractArgumentList({
             args,
             fields: ['tokens'],
         });
         const { tokens } = params;
-        const { decs, amount } = await this._paramsUtils.checkAsset(tokens);
+        const { decs, amount } = await Utils.checkAsset(tokens);
 
-        await this._paramsUtils.checkDecsValue({ decs, requiredValue: 3 });
+        await Utils.checkDecsValue({ decs, requiredValue: 3 });
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
 
-        return this._paramsUtils.convertAssetToString({
+        return Utils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * supply) / balance),
             decs: 6,
@@ -506,14 +497,6 @@ class Wallet extends BasicController {
         }
 
         return account;
-    }
-
-    // Converts transfers quantity data to asset string
-    // Like: "123.000 GLS"
-    _formatQuantity(quantity) {
-        return (
-            new BigNum(quantity.amount).shiftedBy(-quantity.decs).toString() + ' ' + quantity.sym
-        );
     }
 }
 
