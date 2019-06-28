@@ -190,7 +190,7 @@ class GenesisProcessor {
         const options = this._nats.subscriptionOptions();
 
         Logger.log(`Subscribe on seq: ${this._lastProcessedSeq + 1}`);
-        options.setMaxInFlight(100);
+        options.setMaxInFlight(50);
         options.setStartAtSequence(this._lastProcessedSeq + 1);
 
         this._subscription = this._nats.subscribe('GenesisData', options);
