@@ -1,33 +1,9 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
-const bignum = core.types.BigNum;
+const BigNum = core.types.BigNum;
 
-class ParamsUtils {
-    async extractSingleArgument({ args, fieldName }) {
-        if (typeof fieldName !== 'string') {
-            Logger.warn(`_extractSingleArgument: invalid argument ${fieldName}`);
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        let result;
-
-        if (args) {
-            if (Array.isArray(args)) {
-                result = args[0];
-            } else {
-                result = args[fieldName];
-            }
-        }
-
-        if (!result || typeof result !== 'string') {
-            Logger.warn('Wrong arguments');
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        return result;
-    }
-
-    async extractArgumentList({ args, fields }) {
+class Utils {
+    static async extractArgumentList({ args, fields }) {
         if (!Array.isArray(fields)) {
             Logger.warn('_extractArgumentList: invalid argument');
             throw { code: 805, message: 'Wrong arguments' };
@@ -64,7 +40,7 @@ class ParamsUtils {
         return result;
     }
 
-    checkAsset(asset) {
+    static checkAsset(asset) {
         if (typeof asset !== 'string') {
             return;
         }
@@ -84,36 +60,53 @@ class ParamsUtils {
         return { sym, amount, decs };
     }
 
-    convertAssetToString({ sym, amount, decs }) {
-        const divider = new bignum(10).pow(decs);
-        const leftPart = new bignum(amount).div(divider).toString();
+    static convertAssetToString({ sym, amount, decs }) {
+        const divider = new BigNum(10).pow(decs);
+        const leftPart = new BigNum(amount).div(divider).toString();
 
         return `${leftPart} ${sym}`;
     }
-    // convertion methods helpers
+    // conversion methods helpers
 
-    checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
+    static checkVestingStatAndBalance({ vestingBalance, vestingStat }) {
         if (!vestingStat) {
             Logger.error('convert: no records about vesting stats in base');
             throw { code: 811, message: 'Data is absent in base' };
         }
 
-        if (!vestingBalance.balances || !vestingBalance.balances.length) {
+        if (!vestingBalance.liquid || !vestingBalance.liquid.GOLOS) {
             Logger.error('convert: no GOLOS balance for gls.vesting account');
             throw { code: 811, message: 'Data is absent in base' };
         }
     }
 
-    checkDecsValue({ decs, requiredValue }) {
+    static checkDecsValue({ decs, requiredValue }) {
         if (decs !== requiredValue) {
             Logger.error(`convert: invalid argument ${decs}. decs must be equal ${requiredValue}`);
             throw { code: 805, message: 'Wrong arguments' };
         }
     }
 
-    getAssetName(asset) {
-        return asset.split(' ')[1];
+    static parseAsset(asset) {
+        if (!asset) {
+            throw new Error('Asset is not defined');
+        }
+        const [quantityRaw, sym] = asset.split(' ');
+        const quantity = new BigNum(asset);
+        return {
+            quantityRaw,
+            quantity,
+            sym,
+        };
+    }
+
+    // Converts transfers quantity data to asset string
+    // Like: "123.000 GLS"
+    static formatQuantity(quantity) {
+        return (
+            new BigNum(quantity.amount).shiftedBy(-quantity.decs).toString() + ' ' + quantity.sym
+        );
     }
 }
 
-module.exports = ParamsUtils;
+module.exports = Utils;
