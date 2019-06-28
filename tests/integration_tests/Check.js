@@ -136,7 +136,7 @@ class Check {
     }
 
     async getVestingBalance(args) {
-        let res = await this._walletTester.getVestingBalance(args);
+        let res = await this._walletTester._getVestingBalance(args);
         res.should.be.a('object');
 
         res.should.have.property('result');

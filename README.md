@@ -78,8 +78,9 @@ Golos_wallet -- сервис, который предоставляет удоб
 
 |  Параметр  |  Тип   | Обяз. | Описание                          |
 | :--------: | :----: | :---: | --------------------------------- |
-|    name    | string |  Да   | Имя пользователя                  |
-| tokensList | string |  нет  | Массив `sym` интересующих токенов |
+|   userId   | string |  Да   | Имя пользователя                  |
+| currencies | [string] |  нет  | Массив `sym` интересующих токенов. Указать `["all"]`, если нужны все |
+| type | string |  нет  | Тип токена: `liquid`, `vesting` или оба: `all` |
 
 **Пример :one::**
 
@@ -91,7 +92,7 @@ Golos_wallet -- сервис, который предоставляет удоб
     "jsonrpc": "2.0",
     "method": "getBalance",
     "params": {
-        "name": "destroyer"
+        "userId": "destroyer"
     }
 }
 ```
@@ -101,10 +102,26 @@ Golos_wallet -- сервис, который предоставляет удоб
 ```json
 {
     "jsonrpc": "2.0",
-    "id": 991579,
+    "id": 1,
     "result": {
-        "name": "destroyer",
-        "balances": ["107.005 GOLOS"]
+        "userId": "destroyer",
+        "vesting": {
+            "total": {
+                "GESTS": "2228760.240739 GOLOS",
+                "GOLOS": "2137.371"
+            },
+            "outDelegate": {
+                "GESTS": "0.000000 GOLOS",
+                "GOLOS": "0"
+            },
+            "inDelegated": {
+                "GESTS": "0.000000 GOLOS",
+                "GOLOS": "0"
+            }
+        },
+        "liquid": {
+            "GOLOS": "11.444"
+        }
     }
 }
 ```
@@ -117,8 +134,9 @@ Golos_wallet -- сервис, который предоставляет удоб
     "jsonrpc": "2.0",
     "method": "getBalance",
     "params": {
-        "name": "cyber.token",
-        "tokensList": ["ABCXXXX", "ABXXXXX"]
+        "userId": "cyber.token",
+        "currencies": ["ABCXXXX", "ABXXXXX"],
+        "type": "liquid"
     }
 }
 ```
@@ -130,20 +148,14 @@ Golos_wallet -- сервис, который предоставляет удоб
     "id": 1,
     "jsonrpc": "2.0",
     "result": {
-        "name": "cyber.token",
-        "balances": ["123.0024 ABXXXXX", "1000.000 ABCXXXX"]
+        "userId": "cyber.token",
+        "liquid": {
+            "ABCXXXX": "10.000",
+            "ABXXXXX": "11.000"
+         }
     }
 }
 ```
-
-**:x: Ошибки**
-
-| error code |                               message                               | Описание                                           |
-| :--------: | :-----------------------------------------------------------------: | -------------------------------------------------- |
-|    805     | getBalance: invalid argument: tokens param must be array of strings | Передан некорректный параметр `tokensList`         |
-|    809     |                 getBalance: name must be a string!                  | Передан некорректный параметр `name`               |
-|    809     |        getBalance: any tokensList element must be a string!         | Передан некорректный элемент массива `tokensList`  |
-|    810     |              getBalance: name can not be empty string!              | Передана пустая строка в качестве параметра `name` |
 
 ---
 
@@ -486,64 +498,6 @@ Golos_wallet -- сервис, который предоставляет удоб
 | error code | message | Описание |
 | :--------: | :-----: | -------- |
 
-
----
-
-### getVestingBalance
-
-**Запрос :arrow_right:**
-
-|     Процедура     | Авторизация  | Описание                                                                                              |
-| :---------------: | :----------: | ----------------------------------------------------------------------------------------------------- |
-| getVestingBalance | Не требуется | Получить информацию о состоянии вестинга конкретного пользователя: `vesting`, `delegated`, `received` |
-
-| Параметр |  Тип   | Обяз. | Описание         |
-| :------: | :----: | :---: | ---------------- |
-| account  | string |  Да   | Имя пользователя |
-
-Пример:
-
-Получим информацию о вестинге `testuser`:
-
-```json
-{
-    "jsonrpc": "2.0",
-    "id": 1,
-    "method": "getVestingBalance",
-    "params": {
-        "account": "tst3ekvfbcra"
-    }
-}
-```
-
-**:arrow_left: Ответ**
-
-Информация о вестинге для пользователя `testuser`
-
-```json
-{
-    "account": "tst3ekvfbcra",
-    "vesting": {
-        "GESTS": "20409.799260 GOLOS",
-        "GOLOS": "6.002 GOLOS"
-    },
-    "delegated": {
-        "GESTS": "0.000000 GOLOS",
-        "GOLOS": "0 GOLOS"
-    },
-    "received": {
-        "GESTS": "0.000000 GOLOS",
-        "GOLOS": "0 GOLOS"
-    }
-}
-```
-
-**:x: Ошибки**
-
-| error code |                         message                          | Описание                                              |
-| :--------: | :------------------------------------------------------: | ----------------------------------------------------- |
-|    809     |    getVestingBalance: account name must be a string!     | Передан некорректный параметр `account`               |
-|    810     | getVestingBalance: account name can not be empty string! | Передана пустая строка в качестве параметра `account` |
 
 ---
 

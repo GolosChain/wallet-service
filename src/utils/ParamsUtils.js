@@ -1,32 +1,8 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
-const bignum = core.types.BigNum;
+const BigNum = core.types.BigNum;
 
 class ParamsUtils {
-    async extractSingleArgument({ args, fieldName }) {
-        if (typeof fieldName !== 'string') {
-            Logger.warn(`_extractSingleArgument: invalid argument ${fieldName}`);
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        let result;
-
-        if (args) {
-            if (Array.isArray(args)) {
-                result = args[0];
-            } else {
-                result = args[fieldName];
-            }
-        }
-
-        if (!result || typeof result !== 'string') {
-            Logger.warn('Wrong arguments');
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        return result;
-    }
-
     async extractArgumentList({ args, fields }) {
         if (!Array.isArray(fields)) {
             Logger.warn('_extractArgumentList: invalid argument');
@@ -85,8 +61,8 @@ class ParamsUtils {
     }
 
     convertAssetToString({ sym, amount, decs }) {
-        const divider = new bignum(10).pow(decs);
-        const leftPart = new bignum(amount).div(divider).toString();
+        const divider = new BigNum(10).pow(decs);
+        const leftPart = new BigNum(amount).div(divider).toString();
 
         return `${leftPart} ${sym}`;
     }
@@ -98,7 +74,7 @@ class ParamsUtils {
             throw { code: 811, message: 'Data is absent in base' };
         }
 
-        if (!vestingBalance.balances || !vestingBalance.balances.length) {
+        if (!vestingBalance.liquid || !vestingBalance.liquid.GOLOS) {
             Logger.error('convert: no GOLOS balance for gls.vesting account');
             throw { code: 811, message: 'Data is absent in base' };
         }
@@ -111,8 +87,17 @@ class ParamsUtils {
         }
     }
 
-    getAssetName(asset) {
-        return asset.split(' ')[1];
+    parseAsset(asset) {
+        if (!asset) {
+            throw new Error('Asset is not defined');
+        }
+        const [quantityRaw, sym] = asset.split(' ');
+        const quantity = new BigNum(quantityRaw);
+        return {
+            quantityRaw,
+            quantity,
+            sym,
+        };
     }
 }
 

@@ -255,52 +255,45 @@ class Wallet extends BasicController {
         return result;
     }
 
-    async getBalance({ name, tokensList }) {
-        if (!name || typeof name !== 'string') {
-            throw { code: 809, message: 'getBalance: name must be non-empty string' };
-        }
-
-        const balanceObject = await BalanceModel.findOne({ name });
+    async getBalance({ userId, currencies, type }) {
+        const balanceObject = await BalanceModel.findOne({ name: userId });
 
         if (!balanceObject) {
             return {};
         }
 
         let res = {
-            name,
-            balances: [],
+            userId,
         };
 
         let tokensMap = {};
 
-        if (tokensList) {
-            if (!Array.isArray(tokensList)) {
-                Logger.warn('getBalance: invalid argument: tokens param must be array of strings');
-                throw {
-                    code: 805,
-                    message: 'getBalance: invalid argument: tokens param must be array of strings',
-                };
-            }
+        if (type !== 'liquid') {
+            const {
+                vesting: total,
+                delegated: outDelegate,
+                received: inDelegated,
+            } = await this._getVestingBalance({ account: userId });
 
-            for (const token of tokensList) {
-                if (typeof token !== 'string') {
-                    throw {
-                        code: 809,
-                        message: 'getBalance: any tokensList element must be a string!',
-                    };
-                }
-                tokensMap[token] = true;
-            }
+            res.vesting = { total, outDelegate, inDelegated };
         }
 
-        for (const tokenBalance of balanceObject.balances) {
-            if (tokensList) {
-                const sym = await this._paramsUtils.getAssetName(tokenBalance);
-                if (tokensMap[sym]) {
-                    res.balances.push(tokenBalance);
+        if (type !== 'vesting') {
+            res.liquid = {};
+            if (currencies.includes('all')) {
+                const allCurrencies = await TokenModel.find({});
+                for (const currency of allCurrencies) {
+                    tokensMap[currency.sym] = true;
                 }
-            } else {
-                res.balances.push(tokenBalance);
+            } else
+                for (const token of currencies) {
+                    tokensMap[token] = true;
+                }
+            for (const tokenBalance of balanceObject.balances) {
+                const { sym, quantityRaw } = await this._paramsUtils.parseAsset(tokenBalance);
+                if (tokensMap[sym]) {
+                    res.liquid[sym] = quantityRaw;
+                }
             }
         }
 
@@ -317,32 +310,28 @@ class Wallet extends BasicController {
         return { stat: vestingStat.stat };
     }
 
-    async getVestingBalance({ account }) {
-        if (!account || typeof account !== 'string') {
-            throw { code: 809, message: 'getVestingBalance: account name must be a string!' };
-        }
-
-        if (account.length === 0) {
-            throw {
-                code: 810,
-                message: 'getVestingBalance: account name can not be empty string!',
-            };
-        }
-
+    async _getVestingBalance({ account }) {
         const vestingBalance = await VestingBalance.findOne({ account });
 
         if (!vestingBalance) {
             return {};
         }
 
-        const vestingInGolos = await this.convertVestingToToken({
+        vestingBalance.vesting = this._paramsUtils.parseAsset(vestingBalance.vesting);
+        vestingBalance.delegated = this._paramsUtils.parseAsset(vestingBalance.delegated);
+        vestingBalance.received = this._paramsUtils.parseAsset(vestingBalance.received);
+
+        const { quantityRaw: vestingInGolos } = await this.convertVestingToToken({
             vesting: vestingBalance.vesting,
+            type: 'parsed',
         });
-        const delegatedInGolos = await this.convertVestingToToken({
+        const { quantityRaw: delegatedInGolos } = await this.convertVestingToToken({
             vesting: vestingBalance.delegated,
+            type: 'parsed',
         });
-        const receivedInGolos = await this.convertVestingToToken({
+        const { quantityRaw: receivedInGolos } = await this.convertVestingToToken({
             vesting: vestingBalance.received,
+            type: 'parsed',
         });
 
         return {
@@ -415,8 +404,9 @@ class Wallet extends BasicController {
     async _getVestingSupplyAndBalance() {
         const vestingStat = await this.getVestingInfo();
         const vestingBalance = await this.getBalance({
-            name: 'gls.vesting',
-            tokensList: ['GOLOS'],
+            userId: 'gls.vesting',
+            currencies: ['GOLOS'],
+            type: 'liquid',
         });
 
         await this._paramsUtils.checkVestingStatAndBalance({
@@ -424,7 +414,7 @@ class Wallet extends BasicController {
             vestingStat: vestingStat.stat,
         });
 
-        const balance = await this._paramsUtils.checkAsset(vestingBalance.balances[0]);
+        const balance = await this._paramsUtils.checkAsset(vestingBalance.liquid.GOLOS);
         const supply = await this._paramsUtils.checkAsset(vestingStat.stat);
 
         return {
@@ -436,20 +426,28 @@ class Wallet extends BasicController {
     async convertVestingToToken(args) {
         const params = await this._paramsUtils.extractArgumentList({
             args,
-            fields: ['vesting'],
+            fields: ['vesting', 'type'],
         });
-        const { vesting } = params;
+        if (!params.type) {
+            params.type = 'string';
+        }
+        const { vesting, type } = params;
         const { decs, amount } = await this._paramsUtils.checkAsset(vesting);
 
         await this._paramsUtils.checkDecsValue({ decs, requiredValue: 6 });
 
         const { balance, supply } = await this._getVestingSupplyAndBalance();
-
-        return this._paramsUtils.convertAssetToString({
+        const resultString = this._paramsUtils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round((amount * balance) / supply),
             decs: 3,
         });
+
+        if (type === 'string') {
+            return resultString;
+        } else {
+            return this._paramsUtils.parseAsset(resultString);
+        }
     }
 
     async convertTokensToVesting(args) {

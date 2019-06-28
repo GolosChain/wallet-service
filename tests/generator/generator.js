@@ -1,4 +1,4 @@
-const fs = require('fs');
+xconst fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv').config();
 const User = require('./User');
@@ -39,17 +39,17 @@ async function main() {
         await user.countUserTransfers();
         delete user._walletRPC;
     }
-    
+
     fs.writeFile(path.join(__dirname, '../Users.json'), JSON.stringify(users), function(error) {
         if (error) {
             throw error;
         }
     });
-    
+
     Logger.log(users);
     Logger.info('Generating transfers'); // 0 => 1
     Logger.info(`Sending tokens from ${users[0].username} to ${users[1].username}`);
-    
+
     for (let i = 0; i < 3; i++) {
         await users[0].transfer({
             to: users[1].username,
@@ -58,7 +58,7 @@ async function main() {
         });
         await delay(900);
     }
-    
+
     Logger.info(`Sending tokens from ${users[1].username} to ${users[0].username}`); // 2 => 0
     for (let i = 0; i < 2; i++) {
         await users[1].transfer({
@@ -68,7 +68,7 @@ async function main() {
         });
         await delay(900);
     }
-    
+
     Logger.info(`Sending tokens from ${users[2].username} to ${users[0].username}`); // 2 => 0
     for (let i = 0; i < 4; i++) {
         await users[2].transfer({
@@ -78,7 +78,7 @@ async function main() {
         });
         await delay(900);
     }
-    
+
     Logger.info('Sending some tokens to vesting'); // 1 => vesting => 1
     for (let i = 0; i < 2; i++) {
         await users[1].sendToVesting({

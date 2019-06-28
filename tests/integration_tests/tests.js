@@ -185,7 +185,7 @@ describe('getVestingInfo test', async () => {
     });
 });
 
-describe('getVestingBalance test', async () => {
+describe('_getVestingBalance test', async () => {
     it(`getVestingBalance: check vesting balance of ${users[1].username}`, async () => {
         await check.getVestingBalance({ account: users[1].username });
     });
