@@ -14,7 +14,7 @@ class Prism extends BasicService {
 
     async start() {
         const {
-            lastSequence,
+            lastBlockSequence,
             lastBlockTime,
             lastBlockNum,
         } = await this._getLastBlockTimeAndSequence();
@@ -24,7 +24,7 @@ class Prism extends BasicService {
             blockHandler: this._handleBlock.bind(this),
         });
         await subscriber.setLastBlockMetaData({
-            lastBlockSequence: lastSequence,
+            lastBlockSequence,
             lastBlockTime,
             lastBlockNum,
         });
@@ -35,12 +35,16 @@ class Prism extends BasicService {
     async _handleBlock(block) {
         try {
             const {
-                sequence: lastSequence,
+                sequence: lastBlockSequence,
                 blockTime: lastBlockTime,
                 blockNum: lastBlockNum,
             } = block;
 
-            await this._setLastBlockTimeAndSequence({ lastSequence, lastBlockTime, lastBlockNum });
+            await this._setLastBlockTimeAndSequence({
+                lastBlockSequence,
+                lastBlockTime,
+                lastBlockNum,
+            });
             await this._mainPrismController.disperse(block);
         } catch (error) {
             Logger.error('Cant disperse block:', error);
@@ -51,15 +55,20 @@ class Prism extends BasicService {
     async _getLastBlockTimeAndSequence() {
         return await ServiceMetaModel.findOne(
             {},
-            { _id: false, lastSequence: true, lastBlockTime: true, lastBlockNum: true },
+            {
+                _id: false,
+                lastBlockSequenceSequence: true,
+                lastBlockTime: true,
+                lastBlockNum: true,
+            },
             { lean: true }
         );
     }
 
-    async _setLastBlockTimeAndSequence({ lastSequence, lastBlockTime, lastBlockNum }) {
+    async _setLastBlockTimeAndSequence({ lastBlockSequence, lastBlockTime, lastBlockNum }) {
         await ServiceMetaModel.updateOne(
             {},
-            { $set: { lastSequence, lastBlockNum, lastBlockTime } }
+            { $set: { lastBlockSequence, lastBlockNum, lastBlockTime } }
         );
     }
 }

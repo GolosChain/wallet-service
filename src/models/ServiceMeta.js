@@ -2,7 +2,7 @@ const core = require('gls-core-service');
 const MongoDB = core.services.MongoDB;
 
 module.exports = MongoDB.makeModel('ServiceMeta', {
-    lastSequence: {
+    lastBlockSequence: {
         type: Number,
         default: 0,
     },
