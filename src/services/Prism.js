@@ -13,25 +13,34 @@ class Prism extends BasicService {
     }
 
     async start() {
-        const { lastSequence, lastBlockTime } = await this._getLastBlockTimeAndSequence();
+        const {
+            lastSequence,
+            lastBlockTime,
+            lastBlockNum,
+        } = await this._getLastBlockTimeAndSequence();
 
         const subscriber = new BlockSubscribe({
-            lastSequence,
-            lastTime: lastBlockTime,
             onlyIrreversible: true,
+            blockHandler: this._handleBlock.bind(this),
         });
-
-        subscriber.eachBlock(this._handleBlock.bind(this));
+        await subscriber.setLastBlockMetaData({
+            lastBlockSequence: lastSequence,
+            lastBlockTime,
+            lastBlockNum,
+        });
 
         await subscriber.start();
     }
 
     async _handleBlock(block) {
         try {
-            const lastSequence = block.sequence;
-            const lastBlockTime = block.blockTime;
+            const {
+                sequence: lastSequence,
+                blockTime: lastBlockTime,
+                blockNum: lastBlockNum,
+            } = block;
 
-            await this._setLastBlockTimeAndSequence({ lastSequence, lastBlockTime });
+            await this._setLastBlockTimeAndSequence({ lastSequence, lastBlockTime, lastBlockNum });
             await this._mainPrismController.disperse(block);
         } catch (error) {
             Logger.error('Cant disperse block:', error);
@@ -42,13 +51,16 @@ class Prism extends BasicService {
     async _getLastBlockTimeAndSequence() {
         return await ServiceMetaModel.findOne(
             {},
-            { _id: false, lastSequence: true, lastBlockTime: true },
+            { _id: false, lastSequence: true, lastBlockTime: true, lastBlockNum: true },
             { lean: true }
         );
     }
 
-    async _setLastBlockTimeAndSequence({ lastSequence, lastBlockTime }) {
-        await ServiceMetaModel.updateOne({}, { $set: { lastSequence, lastBlockTime } });
+    async _setLastBlockTimeAndSequence({ lastSequence, lastBlockTime, lastBlockNum }) {
+        await ServiceMetaModel.updateOne(
+            {},
+            { $set: { lastSequence, lastBlockNum, lastBlockTime } }
+        );
     }
 }
 

@@ -250,12 +250,6 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ userId, currencies, type }) {
-        const balanceObject = await BalanceModel.findOne({ name: userId });
-
-        if (!balanceObject) {
-            return {};
-        }
-
         let res = {
             userId,
         };
@@ -273,20 +267,25 @@ class Wallet extends BasicController {
         }
 
         if (type !== 'vesting') {
-            res.liquid = {};
-            if (currencies.includes('all')) {
-                const allCurrencies = await TokenModel.find({});
-                for (const currency of allCurrencies) {
-                    tokensMap[currency.sym] = true;
+            const balanceObject = await BalanceModel.findOne({ name: userId });
+
+            if (balanceObject) {
+                res.liquid = {};
+                if (currencies.includes('all')) {
+                    const allCurrencies = await TokenModel.find({});
+                    for (const currency of allCurrencies) {
+                        tokensMap[currency.sym] = true;
+                    }
+                } else {
+                    for (const token of currencies) {
+                        tokensMap[token] = true;
+                    }
                 }
-            } else
-                for (const token of currencies) {
-                    tokensMap[token] = true;
-                }
-            for (const tokenBalance of balanceObject.balances) {
-                const { sym, quantityRaw } = await Utils.parseAsset(tokenBalance);
-                if (tokensMap[sym]) {
-                    res.liquid[sym] = quantityRaw;
+                for (const tokenBalance of balanceObject.balances) {
+                    const { sym, quantityRaw } = await Utils.parseAsset(tokenBalance);
+                    if (tokensMap[sym]) {
+                        res.liquid[sym] = quantityRaw;
+                    }
                 }
             }
         }
