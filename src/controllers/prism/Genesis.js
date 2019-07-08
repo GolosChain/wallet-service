@@ -11,6 +11,7 @@ class Genesis {
     constructor() {
         this._isDone = false;
 
+        this._alreadyTypes = {};
         this._usersBulk = new BulkSaver(UserMetaModel, 'profiles');
         this._balancesBulk = new BulkSaver(BalanceModel, 'balances');
         this._balancesVestingBulk = new BulkSaver(VestingBalanceModel, 'balances_vesting');
@@ -37,6 +38,15 @@ class Genesis {
             case 'balance':
                 await this._handleBalance(data);
                 return true;
+            case 'delegate':
+                // TODO: Need process
+                // Structure example:
+                // { delegator: 'cd4bcmmawqo4',
+                //   delegatee: 'eqmdozwshex2',
+                //   quantity: '11038.944203 GOLOS',
+                //   interest_rate: 0,
+                //   min_delegation_time: '2018-08-24T13:37:51.000' }
+                return true;
             case 'domain':
             case 'message':
             case 'pin':
@@ -44,8 +54,11 @@ class Genesis {
                 // Skip
                 return true;
             default:
+                if (!this._alreadyTypes[type]) {
+                    this._alreadyTypes[type] = true;
+                    console.log('NEW DATA TYPE:', type, data);
+                }
                 // Do nothing
-                console.log('NEW DATA:', type, data);
                 return false;
         }
     }
