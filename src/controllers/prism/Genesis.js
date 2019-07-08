@@ -95,6 +95,11 @@ class Genesis {
             timestamp: new Date(data.time + 'Z'),
         };
 
+        if (!data.to || !data.receiver) {
+            Logger.warn('Invalid transfer data:', data);
+            return;
+        }
+
         this._transfersBulk.addEntry(transferObject);
     }
 
