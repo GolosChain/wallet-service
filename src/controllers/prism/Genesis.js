@@ -95,7 +95,7 @@ class Genesis {
             timestamp: new Date(data.time + 'Z'),
         };
 
-        if (!data.to || !data.receiver) {
+        if (!data.to || !data.from) {
             Logger.warn('Invalid transfer data:', data);
             return;
         }
