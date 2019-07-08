@@ -1,4 +1,4 @@
-version: '3.6'
+version: '2.2'
 services:
   wallet-mongo:
     container_name: wallet-mongo
@@ -25,6 +25,9 @@ services:
       - $GLS_CONNECTOR_HOST:$GLS_CONNECTOR_PORT:$GLS_CONNECTOR_PORT
     env_file:
       - .env
+    cpus: 2
+    mem_limit: 1024m
+
 
 volumes:
   wallet-mongodb-vol:
