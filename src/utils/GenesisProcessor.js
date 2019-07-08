@@ -264,7 +264,7 @@ class GenesisProcessor {
 
     async _handleData(type, data, seq) {
         metrics.inc('genesis_entity_received', { type });
-        metrics.inc(`genesis_entity_received_type_${type}`);
+        metrics.inc(`genesis_entity_received_type_${type.replace(/[^\w]+/, '_')}`);
 
         if (this._isDataEndReceived) {
             throw new Error('Data received after "dataend" event');
