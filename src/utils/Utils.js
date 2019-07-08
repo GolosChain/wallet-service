@@ -113,8 +113,6 @@ class Utils {
     }
 
     static async convertTokensToVesting({ tokens }) {
-        // todo: migrate this to Utils
-
         const { decs, amount } = await Utils.checkAsset(tokens);
 
         await Utils.checkDecsValue({ decs, requiredValue: 3 });
@@ -139,7 +137,7 @@ class Utils {
     }
 
     static async getBalance({ userId, currencies, type }) {
-        let res = {
+        const result = {
             userId,
         };
 
@@ -152,16 +150,21 @@ class Utils {
                 received: inDelegated,
             } = await Utils.getVestingBalance({ account: userId });
 
-            res.vesting = { total, outDelegate, inDelegated };
+            result.vesting = { total, outDelegate, inDelegated };
         }
 
         if (type !== 'vesting') {
             const balanceObject = await BalanceModel.findOne({ name: userId });
 
             if (balanceObject) {
-                res.liquid = {};
+                result.liquid = {};
                 if (currencies.includes('all')) {
-                    const allCurrencies = await TokenModel.find({});
+                    const allCurrencies = await TokenModel.find(
+                        {},
+                        { _id: false, sym: true },
+                        { lean: true }
+                    );
+
                     for (const currency of allCurrencies) {
                         tokensMap[currency.sym] = true;
                     }
@@ -173,13 +176,13 @@ class Utils {
                 for (const tokenBalance of balanceObject.balances) {
                     const { sym, quantityRaw } = await Utils.parseAsset(tokenBalance);
                     if (tokensMap[sym]) {
-                        res.liquid[sym] = quantityRaw;
+                        result.liquid[sym] = quantityRaw;
                     }
                 }
             }
         }
 
-        return res;
+        return result;
     }
 
     static async getVestingSupplyAndBalance() {
@@ -237,16 +240,17 @@ class Utils {
     }
 
     static async convertVestingToToken({ vesting, type }) {
-        // todo: migrate this to Utils
-
         const { decs, amount } = await Utils.checkAsset(vesting);
 
         await Utils.checkDecsValue({ decs, requiredValue: 6 });
 
         const { balance, supply } = await Utils.getVestingSupplyAndBalance();
+        const calculatedAmount = BigNum(amount)
+            .mul(BigNum(balance))
+            .div(BigNum(supply));
         const resultString = Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: Math.round((amount * balance) / supply),
+            amount: Math.round(calculatedAmount.toString()),
             decs: 3,
         });
 

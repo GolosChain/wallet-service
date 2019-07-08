@@ -130,7 +130,7 @@ class Main {
 
         await transfer.save();
 
-        Logger.info('Created transfer object: ', JSON.stringify(transferObject, null, 4));
+        Logger.info('Created transfer object: ', transferObject.toObject());
     }
 
     async _createRewardEvent({
@@ -159,13 +159,16 @@ class Main {
         };
 
         // todo: uncomment when stats will work properly
-        // if (isVesting) {
-        //     rewardObject.token.type = 'vesting';
-        //     rewardObject.quantity = await Utils.convertTokensToVesting({ tokens: quantityRaw });
-        // } else {
-        rewardObject.token.type = 'liquid';
-        rewardObject.quantity = quantityRaw;
-        // }
+        if (isVesting) {
+            rewardObject.token.type = 'vesting';
+            rewardObject.quantity = quantityRaw;
+
+            // todo: use this when vesting stat works properly
+            // rewardObject.quantity = await Utils.convertTokensToVesting({ tokens: quantityRaw });
+        } else {
+            rewardObject.token.type = 'liquid';
+            rewardObject.quantity = quantityRaw;
+        }
 
         const reward = new RewardModel(rewardObject);
 
@@ -175,10 +178,8 @@ class Main {
     }
 
     async _handleTransferOrReward({ trxData, sender, receiver, quantity, memo }) {
-        const parsedMemo = this._parseMemo(memo);
-        if (!parsedMemo) {
-            return await this._createTransferEvent({ trxData, sender, quantity, receiver, memo });
-        } else {
+        const parsedMemo = this._parseRewardMemo(memo);
+        if (parsedMemo) {
             return await this._createRewardEvent({
                 trxData,
                 sender,
@@ -187,9 +188,10 @@ class Main {
                 parsedMemo,
             });
         }
+        return await this._createTransferEvent({ trxData, sender, quantity, receiver, memo });
     }
 
-    _parseMemo(memo) {
+    _parseRewardMemo(memo) {
         const pattern = /((?<isVesting>send to: )(?<user>.*);|.*?) *(?<type>[\S]*).*(?<contentType>post|comment) (?<author>.*):(?<permlink>.*)/;
         const match = memo.match(pattern);
         if (match) {

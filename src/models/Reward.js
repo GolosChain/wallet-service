@@ -62,10 +62,6 @@ module.exports = MongoDB.makeModel(
                 fields: {
                     sender: 1,
                     receiver: 1,
-                    _id: -1,
-                },
-                options: {
-                    unique: false,
                 },
             },
         ],
