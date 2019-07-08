@@ -147,7 +147,12 @@ class Genesis {
     }
 
     getQueueLength() {
-        return this._usersBulk.getQueueLength();
+        return (
+            this._usersBulk.getQueueLength() +
+            this._balancesBulk.getQueueLength() +
+            this._balancesVestingBulk.getQueueLength() +
+            this._transfersBulk.getQueueLength()
+        );
     }
 }
 
