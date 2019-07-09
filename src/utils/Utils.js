@@ -121,10 +121,13 @@ class Utils {
         const base = new BigNum(amount);
         const multiplier = new BigNum(supply);
         const divider = new BigNum(balance);
-        const calculatedAmount = base.times(multiplier).div(divider);
+        const calculatedAmount = base
+            .times(multiplier)
+            .div(divider)
+            .dp(0);
         return Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: Math.round(calculatedAmount.toString()),
+            amount: calculatedAmount.toString(),
             decs: 6,
         });
     }
@@ -251,10 +254,10 @@ class Utils {
         const base = new BigNum(amount);
         const multiplier = new BigNum(balance);
         const divider = new BigNum(supply);
-        const calculatedAmount = base.times(multiplier).div(divider);
+        const calculatedAmount = base.times(multiplier).div(divider.dp(0));
         const resultString = Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: Math.round(calculatedAmount.toString()),
+            amount: calculatedAmount.toString(),
             decs: 3,
         });
 
