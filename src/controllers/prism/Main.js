@@ -398,7 +398,6 @@ class Main {
         // Ensure given event is stat event
         // TODO: Add correct `event.code` check, when it'll be stable...
         if (!(event.event === 'stat')) {
-            console.log(event.event);
             return;
         }
 
