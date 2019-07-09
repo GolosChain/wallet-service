@@ -1,6 +1,5 @@
 const core = require('gls-core-service');
-const { Logger, metrics } = core.utils;
-const BulkSaver = require('../../utils/BulkSaver');
+const { Logger, metrics, BulkSaver } = core.utils;
 const UserMetaModel = require('../../models/UserMeta');
 const BalanceModel = require('../../models/Balance');
 const VestingBalanceModel = require('../../models/VestingBalance');
