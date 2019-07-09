@@ -121,7 +121,11 @@ class Utils {
 
         return Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: Math.round((amount * supply) / balance),
+            amount: Utils.calculateConvertAmount({
+                baseRaw: amount,
+                multiplierRaw: supply,
+                dividerRaw: balance,
+            }),
             decs: 6,
         });
     }
@@ -245,12 +249,13 @@ class Utils {
         await Utils.checkDecsValue({ decs, requiredValue: 6 });
 
         const { balance, supply } = await Utils.getVestingSupplyAndBalance();
-        const calculatedAmount = BigNum(amount)
-            .mul(BigNum(balance))
-            .div(BigNum(supply));
         const resultString = Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: Math.round(calculatedAmount.toString()),
+            amount: Utils.calculateConvertAmount({
+                baseRaw: amount,
+                multiplierRaw: balance,
+                dividerRaw: supply,
+            }),
             decs: 3,
         });
 
@@ -258,6 +263,18 @@ class Utils {
             return resultString;
         }
         return Utils.parseAsset(resultString);
+    }
+
+    static calculateConvertAmount({ baseRaw, multiplierRaw, dividerRaw }) {
+        const base = new BigNum(baseRaw);
+        const multiplier = new BigNum(multiplierRaw);
+        const divider = new BigNum(dividerRaw);
+
+        return base
+            .times(multiplier)
+            .div(divider)
+            .dp(0)
+            .toString();
     }
 }
 
