@@ -118,10 +118,13 @@ class Utils {
         await Utils.checkDecsValue({ decs, requiredValue: 3 });
 
         const { balance, supply } = await Utils.getVestingSupplyAndBalance();
-
+        const base = new BigNum(amount);
+        const multiplier = new BigNum(supply);
+        const divider = new BigNum(balance);
+        const calculatedAmount = base.times(multiplier).div(divider);
         return Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: Math.round((amount * supply) / balance),
+            amount: Math.round(calculatedAmount.toString()),
             decs: 6,
         });
     }
@@ -245,9 +248,10 @@ class Utils {
         await Utils.checkDecsValue({ decs, requiredValue: 6 });
 
         const { balance, supply } = await Utils.getVestingSupplyAndBalance();
-        const calculatedAmount = BigNum(amount)
-            .mul(BigNum(balance))
-            .div(BigNum(supply));
+        const base = new BigNum(amount);
+        const multiplier = new BigNum(balance);
+        const divider = new BigNum(supply);
+        const calculatedAmount = base.times(multiplier).div(divider);
         const resultString = Utils.convertAssetToString({
             sym: 'GOLOS',
             amount: Math.round(calculatedAmount.toString()),
