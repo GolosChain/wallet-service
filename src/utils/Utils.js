@@ -118,16 +118,14 @@ class Utils {
         await Utils.checkDecsValue({ decs, requiredValue: 3 });
 
         const { balance, supply } = await Utils.getVestingSupplyAndBalance();
-        const base = new BigNum(amount);
-        const multiplier = new BigNum(supply);
-        const divider = new BigNum(balance);
-        const calculatedAmount = base
-            .times(multiplier)
-            .div(divider)
-            .dp(0);
+
         return Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: calculatedAmount.toString(),
+            amount: Utils.calculateConvertAmount({
+                baseRaw: amount,
+                multiplierRaw: supply,
+                dividerRaw: balance,
+            }),
             decs: 6,
         });
     }
@@ -251,16 +249,13 @@ class Utils {
         await Utils.checkDecsValue({ decs, requiredValue: 6 });
 
         const { balance, supply } = await Utils.getVestingSupplyAndBalance();
-        const base = new BigNum(amount);
-        const multiplier = new BigNum(balance);
-        const divider = new BigNum(supply);
-        const calculatedAmount = base
-            .times(multiplier)
-            .div(divider)
-            .dp(0);
         const resultString = Utils.convertAssetToString({
             sym: 'GOLOS',
-            amount: calculatedAmount.toString(),
+            amount: Utils.calculateConvertAmount({
+                baseRaw: amount,
+                multiplierRaw: balance,
+                dividerRaw: supply,
+            }),
             decs: 3,
         });
 
@@ -268,6 +263,18 @@ class Utils {
             return resultString;
         }
         return Utils.parseAsset(resultString);
+    }
+
+    static calculateConvertAmount({ baseRaw, multiplierRaw, dividerRaw }) {
+        const base = new BigNum(baseRaw);
+        const multiplier = new BigNum(multiplierRaw);
+        const divider = new BigNum(dividerRaw);
+
+        return base
+            .times(multiplier)
+            .div(divider)
+            .dp(0)
+            .toString();
     }
 }
 
