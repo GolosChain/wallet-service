@@ -254,7 +254,10 @@ class Utils {
         const base = new BigNum(amount);
         const multiplier = new BigNum(balance);
         const divider = new BigNum(supply);
-        const calculatedAmount = base.times(multiplier).div(divider.dp(0));
+        const calculatedAmount = base
+            .times(multiplier)
+            .div(divider)
+            .dp(0);
         const resultString = Utils.convertAssetToString({
             sym: 'GOLOS',
             amount: calculatedAmount.toString(),
