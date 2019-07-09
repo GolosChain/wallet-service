@@ -8,5 +8,5 @@ module.exports = {
     GLS_CONTENT_PREVIEW_LENGTH: Number(env.GLS_CONTENT_PREVIEW_LENGTH) || 200,
     GLS_PRISM_CONNECT: env.GLS_PRISM_CONNECT,
     GLS_LOGS_ON: env.GLS_LOGS_ON === 'true',
-    GLS_SKIP_GENESIS: Boolean(env.GLS_SKIP_GENESIS) && GLS_SKIP_GENESIS !== 'false',
+    GLS_SKIP_GENESIS: Boolean(env.GLS_SKIP_GENESIS) && env.GLS_SKIP_GENESIS !== 'false',
 };
