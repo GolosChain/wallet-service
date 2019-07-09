@@ -55,7 +55,7 @@ class Genesis {
             default:
                 if (!this._alreadyTypes[type]) {
                     this._alreadyTypes[type] = true;
-                    console.log('NEW DATA TYPE:', type, data);
+                    Logger.log('New unknown genesis data:', type, data);
                 }
                 // Do nothing
                 return false;
@@ -105,13 +105,15 @@ class Genesis {
     async _handleCurrency(data) {
         const [, sym] = data.supply.split(' ');
 
-        await TokenModel.findOneAndUpdate(
+        await TokenModel.updateOne(
             { sym },
             {
-                sym,
-                issuer: data.issuer,
-                supply: data.supply,
-                max_supply: data.max_supply,
+                $set: {
+                    sym,
+                    issuer: data.issuer,
+                    supply: data.supply,
+                    max_supply: data.max_supply,
+                },
             },
             {
                 upsert: true,
