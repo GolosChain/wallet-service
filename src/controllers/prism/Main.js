@@ -130,7 +130,7 @@ class Main {
 
         await transfer.save();
 
-        Logger.info('Created transfer object: ', transferObject.toObject());
+        Logger.info('Created transfer object: ', transfer.toObject());
     }
 
     async _createRewardEvent({
