@@ -145,6 +145,11 @@ class Genesis {
         }
     }
 
+    async finish() {
+        // Do nothing
+        // GenesisProcessor ожидает что у GenesisController есть метод finish
+    }
+
     getQueueLength() {
         return (
             this._usersBulk.getQueueLength() +
