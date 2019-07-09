@@ -48,7 +48,6 @@ class Main {
                         await this._handleEvents({ events: action.events });
                         break;
                     default:
-                        break;
                 }
             }
 
