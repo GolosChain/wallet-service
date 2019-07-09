@@ -197,6 +197,7 @@ class Main {
         if (match) {
             return match.groups;
         }
+        return null;
     }
 
     async _handleChangeVestAction(action, trxData) {
