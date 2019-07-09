@@ -5,11 +5,8 @@ const Utils = require('../utils/Utils');
 
 const TransferModel = require('../models/Transfer');
 const DelegationModel = require('../models/Delegation');
-const BalanceModel = require('../models/Balance');
 const TokenModel = require('../models/Token');
 
-const VestingStat = require('../models/VestingStat');
-const VestingBalance = require('../models/VestingBalance');
 const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
@@ -250,89 +247,11 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ userId, currencies, type }) {
-        let res = {
-            userId,
-        };
-
-        let tokensMap = {};
-
-        if (type !== 'liquid') {
-            const {
-                vesting: total,
-                delegated: outDelegate,
-                received: inDelegated,
-            } = await this._getVestingBalance({ account: userId });
-
-            res.vesting = { total, outDelegate, inDelegated };
-        }
-
-        if (type !== 'vesting') {
-            const balanceObject = await BalanceModel.findOne({ name: userId });
-
-            if (balanceObject) {
-                res.liquid = {};
-                if (currencies.includes('all')) {
-                    const allCurrencies = await TokenModel.find({});
-                    for (const currency of allCurrencies) {
-                        tokensMap[currency.sym] = true;
-                    }
-                } else {
-                    for (const token of currencies) {
-                        tokensMap[token] = true;
-                    }
-                }
-                for (const tokenBalance of balanceObject.balances) {
-                    const { sym, quantityRaw } = await Utils.parseAsset(tokenBalance);
-                    if (tokensMap[sym]) {
-                        res.liquid[sym] = quantityRaw;
-                    }
-                }
-            }
-        }
-
-        return res;
+        return await Utils.getBalance({ userId, currencies, type });
     }
 
     async getVestingInfo() {
-        const vestingStat = await VestingStat.findOne();
-
-        if (!vestingStat) {
-            return {};
-        }
-
-        return { stat: vestingStat.stat };
-    }
-
-    async _getVestingBalance({ account }) {
-        const vestingBalance = await VestingBalance.findOne({ account });
-
-        if (!vestingBalance) {
-            return {};
-        }
-
-        vestingBalance.vesting = Utils.parseAsset(vestingBalance.vesting).quantityRaw;
-        vestingBalance.delegated = Utils.parseAsset(vestingBalance.delegated).quantityRaw;
-        vestingBalance.received = Utils.parseAsset(vestingBalance.received).quantityRaw;
-
-        const { quantityRaw: vestingInGolos } = await this.convertVestingToToken({
-            vesting: vestingBalance.vesting,
-            type: 'parsed',
-        });
-        const { quantityRaw: delegatedInGolos } = await this.convertVestingToToken({
-            vesting: vestingBalance.delegated,
-            type: 'parsed',
-        });
-        const { quantityRaw: receivedInGolos } = await this.convertVestingToToken({
-            vesting: vestingBalance.received,
-            type: 'parsed',
-        });
-
-        return {
-            account,
-            vesting: { GESTS: vestingBalance.vesting, GOLOS: vestingInGolos },
-            delegated: { GESTS: vestingBalance.delegated, GOLOS: delegatedInGolos },
-            received: { GESTS: vestingBalance.received, GOLOS: receivedInGolos },
-        };
+        return await Utils.getVestingInfo();
     }
 
     async getVestingHistory(args) {
@@ -394,71 +313,12 @@ class Wallet extends BasicController {
         return { items, sequenceKey: newSequenceKey };
     }
 
-    async _getVestingSupplyAndBalance() {
-        const vestingStat = await this.getVestingInfo();
-        const vestingBalance = await this.getBalance({
-            userId: 'gls.vesting',
-            currencies: ['GOLOS'],
-            type: 'liquid',
-        });
-
-        await Utils.checkVestingStatAndBalance({
-            vestingBalance,
-            vestingStat: vestingStat.stat,
-        });
-
-        const balance = await Utils.checkAsset(vestingBalance.liquid.GOLOS);
-        const supply = await Utils.checkAsset(vestingStat.stat);
-
-        return {
-            balance: balance.amount,
-            supply: supply.amount,
-        };
+    async convertVestingToToken({ vesting, type }) {
+        return await Utils.convertVestingToToken({ vesting, type });
     }
 
-    async convertVestingToToken(args) {
-        const params = await Utils.extractArgumentList({
-            args,
-            fields: ['vesting', 'type'],
-        });
-        if (!params.type) {
-            params.type = 'string';
-        }
-        const { vesting, type } = params;
-        const { decs, amount } = await Utils.checkAsset(vesting);
-
-        await Utils.checkDecsValue({ decs, requiredValue: 6 });
-
-        const { balance, supply } = await this._getVestingSupplyAndBalance();
-        const resultString = Utils.convertAssetToString({
-            sym: 'GOLOS',
-            amount: Math.round((amount * balance) / supply),
-            decs: 3,
-        });
-
-        if (type === 'string') {
-            return resultString;
-        }
-        return Utils.parseAsset(resultString);
-    }
-
-    async convertTokensToVesting(args) {
-        const params = await Utils.extractArgumentList({
-            args,
-            fields: ['tokens'],
-        });
-        const { tokens } = params;
-        const { decs, amount } = await Utils.checkAsset(tokens);
-
-        await Utils.checkDecsValue({ decs, requiredValue: 3 });
-
-        const { balance, supply } = await this._getVestingSupplyAndBalance();
-
-        return Utils.convertAssetToString({
-            sym: 'GOLOS',
-            amount: Math.round((amount * supply) / balance),
-            decs: 6,
-        });
+    async convertTokensToVesting({ tokens }) {
+        return await Utils.convertTokensToVesting({ tokens });
     }
 
     _checkNameString(name) {

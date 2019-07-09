@@ -2,6 +2,7 @@ const core = require('gls-core-service');
 const Logger = core.utils.Logger;
 const Utils = require('../../utils/Utils');
 const TransferModel = require('../../models/Transfer');
+const RewardModel = require('../../models/Reward');
 const DelegationModel = require('../../models/Delegation');
 const BalanceModel = require('../../models/Balance');
 const TokenModel = require('../../models/Token');
@@ -35,6 +36,10 @@ class Main {
                     case 'transfer':
                     case 'payment':
                         await this._handleTransferAction(action, trxData);
+                        break;
+                    case 'bulkpayment':
+                    case 'bulktransfer':
+                        await this._handleBulkTransferAction(action, trxData);
                         break;
                     case 'issue':
                         await this._handleEvents({ events: action.events });
@@ -85,26 +90,114 @@ class Main {
         }
     }
 
-    async _handleTransferAction(action, trxData) {
-        if (!action.args) {
-            throw { code: 812, message: 'Invalid action object' };
-        }
+    async _handleBulkTransferAction(action, trxData) {
+        const sender = action.args.from;
 
-        const transferObject = {
-            ...trxData,
+        for (const { to: receiver, quantity, memo } of action.args.recipients) {
+            await this._handleTransferOrReward({
+                trxData,
+                sender,
+                receiver,
+                quantity,
+                memo,
+            });
+        }
+        await this._handleEvents({ events: action.events });
+    }
+
+    async _handleTransferAction(action, trxData) {
+        await this._handleTransferOrReward({
+            trxData,
             sender: action.args.from,
             receiver: action.args.to,
             quantity: action.args.quantity,
             memo: action.args.memo,
+        });
+
+        await this._handleEvents({ events: action.events });
+    }
+
+    async _createTransferEvent({ trxData, sender, receiver, quantity, memo }) {
+        const transferObject = {
+            ...trxData,
+            sender,
+            receiver,
+            quantity,
+            memo,
         };
 
         const transfer = new TransferModel(transferObject);
 
         await transfer.save();
 
-        Logger.info('Created transfer object: ', transferObject);
+        Logger.info('Created transfer object: ', transferObject.toObject());
+    }
 
-        await this._handleEvents({ events: action.events });
+    async _createRewardEvent({
+        trxData,
+        sender,
+        receiver: receiverOriginal,
+        quantity: quantityString,
+        parsedMemo: { isVesting, user, type, contentType, author, permlink },
+    }) {
+        const receiver = user || receiverOriginal;
+        const { quantityRaw, quantity, sym } = Utils.parseAsset(quantityString);
+
+        const rewardObject = {
+            ...trxData,
+            sender,
+            receiver,
+            type,
+            contentType,
+            contentId: {
+                author,
+                permlink,
+            },
+            token: {
+                sym,
+            },
+        };
+
+        // todo: uncomment when stats will work properly
+        if (isVesting) {
+            rewardObject.token.type = 'vesting';
+            rewardObject.quantity = quantityRaw;
+
+            // todo: use this when vesting stat works properly
+            // rewardObject.quantity = await Utils.convertTokensToVesting({ tokens: quantityRaw });
+        } else {
+            rewardObject.token.type = 'liquid';
+            rewardObject.quantity = quantityRaw;
+        }
+
+        const reward = new RewardModel(rewardObject);
+
+        await reward.save();
+
+        Logger.info('Created reward object: ', JSON.stringify(rewardObject, null, 4));
+    }
+
+    async _handleTransferOrReward({ trxData, sender, receiver, quantity, memo }) {
+        const parsedMemo = this._parseRewardMemo(memo);
+        if (parsedMemo) {
+            return await this._createRewardEvent({
+                trxData,
+                sender,
+                quantity,
+                receiver,
+                parsedMemo,
+            });
+        }
+        return await this._createTransferEvent({ trxData, sender, quantity, receiver, memo });
+    }
+
+    _parseRewardMemo(memo) {
+        const pattern = /((?<isVesting>send to: )(?<user>.*);|.*?) *(?<type>[\S]*).*(?<contentType>post|comment) (?<author>.*):(?<permlink>.*)/;
+        const match = memo.match(pattern);
+        if (match) {
+            return match.groups;
+        }
+        return null;
     }
 
     async _handleChangeVestAction(action, trxData) {
@@ -125,7 +218,7 @@ class Main {
         Logger.info('Created vesting change object:', vestChangeObject);
     }
 
-    async _handleUpdateMetaAction(action, trxData) {
+    async _handleUpdateMetaAction(action) {
         if (!action.args) {
             throw { code: 812, message: 'Invalid action object' };
         }
@@ -158,7 +251,7 @@ class Main {
         }
     }
 
-    async _handleVestingEvents({ events, action }) {
+    async _handleVestingEvents({ events }) {
         for (const event of events) {
             await this._handleVestingStatEvent(event);
             await this._handleVestingBalanceEvent(event);
