@@ -45,7 +45,6 @@ class Main {
                     case 'create':
                     case 'claim':
                         await this._handleEvents({ events: action.events });
-                        await this._handleEvents({ events: action.events });
                         break;
                     default:
                 }
