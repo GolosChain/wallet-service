@@ -101,28 +101,33 @@ Golos_wallet -- сервис, который предоставляет удоб
 
 ```json
 {
-    "jsonrpc": "2.0",
-    "id": 1,
-    "result": {
-        "userId": "destroyer",
-        "vesting": {
-            "total": {
-                "GESTS": "2228760.240739 GOLOS",
-                "GOLOS": "2137.371"
-            },
-            "outDelegate": {
-                "GESTS": "0.000000 GOLOS",
-                "GOLOS": "0"
-            },
-            "inDelegated": {
-                "GESTS": "0.000000 GOLOS",
-                "GOLOS": "0"
-            }
-        },
-        "liquid": {
-            "GOLOS": "11.444"
-        }
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "userId": "destroyer",
+    "vesting": {
+      "total": {
+        "GESTS": "2228760.240739 GOLOS",
+        "GOLOS": "2137.371"
+      },
+      "outDelegate": {
+        "GESTS": "0.000000 GOLOS",
+        "GOLOS": "0"
+      },
+      "inDelegated": {
+        "GESTS": "0.000000 GOLOS",
+        "GOLOS": "0"
+      }
+    },
+    "liquid": {
+      "balances": {
+        "GOLOS": "11.444"
+      },
+      "payments": {
+        "GOLOS": "0.000"
+      }
     }
+  }
 }
 ```
 
@@ -130,14 +135,17 @@ Golos_wallet -- сервис, который предоставляет удоб
 
 ```json
 {
-    "id": 1,
-    "jsonrpc": "2.0",
-    "method": "getBalance",
-    "params": {
-        "userId": "cyber.token",
-        "currencies": ["ABCXXXX", "ABXXXXX"],
-        "type": "liquid"
-    }
+  "id": 1,
+  "jsonrpc": "2.0",
+  "method": "getBalance",
+  "params": {
+    "userId": "cyber.token",
+    "currencies": [
+      "ABCXXXX",
+      "ABXXXXX"
+    ],
+    "type": "liquid"
+  }
 }
 ```
 
@@ -145,15 +153,21 @@ Golos_wallet -- сервис, который предоставляет удоб
 
 ```json
 {
-    "id": 1,
-    "jsonrpc": "2.0",
-    "result": {
-        "userId": "cyber.token",
-        "liquid": {
-            "ABCXXXX": "10.000",
-            "ABXXXXX": "11.000"
-         }
+  "id": 1,
+  "jsonrpc": "2.0",
+  "result": {
+    "userId": "cyber.token",
+    "liquid": {
+      "balances": {
+        "ABCXXXX": "10.000",
+        "ABXXXXX": "11.000"
+      },
+      "payments": {
+        "ABCXXXX": "11.000",
+        "ABXXXXX": "1.000"
+      }
     }
+  }
 }
 ```
 

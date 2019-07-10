@@ -78,7 +78,7 @@ class Utils {
             throw { code: 811, message: 'Data is absent in base' };
         }
 
-        if (!vestingBalance.liquid || !vestingBalance.liquid.GOLOS) {
+        if (!vestingBalance.liquid || !vestingBalance.liquid.balances.GOLOS) {
             Logger.error('convert: no GOLOS balance for gls.vesting account');
             throw { code: 811, message: 'Data is absent in base' };
         }
@@ -161,7 +161,10 @@ class Utils {
             const balanceObject = await BalanceModel.findOne({ name: userId });
 
             if (balanceObject) {
-                result.liquid = {};
+                result.liquid = {
+                    balances: {},
+                    payments: {},
+                };
                 if (currencies.includes('all')) {
                     const allCurrencies = await TokenModel.find(
                         {},
@@ -180,7 +183,13 @@ class Utils {
                 for (const tokenBalance of balanceObject.balances) {
                     const { sym, quantityRaw } = await Utils.parseAsset(tokenBalance);
                     if (tokensMap[sym]) {
-                        result.liquid[sym] = quantityRaw;
+                        result.liquid.balances[sym] = quantityRaw;
+                    }
+                }
+                for (const tokenPayments of balanceObject.payments) {
+                    const { sym, quantityRaw } = await Utils.parseAsset(tokenPayments);
+                    if (tokensMap[sym]) {
+                        result.liquid.payments[sym] = quantityRaw;
                     }
                 }
             }
@@ -202,7 +211,7 @@ class Utils {
             vestingStat: vestingStat.stat,
         });
 
-        const balance = await Utils.checkAsset(vestingBalance.liquid.GOLOS);
+        const balance = await Utils.checkAsset(vestingBalance.liquid.balances.GOLOS);
         const supply = await Utils.checkAsset(vestingStat.stat);
 
         return {

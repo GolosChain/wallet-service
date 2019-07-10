@@ -15,6 +15,14 @@ module.exports = MongoDB.makeModel(
                 },
             ],
         },
+        payments: {
+            type: [
+                {
+                    type: String,
+                    required: true,
+                },
+            ],
+        },
     },
     {
         index: [

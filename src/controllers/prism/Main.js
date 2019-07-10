@@ -311,59 +311,68 @@ class Main {
         return savedModel;
     }
 
+    async _createOrUpdateUserBalance({ name, balance, payments }) {
+        // todo: refactor this!
+        const balanceModel = await BalanceModel.findOne({ name });
+        const { sym } = Utils.parseAsset(balance);
+        if (balanceModel) {
+            // Check balance of tokens listed in balance.balances array
+            const neededSym = sym;
+            let neededTokenBalanceId = null;
+            let neededTokenPaymentsId = 0;
+
+            for (let i = 0; i < balanceModel.balances.length; i++) {
+                const { sym: tokenSym } = await Utils.parseAsset(balanceModel.balances[i]);
+                if (tokenSym === neededSym) {
+                    neededTokenBalanceId = i;
+                }
+            }
+
+            for (let i = 0; i < balanceModel.payments.length; i++) {
+                const { sym: tokenSym } = await Utils.parseAsset(balanceModel.payments[i]);
+                if (tokenSym === neededSym) {
+                    neededTokenPaymentsId = i;
+                }
+            }
+
+            // Modify if such token is present and create new one otherwise
+            if (neededTokenBalanceId != null) {
+                let objectToModify = {};
+                const idString = 'balances.' + neededTokenBalanceId;
+                objectToModify[idString] = balance;
+                objectToModify[`payments.${neededTokenPaymentsId}`] = payments;
+
+                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: objectToModify });
+            } else {
+                await balanceModel.balances.push(balance);
+                await balanceModel.payments.push(payments);
+                await balanceModel.save();
+            }
+
+            Logger.info('Updated balance object of user', name, ':', { balance, payments });
+        } else {
+            const newBalance = new BalanceModel({
+                name,
+                balances: [balance],
+            });
+
+            await newBalance.save();
+
+            Logger.info('Created balance object of user', name, ':', { balance, payments });
+        }
+    }
+
     async _handleBalanceEvent(event) {
         // Ensure given event is balance event
         if (!(event.code === 'cyber.token' && event.event === 'balance')) {
             return;
         }
 
-        const balance = await BalanceModel.findOne({ name: event.args.account });
-        const { sym } = Utils.parseAsset(event.args.balance);
-        if (balance) {
-            // Check balance of tokens listed in balance.balances array
-            const neededSym = sym;
-            let neededTokenId = null;
-
-            for (let i = 0; i < balance.balances.length; i++) {
-                const { sym: tokenSym } = await Utils.parseAsset(balance.balances[i]);
-                if (tokenSym === neededSym) {
-                    neededTokenId = i;
-                }
-            }
-
-            // Modify if such token is present and create new one otherwise
-            if (neededTokenId != null) {
-                let objectToModify = {};
-                const idString = 'balances.' + neededTokenId;
-                objectToModify[idString] = event.args.balance;
-
-                await BalanceModel.updateOne({ _id: balance._id }, { $set: objectToModify });
-            } else {
-                await balance.balances.push(event.args.balance);
-                await balance.save();
-            }
-
-            Logger.info(
-                'Updated balance object of user',
-                event.args.account,
-                ':',
-                event.args.balance
-            );
-        } else {
-            const newBalance = new BalanceModel({
-                name: event.args.account,
-                balances: [event.args.balance],
-            });
-
-            await newBalance.save();
-
-            Logger.info(
-                'Created balance object of user',
-                event.args.account,
-                ':',
-                event.args.balance
-            );
-        }
+        await this._createOrUpdateUserBalance({
+            name: event.args.account,
+            balance: event.args.balance,
+            payments: event.args.payments,
+        });
     }
 
     async _handleCurrencyEvent(event) {
