@@ -254,7 +254,6 @@ class Main {
 
     async _handleVestingEvents({ events }) {
         for (const event of events) {
-            console.log(event.event);
             await this._handleVestingStatEvent(event);
             await this._handleVestingBalanceEvent(event);
         }
