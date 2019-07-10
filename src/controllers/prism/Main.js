@@ -42,9 +42,8 @@ class Main {
                         await this._handleBulkTransferAction(action, trxData);
                         break;
                     case 'issue':
-                        await this._handleEvents({ events: action.events });
-                        break;
                     case 'create':
+                    case 'claim':
                         await this._handleEvents({ events: action.events });
                         break;
                     default:
@@ -53,7 +52,9 @@ class Main {
 
             if (
                 action.receiver === 'gls.vesting' &&
-                (action.action === 'transfer' || action.action === 'delegate') &&
+                (action.action === 'transfer' ||
+                    action.action === 'delegate' ||
+                    action.action === 'timeoutconv') &&
                 (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
                 await this._handleVestingEvents({ events: action.events, action: action.action });
