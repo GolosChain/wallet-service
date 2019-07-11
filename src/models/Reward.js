@@ -4,11 +4,7 @@ const MongoDB = core.services.MongoDB;
 module.exports = MongoDB.makeModel(
     'Reward',
     {
-        sender: {
-            type: String,
-            required: true,
-        },
-        receiver: {
+        userId: {
             type: String,
             required: true,
         },
@@ -30,8 +26,8 @@ module.exports = MongoDB.makeModel(
         },
         type: {
             type: String,
-            enum: ['transfer', 'benefeciary', 'curators', 'author', 'delegator'],
-            default: 'transfer',
+            enum: ['benefeciary', 'curators', 'author', 'delegator'],
+            required: true,
         },
         contentType: {
             type: String,
@@ -45,15 +41,13 @@ module.exports = MongoDB.makeModel(
                 type: String,
             },
         },
-        token: {
-            sym: {
-                type: String,
-                default: 'GOLOS',
-            },
-            type: {
-                type: String,
-                enum: ['vesting', 'liquid'],
-            },
+        tokenType: {
+            type: String,
+            enum: ['vesting', 'liquid'],
+        },
+        sym: {
+            type: String,
+            required: true,
         },
     },
     {

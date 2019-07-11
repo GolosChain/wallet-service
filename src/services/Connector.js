@@ -85,6 +85,40 @@ class Connector extends BasicConnector {
                         },
                     },
                 },
+                getRewardsHistory: {
+                    handler: this._wallet.getRewardsHistory,
+                    scope: this._wallet,
+                    validation: {
+                        required: ['userId'],
+                        properties: {
+                            userId: {
+                                type: 'string',
+                            },
+                            types: {
+                                type: 'array',
+                                default: ['all'],
+                                items: {
+                                    type: 'string',
+                                    enum: [
+                                        'transfer',
+                                        'benefeciary',
+                                        'curators',
+                                        'author',
+                                        'delegator',
+                                        'all',
+                                    ],
+                                },
+                            },
+                            sequenceKey: {
+                                type: 'string',
+                            },
+                            limit: {
+                                type: 'number',
+                                default: 10,
+                            },
+                        },
+                    },
+                },
                 getDelegationState: this._wallet.getDelegationState.bind(this._wallet),
                 convertVestingToToken: this._wallet.convertVestingToToken.bind(this._wallet),
                 convertTokensToVesting: this._wallet.convertTokensToVesting.bind(this._wallet),
