@@ -250,38 +250,25 @@ class Wallet extends BasicController {
         return await Utils.getVestingInfo();
     }
 
-    async getVestingHistory(args) {
-        const params = await Utils.extractArgumentList({
-            args,
-            fields: ['account', 'sequenceKey', 'limit'],
-        });
-
-        const { account, sequenceKey, limit } = params;
-
-        if (limit < 0) {
-            Logger.warn('getVestingHistory: invalid argument: limit must be positive');
-            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
-        }
-
-        let vestingChanges;
+    async getVestingHistory({ userId, sequenceKey, limit }) {
+        const filter = {
+            who: userId,
+        };
 
         if (sequenceKey) {
-            vestingChanges = await VestingChange.find({
-                who: account,
-                _id: { $gt: sequenceKey },
-            })
-                .limit(limit)
-                .sort({ _id: -1 });
-        } else {
-            vestingChanges = await VestingChange.find({ who: account })
-                .limit(limit)
-                .sort({ _id: -1 });
+            filter._id = { $gt: sequenceKey };
         }
+
+        const vestingChanges = await VestingChange.find(filter, {}, { lean: true })
+            .limit(limit)
+            .sort({ _id: -1 });
 
         const items = [];
 
         for (const change of vestingChanges) {
-            const diffInGolos = await this.convertVestingToToken({
+            // todo: do this in dispersion section
+
+            const { quantityRaw, sym } = await Utils.convertVestingToToken({
                 vesting: change.diff,
             });
 
@@ -290,10 +277,10 @@ class Wallet extends BasicController {
                 who: change.who,
                 diff: {
                     GESTS: change.diff,
-                    GOLOS: diffInGolos,
+                    GOLOS: `${quantityRaw} ${sym}`,
                 },
                 block: change.block,
-                trx_id: change.trx_id,
+                trxId: change.trx_id,
                 timestamp: change.timestamp,
             });
         }
