@@ -183,25 +183,24 @@ Golos_wallet -- сервис, который предоставляет удоб
 
 |  Параметр   |        Тип         | Обяз. | Описание                                                                                                                                                                             |
 | :---------: | :----------------: | :---: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-|   sender    |      `string`      |  Нет  | Имя отправителя трансфера                                                                                                                                                            |
-|  receiver   |      `string`      |  Нет  | Имя получателя трансфера                                                                                                                                                             |
+|   userId    |      `string`      |  Да  | Имя пользователя                                                                                                                                                            |
+|  direction   |      `string`      |  Нет  | Направление: `in`, `out`, `all`                                                                                                                                                             |
 | sequenceKey | `null` or `string` |  Да   | Отступ от начала списка. Если передана строка с валидным sequenceKey, то будет возвращено не более `limit` элементов начиная со следующего за элементом с `_id` равным `sequenceKey` |
-|    limit    |      `number`      |  Да   | Количество записей из списка трансферов. В паре с `limit` формирует отрезок запроса: `[begin, from]` размером `limit`. Не может быть больше `from`, если `from > -1`                 |
+|    limit    |      `number`      |  Да   | Количество записей из списка трансферов. В паре с `sequenceKey` формирует отрезок запроса: `[begin, from]` размером `limit`. Не может быть больше `from`, если `from > -1`                 |
 
 #### Необходимо указать отправителя и получателя. Для работы необходим хотя бы один из них.
 
 Пример:
 
-Получаем все транзакции с отправителем `cyber.token` и получателем `korpusenko`
+Получаем все транзакции с отправителем или получателем `tst2kpdqxjla`
 
 ```json
 {
     "jsonrpc": "2.0",
     "id": 1,
-    "method": "getHistory",
+    "method": "getTransferHistory",
     "params": {
-        "sender": "tst2kpdqxjla",
-        "sequenceKey": null,
+        "userId": "tst2kpdqxjla",
         "limit": 100
     }
 }
@@ -222,62 +221,28 @@ Golos_wallet -- сервис, который предоставляет удоб
                 "sender": "tst2kpdqxjla",
                 "receiver": "tst3ekvfbcra",
                 "quantity": "0.001 GOLOS",
-                "trx_id": "3e43c4411e1ef5638c5b477ec52b4a11de582218e491f0d9ef4f0b878455b3d6",
-                "memo": "{ \"i\": 2, \"msg\": \"Hello, hirthe-freddy-md!\"}",
+                "sym": "GOLOS",
+                "trxId": "3e43c4411e1ef5638c5b477ec52b4a11de582218e491f0d9ef4f0b878455b3d6",
+                "memo": "memo",
                 "block": 148764,
                 "timestamp": "2019-06-16T19:36:24.000Z"
-            },
-            {
-                "id": "5d069a322b07cc86f0556d8f",
-                "sender": "tst2kpdqxjla",
-                "receiver": "tst3ekvfbcra",
-                "quantity": "0.001 GOLOS",
-                "trx_id": "f755e438a86e6446eefbd561caefa1caaa48b4bf99fff7c64d27dabf5ca14067",
-                "memo": "{ \"i\": 1, \"msg\": \"Hello, hirthe-freddy-md!\"}",
-                "block": 148760,
-                "timestamp": "2019-06-16T19:36:12.000Z"
-            },
-            {
-                "id": "5d069a2c2b07cc2320556d8c",
-                "sender": "tst2kpdqxjla",
-                "receiver": "tst3ekvfbcra",
-                "quantity": "0.001 GOLOS",
-                "trx_id": "83421002c5c3ee23b033f230cdcb15c38e40184c9af15cb9b52fa4fa5ebdf9f7",
-                "memo": "{ \"i\": 0, \"msg\": \"Hello, hirthe-freddy-md!\"}",
-                "block": 148758,
-                "timestamp": "2019-06-16T19:36:06.000Z"
-            },
-            {
-                "id": "5d069a202b07cc5eff556d7b",
-                "sender": "tst2kpdqxjla",
-                "receiver": "gls.vesting",
-                "quantity": "5.000 GOLOS",
-                "trx_id": "e88133e5fa686fd2451ada06fa50ee8a549ff3882eb21598b7cec762489b60d1",
-                "memo": "tst2kpdqxjla",
-                "block": 148754,
-                "timestamp": "2019-06-16T19:35:54.000Z"
             },
             {
                 "id": "5d069a202b07cc4c88556d73",
                 "sender": "tst2kpdqxjla",
                 "receiver": "gls.vesting",
                 "quantity": "1.000 GOLOS",
-                "trx_id": "f481be42e6c227667f6d96d9acbe18f68dd05fd5ce063d05b4fa9355de3c8267",
+                "sym": "GOLOS",
+                "trxId": "f481be42e6c227667f6d96d9acbe18f68dd05fd5ce063d05b4fa9355de3c8267",
                 "memo": "",
                 "block": 148754,
                 "timestamp": "2019-06-16T19:35:54.000Z"
             }
         ],
-        "sequenceKey": null
+        "sequenceKey": "5d069a202b07cc4c88556d73"
     }
 }
 ```
-
-**:x: Ошибки**
-
-| error code |     message     | Описание                        |
-| :--------: | :-------------: | ------------------------------- |
-|    805     | Wrong arguments | Переданы некорректные параметры |
 
 ---
 

@@ -36,7 +36,34 @@ class Connector extends BasicConnector {
                         },
                     },
                 },
-                getHistory: this._wallet.getHistory.bind(this._wallet),
+                getTransferHistory: {
+                    handler: this._wallet.getTransferHistory,
+                    scope: this._wallet,
+                    validation: {
+                        required: ['userId'],
+                        properties: {
+                            userId: {
+                                type: 'string',
+                            },
+                            currencies: {
+                                type: 'array',
+                                default: ['all'],
+                            },
+                            direction: {
+                                type: 'string',
+                                enum: ['in', 'out', 'all'],
+                                default: 'all',
+                            },
+                            sequenceKey: {
+                                type: 'string',
+                            },
+                            limit: {
+                                type: 'number',
+                                default: 10,
+                            },
+                        },
+                    },
+                },
                 getTokensInfo: this._wallet.getTokensInfo.bind(this._wallet),
                 getVestingInfo: this._wallet.getVestingInfo.bind(this._wallet),
                 getVestingHistory: this._wallet.getVestingHistory.bind(this._wallet),

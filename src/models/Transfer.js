@@ -16,6 +16,10 @@ module.exports = MongoDB.makeModel(
             type: String,
             required: true,
         },
+        sym: {
+            type: String,
+            required: true,
+        },
         memo: {
             type: String,
         },
@@ -38,10 +42,8 @@ module.exports = MongoDB.makeModel(
                 fields: {
                     sender: 1,
                     receiver: 1,
+                    sym: 1,
                     _id: -1,
-                },
-                options: {
-                    unique: false,
                 },
             },
         ],
