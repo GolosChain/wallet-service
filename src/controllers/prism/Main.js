@@ -137,39 +137,35 @@ class Main {
 
     async _createRewardEvent({
         trxData,
-        sender,
         receiver: receiverOriginal,
         quantity: quantityString,
         parsedMemo: { isVesting, user, type, contentType, author, permlink },
     }) {
-        const receiver = user || receiverOriginal;
-        const { quantityRaw, quantity, sym } = Utils.parseAsset(quantityString);
+        const userId = user || receiverOriginal;
+        const { quantityRaw, sym } = Utils.parseAsset(quantityString);
 
         const rewardObject = {
             ...trxData,
-            sender,
-            receiver,
+            userId,
             type,
             contentType,
             contentId: {
-                author,
+                userId: author,
                 permlink,
             },
-            token: {
-                sym,
-            },
+            sym,
         };
 
         // todo: uncomment when stats will work properly
         if (isVesting) {
-            rewardObject.token.type = 'vesting';
-            rewardObject.quantity = quantityRaw;
+            rewardObject.tokenType = 'vesting';
+            rewardObject.quantity = quantityString;
 
             // todo: use this when vesting stat works properly
             // rewardObject.quantity = await Utils.convertTokensToVesting({ tokens: quantityRaw });
         } else {
-            rewardObject.token.type = 'liquid';
-            rewardObject.quantity = quantityRaw;
+            rewardObject.tokenType = 'liquid';
+            rewardObject.quantity = quantityString;
         }
 
         const reward = new RewardModel(rewardObject);
@@ -184,7 +180,6 @@ class Main {
         if (parsedMemo) {
             return await this._createRewardEvent({
                 trxData,
-                sender,
                 quantity,
                 receiver,
                 parsedMemo,

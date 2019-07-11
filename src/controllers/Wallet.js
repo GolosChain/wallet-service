@@ -6,6 +6,7 @@ const Utils = require('../utils/Utils');
 const TransferModel = require('../models/Transfer');
 const DelegationModel = require('../models/Delegation');
 const TokenModel = require('../models/Token');
+const RewardModel = require('../models/Reward');
 
 const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
@@ -250,6 +251,50 @@ class Wallet extends BasicController {
         return await Utils.getVestingInfo();
     }
 
+    async getRewardsHistory({ userId, types, sequenceKey, limit }) {
+        const filter = { userId };
+
+        if (!types.includes('all')) {
+            filter.$or = types.map(type => {
+                return { type };
+            });
+        }
+
+        if (sequenceKey) {
+            filter._id = { $gt: sequenceKey };
+        }
+
+        const rewards = await RewardModel.find(filter, {}, { lean: true })
+            .limit(limit)
+            .sort({ _id: -1 });
+
+        let newSequenceKey;
+
+        if (rewards.length < limit) {
+            newSequenceKey = null;
+        } else {
+            newSequenceKey = rewards[rewards.length - 1]._id;
+        }
+        let items = [];
+        for (const reward of rewards) {
+            items.push({
+                id: reward._id,
+                userId: reward.userId,
+                block: reward.block,
+                trxId: reward.trx_id,
+                timestamp: reward.timestamp,
+                tokenType: reward.tokenType,
+                sym: reward.sym,
+                type: reward.type,
+                contentType: reward.contentType,
+                contentId: reward.contentId,
+                quantity: reward.quantity,
+            });
+        }
+
+        return { items, sequenceKey: newSequenceKey };
+    }
+
     async getVestingHistory({ userId, sequenceKey, limit }) {
         const filter = {
             who: userId,
@@ -302,12 +347,6 @@ class Wallet extends BasicController {
 
     async convertTokensToVesting({ tokens }) {
         return await Utils.convertTokensToVesting({ tokens });
-    }
-
-    _checkNameString(name) {
-        if (typeof name !== 'string') {
-            throw { code: 809, message: 'Name must be a non-empty string!' };
-        }
     }
 
     async _getUsername(account) {

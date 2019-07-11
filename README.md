@@ -505,7 +505,6 @@ Golos_wallet -- сервис, который предоставляет удоб
     "method": "getVestingHistory",
     "params": {
         "userId": "testuser",
-        "sequenceKey": null,
         "limit": 3
     }
 }
@@ -576,6 +575,88 @@ Golos_wallet -- сервис, который предоставляет удоб
 | error code |     message     | Описание                        |
 | :--------: | :-------------: | ------------------------------- |
 |    805     | Wrong arguments | Переданы некорректные параметры |
+
+---
+
+
+### getRewardsHistory
+
+**Запрос :arrow_right:**
+
+|     Процедура     | Авторизация  | Описание                                                                               |
+| :---------------: | :----------: | -------------------------------------------------------------------------------------- |
+| getRewardsHistory | Не требуется | Получить историю наград пользователя. Использует механику `from` - `limit` |
+
+|  Параметр   |      Тип       | Обяз. | Описание                                                                                                                                                                             |
+| :---------: | :------------: | :---: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|   userId   |     string     |  Да   | Имя пользователя                                                                                                                                                                     |
+| sequenceKey |  string |  Нет   | Отступ от начала списка. Если передана строка с валидным sequenceKey, то будет возвращено не более `limit` элементов начиная со следующего за элементом с `_id` равным `sequenceKey` |
+| types |[string]|  Нет   | Тип награды. Доступные варианты: `'transfer', 'benefeciary', 'curators', 'author', 'delegator'` и `'all'` (по умолчанию)
+|    limit    |     number     |  Нет   | Количество записей из списка трансферов. В паре с `limit` формирует отрезок запроса: `[begin, from]` размером `limit`. Не может быть больше `from`, если `from > -1`                 |
+
+Пример:
+
+Получим историю наград `testuser`:
+
+```json
+{
+	"jsonrpc": "2.0",
+	"id": 1, 
+	"method": "getRewardsHistory",
+	"params": {
+		"userId": "la3jqfmtkgms",
+		"limit": 2
+	}
+}
+```
+
+**:arrow_left: Ответ**
+
+История изменения вестинга для пользователя `testuser`
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+        "items": [
+            {
+                "id": "5d274cb3eef0a2d1c5e7bcfa",
+                "userId": "la3jqfmtkgms",
+                "block": 31832,
+                "trxId": "d260f20ac581ab105b5ae3c9a00d3a7d46a53347c778bf044ccf9d567033d1c1",
+                "timestamp": "2019-07-11T14:50:21.000Z",
+                "tokenType": "vesting",
+                "sym": "GOLOS",
+                "type": "curators",
+                "contentType": "post",
+                "contentId": {
+                    "userId": "la3jqfmtkgms",
+                    "permlink": "re-panichodl-re-prettykaty-borba-s-botami-1562250930101t-c883-427f-be55-f698dc06b535uid-20190704t145018733z"
+                },
+                "quantity": "0.123 GOLOS"
+            },
+            {
+                "id": "5d274cb3eef0a2962fe7bcfc",
+                "userId": "la3jqfmtkgms",
+                "block": 31832,
+                "trxId": "d260f20ac581ab105b5ae3c9a00d3a7d46a53347c778bf044ccf9d567033d1c1",
+                "timestamp": "2019-07-11T14:50:21.000Z",
+                "tokenType": "vesting",
+                "sym": "GOLOS",
+                "type": "author",
+                "contentType": "post",
+                "contentId": {
+                    "userId": "la3jqfmtkgms",
+                    "permlink": "re-panichodl-re-prettykaty-borba-s-botami-1562250930101t-c883-427f-be55-f698dc06b535uid-20190704t145018733z"
+                },
+                "quantity": "2.390 GOLOS"
+            }
+        ],
+        "sequenceKey": "5d274cb3eef0a2962fe7bcfc"
+    }
+}
+```
 
 ---
 
