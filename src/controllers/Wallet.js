@@ -81,54 +81,49 @@ class Wallet extends BasicController {
         return res;
     }
 
-    async getHistory(args) {
-        const params = await Utils.extractArgumentList({
-            args,
-            fields: ['sender', 'receiver', 'sequenceKey', 'limit'],
-        });
+    async getTransferHistory({ userId, direction, currencies, sequenceKey, limit }) {
+        const directionFilter = { $or: [] };
+        const currenciesFilter = {};
 
-        const { sender, receiver, sequenceKey, limit } = params;
-
-        if (limit < 0) {
-            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
+        if (direction !== 'in') {
+            directionFilter.$or.push({ sender: userId });
         }
 
-        if (!sender && !receiver) {
-            throw { code: 805, message: 'Wrong arguments' };
+        if (direction !== 'out') {
+            directionFilter.$or.push({ receiver: userId });
         }
 
-        let filter = {};
-
-        // In case sender field is present it has to be a valid string
-        if (sender) {
-            this._checkNameString(sender);
-            filter.sender = sender;
+        if (!currencies.includes('all')) {
+            currenciesFilter.$or = [];
+            for (const sym of currencies) {
+                currenciesFilter.$or.push({ sym });
+            }
         }
 
-        // In case receiver field is present it has to be a valid string
-        if (receiver) {
-            this._checkNameString(receiver);
-            filter.receiver = receiver;
-        }
-
-        let transfers;
+        const filter = {
+            ...directionFilter,
+            ...currenciesFilter,
+        };
 
         if (sequenceKey) {
-            transfers = await TransferModel.find({
-                ...filter,
-                _id: { $gt: ObjectId(sequenceKey) },
-            })
-                .limit(limit)
-                .sort({ _id: -1 });
-        } else {
-            transfers = await TransferModel.find(filter)
-                .limit(limit)
-                .sort({ _id: -1 });
+            filter._id = { $gt: sequenceKey };
         }
+
+        const transfers = await TransferModel.find(
+            {
+                ...filter,
+            },
+            {},
+            { lean: true }
+        )
+            .limit(limit)
+            .sort({ _id: -1 });
 
         const items = [];
 
         for (const transfer of transfers) {
+            // todo: add username field in model and resolve user names when dispersing blocks
+
             const senderName = await this._getUsername(transfer.sender);
             const receiverName = await this._getUsername(transfer.receiver);
 
@@ -137,7 +132,8 @@ class Wallet extends BasicController {
                 sender: senderName,
                 receiver: receiverName,
                 quantity: transfer.quantity,
-                trx_id: transfer.trx_id,
+                sym: transfer.sym,
+                trxId: transfer.trx_id,
                 memo: transfer.memo,
                 block: transfer.block,
                 timestamp: transfer.timestamp,

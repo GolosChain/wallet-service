@@ -5,6 +5,7 @@ const BalanceModel = require('../../models/Balance');
 const VestingBalanceModel = require('../../models/VestingBalance');
 const TokenModel = require('../../models/Token');
 const TransferModel = require('../../models/Transfer');
+const Utils = require('../../utils/Utils');
 
 class Genesis {
     constructor() {
@@ -84,10 +85,12 @@ class Genesis {
     }
 
     _handleTransfer(data) {
+        const { quantityRaw: quantity, sym } = Utils.parseAsset(data.quantity);
         const transferObject = {
             sender: data.from,
             receiver: data.to,
-            quantity: data.quantity,
+            quantity,
+            sym,
             block: 0,
             trx_id: '0',
             memo: data.memo,

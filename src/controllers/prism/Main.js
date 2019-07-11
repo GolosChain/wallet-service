@@ -118,11 +118,13 @@ class Main {
     }
 
     async _createTransferEvent({ trxData, sender, receiver, quantity, memo }) {
+        const { quantityRaw, sym } = Utils.parseAsset(quantity);
         const transferObject = {
             ...trxData,
             sender,
             receiver,
-            quantity,
+            quantity: quantityRaw,
+            sym,
             memo,
         };
 
