@@ -150,7 +150,7 @@ class Main {
             type,
             contentType,
             contentId: {
-                author: author || user,
+                userId: author,
                 permlink,
             },
             sym,
