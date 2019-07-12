@@ -5,6 +5,7 @@ const BalanceModel = require('../../models/Balance');
 const VestingBalanceModel = require('../../models/VestingBalance');
 const TokenModel = require('../../models/Token');
 const TransferModel = require('../../models/Transfer');
+const DelegationModel = require('../../models/Delegation');
 const Utils = require('../../utils/Utils');
 
 class Genesis {
@@ -16,6 +17,7 @@ class Genesis {
         this._balancesBulk = new BulkSaver(BalanceModel, 'balances');
         this._balancesVestingBulk = new BulkSaver(VestingBalanceModel, 'balances_vesting');
         this._transfersBulk = new BulkSaver(TransferModel, 'transfers');
+        this._delegationsBulk = new BulkSaver(DelegationModel, 'delegations');
     }
 
     async handle(type, data) {
@@ -39,13 +41,9 @@ class Genesis {
                 await this._handleBalance(data);
                 return true;
             case 'delegate':
+                this._handleDelegate(data);
+                return true;
                 // TODO: Need process
-                // Structure example:
-                // { delegator: 'cd4bcmmawqo4',
-                //   delegatee: 'eqmdozwshex2',
-                //   quantity: '11038.944203 GOLOS',
-                //   interest_rate: 0,
-                //   min_delegation_time: '2018-08-24T13:37:51.000' }
                 return true;
             case 'domain':
             case 'message':
@@ -58,9 +56,19 @@ class Genesis {
                     this._alreadyTypes[type] = true;
                     Logger.log('New unknown genesis data:', type, data);
                 }
-                // Do nothing
                 return false;
         }
+    }
+
+    _handleDelegate(data) {
+        const { delegator: from, delegatee: to, quantity, interest_rate: interestRate } = data;
+
+        this._delegationsBulk.addEntry({
+            from,
+            to,
+            quantity,
+            interestRate,
+        });
     }
 
     _handleAccount({ owner, name, balance, balance_in_sys: balanceSys, vesting_shares: vesting }) {
@@ -125,12 +133,13 @@ class Genesis {
     }
 
     async _handleBalance(data) {
-        // data = {
-        //   account: 'gls.vesting',
-        //   balance: '119908451.559 GOLOS',
-        //   payments: '0.000 GOLOS'
-        // }
-        // TODO: Implement
+        const { account: name, balance, payments } = data;
+
+        this._balancesBulk.addEntry({
+            name,
+            balances: [balance],
+            payments: [payments],
+        });
     }
 
     async typeEnd(type) {
