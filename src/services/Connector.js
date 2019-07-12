@@ -1,7 +1,5 @@
 const core = require('gls-core-service');
 const BasicConnector = core.services.Connector;
-const env = require('../data/env');
-
 const Wallet = require('../controllers/Wallet');
 
 class Connector extends BasicConnector {
@@ -82,7 +80,10 @@ class Connector extends BasicConnector {
                         },
                     },
                 },
-                getVestingInfo: this._wallet.getVestingInfo.bind(this._wallet),
+                getVestingInfo: {
+                    handler: this._wallet.getVestingInfo,
+                    scope: this._wallet,
+                },
                 getVestingHistory: {
                     handler: this._wallet.getVestingHistory,
                     scope: this._wallet,
@@ -136,9 +137,47 @@ class Connector extends BasicConnector {
                         },
                     },
                 },
-                getDelegationState: this._wallet.getDelegationState.bind(this._wallet),
-                convertVestingToToken: this._wallet.convertVestingToToken.bind(this._wallet),
-                convertTokensToVesting: this._wallet.convertTokensToVesting.bind(this._wallet),
+                getDelegationState: {
+                    handler: this._wallet.getDelegationState,
+                    scope: this._wallet,
+                    validation: {
+                        required: ['userId'],
+                        properties: {
+                            userId: {
+                                type: 'string',
+                            },
+                            direction: {
+                                type: 'string',
+                                default: 'all',
+                                enum: ['in', 'out', 'all'],
+                            },
+                        },
+                    },
+                },
+                convertVestingToToken: {
+                    handler: this._wallet.convertVestingToToken,
+                    scope: this._wallet,
+                    validation: {
+                        required: ['vesting'],
+                        properties: {
+                            vesting: {
+                                type: 'string',
+                            },
+                        },
+                    },
+                },
+                convertTokensToVesting: {
+                    handler: this._wallet.convertTokensToVesting,
+                    scope: this._wallet,
+                    validation: {
+                        required: ['tokens'],
+                        properties: {
+                            tokens: {
+                                type: 'string',
+                            },
+                        },
+                    },
+                },
             },
         });
 

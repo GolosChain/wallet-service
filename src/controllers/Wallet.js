@@ -11,7 +11,7 @@ const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
-    async getDelegationState({ userId, direction = 'all' }) {
+    async getDelegationState({ userId, direction }) {
         const filter = {};
 
         if (direction !== 'in') {
@@ -253,8 +253,8 @@ class Wallet extends BasicController {
         return { items, sequenceKey: newSequenceKey };
     }
 
-    async convertVestingToToken({ vesting, type }) {
-        return await Utils.convertVestingToToken({ vesting, type });
+    async convertVestingToToken({ vesting }) {
+        return await Utils.convertVestingToToken({ vesting, type: 'string' });
     }
 
     async convertTokensToVesting({ tokens }) {
