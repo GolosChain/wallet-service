@@ -196,21 +196,19 @@ class Wallet extends BasicController {
 
         return {
             sequenceKey: newSequenceKey,
-            items: rewards.map(reward => {
-                return {
-                    id: reward._id,
-                    userId: reward.userId,
-                    block: reward.block,
-                    trxId: reward.trx_id,
-                    timestamp: reward.timestamp,
-                    tokenType: reward.tokenType,
-                    sym: reward.sym,
-                    type: reward.type,
-                    contentType: reward.contentType,
-                    contentId: reward.contentId,
-                    quantity: reward.quantity,
-                };
-            }),
+            items: rewards.map(reward => ({
+                id: reward._id,
+                userId: reward.userId,
+                block: reward.block,
+                trxId: reward.trx_id,
+                timestamp: reward.timestamp,
+                tokenType: reward.tokenType,
+                sym: reward.sym,
+                type: reward.type,
+                contentType: reward.contentType,
+                contentId: reward.contentId,
+                quantity: reward.quantity,
+            })),
         };
     }
 
