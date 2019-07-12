@@ -73,7 +73,7 @@ class Wallet extends BasicController {
 
         let newSequenceKey;
 
-        if (tokensList.length <= limit) {
+        if (tokensList.length < limit) {
             newSequenceKey = null;
         } else {
             newSequenceKey = tokensList[tokensList.length - 1]._id;
@@ -152,7 +152,7 @@ class Wallet extends BasicController {
 
         let newSequenceKey;
 
-        if (items.length <= limit) {
+        if (items.length < limit) {
             newSequenceKey = null;
         } else {
             newSequenceKey = items[items.length - 1].id;
@@ -188,7 +188,7 @@ class Wallet extends BasicController {
 
         let newSequenceKey;
 
-        if (rewards.length <= limit) {
+        if (rewards.length < limit) {
             newSequenceKey = null;
         } else {
             newSequenceKey = rewards[rewards.length - 1]._id;
@@ -249,7 +249,7 @@ class Wallet extends BasicController {
 
         let newSequenceKey;
 
-        if (items.length <= limit) {
+        if (items.length < limit) {
             newSequenceKey = null;
         } else {
             newSequenceKey = items[items.length - 1].id;
