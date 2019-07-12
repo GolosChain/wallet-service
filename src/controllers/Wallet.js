@@ -77,7 +77,7 @@ class Wallet extends BasicController {
                         sym: tokenObject.sym,
                         issuer: tokenObject.issuer,
                         supply: tokenObject.supply,
-                        max_supply: tokenObject.max_supply,
+                        maxSupply: tokenObject.max_supply,
                     };
                 }
             }),
