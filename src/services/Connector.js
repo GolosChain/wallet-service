@@ -68,7 +68,7 @@ class Connector extends BasicConnector {
                 },
                 getRewardsHistory: {
                     handler: this._wallet.getRewardsHistory,
-                    inherits: ['wallet', 'pagination'],
+                    inherits: ['wallet', 'pagination', 'userSpecific'],
                     validation: {
                         properties: {
                             types: {
