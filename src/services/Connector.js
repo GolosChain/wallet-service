@@ -14,7 +14,6 @@ class Connector extends BasicConnector {
     async start() {
         await super.start({
             serverRoutes: {
-                filter_account_history: this._wallet.filterAccountHistory.bind(this._wallet),
                 getBalance: {
                     handler: this._wallet.getBalance,
                     scope: this._wallet,
@@ -64,7 +63,25 @@ class Connector extends BasicConnector {
                         },
                     },
                 },
-                getTokensInfo: this._wallet.getTokensInfo.bind(this._wallet),
+                getTokensInfo: {
+                    handler: this._wallet.getTokensInfo,
+                    scope: this._wallet,
+                    validation: {
+                        properties: {
+                            currencies: {
+                                type: 'array',
+                                default: ['all'],
+                            },
+                            sequenceKey: {
+                                type: 'string',
+                            },
+                            limit: {
+                                type: 'number',
+                                default: 10,
+                            },
+                        },
+                    },
+                },
                 getVestingInfo: this._wallet.getVestingInfo.bind(this._wallet),
                 getVestingHistory: {
                     handler: this._wallet.getVestingHistory,

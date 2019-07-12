@@ -1,6 +1,5 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
-const Logger = core.utils.Logger;
 const Utils = require('../utils/Utils');
 
 const TransferModel = require('../models/Transfer');
@@ -43,43 +42,47 @@ class Wallet extends BasicController {
         return delegations;
     }
 
-    async getTokensInfo(args) {
-        let params;
+    async getTokensInfo({ currencies, limit, sequenceKey }) {
+        const filter = {};
 
-        if (Array.isArray(args) && args.length !== 0) {
-            params = args;
-        } else {
-            if (typeof args === 'object') {
-                params = args.tokens;
-            } else {
-                Logger.warn(`getTokensInfo: invalid argument ${args}`);
-                throw { code: 805, message: 'Wrong arguments' };
-            }
-        }
-
-        const res = { tokens: [] };
-
-        for (const token of params) {
-            if (typeof token !== 'string') {
-                Logger.warn(`getTokensInfo: invalid argument ${params}: ${token}`);
-                throw { code: 805, message: 'Wrong arguments' };
-            }
-
-            const tokenObject = await TokenModel.findOne({ sym: token });
-
-            if (tokenObject) {
-                const tokenInfo = {
-                    sym: tokenObject.sym,
-                    issuer: tokenObject.issuer,
-                    supply: tokenObject.supply,
-                    max_supply: tokenObject.max_supply,
+        if (!currencies.includes('all')) {
+            filter.$or = currencies.map(currency => {
+                return {
+                    sym: currency,
                 };
-
-                res.tokens.push(tokenInfo);
-            }
+            });
         }
 
-        return res;
+        if (sequenceKey) {
+            filter._id = {
+                $gt: sequenceKey,
+            };
+        }
+
+        const tokensList = await TokenModel.find(filter, {}, { lean: true }).limit(limit);
+
+        let newSequenceKey;
+
+        if (tokensList.length <= limit) {
+            newSequenceKey = null;
+        } else {
+            newSequenceKey = tokensList[tokensList.length - 1]._id;
+        }
+
+        return {
+            tokens: tokensList.map(tokenObject => {
+                if (tokenObject) {
+                    return {
+                        id: tokenObject._id,
+                        sym: tokenObject.sym,
+                        issuer: tokenObject.issuer,
+                        supply: tokenObject.supply,
+                        max_supply: tokenObject.max_supply,
+                    };
+                }
+            }),
+            newSequenceKey,
+        };
     }
 
     async getTransferHistory({ userId, direction, currencies, sequenceKey, limit }) {
@@ -143,104 +146,13 @@ class Wallet extends BasicController {
 
         let newSequenceKey;
 
-        if (items.length < limit) {
+        if (items.length <= limit) {
             newSequenceKey = null;
         } else {
             newSequenceKey = items[items.length - 1].id;
         }
 
         return { items, sequenceKey: newSequenceKey };
-    }
-
-    async filterAccountHistory(args) {
-        const params = await Utils.extractArgumentList({
-            args,
-            fields: ['account', 'from', 'limit', 'query'],
-        });
-
-        const { account, from, limit, query } = params;
-
-        if (limit < 0) {
-            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
-        }
-
-        if (from > 0 && limit > from) {
-            throw { code: 805, message: `Wrong arguments: limit can't be greater than from` };
-        }
-
-        let transfers;
-        let filter;
-
-        switch (query.direction) {
-            case 'sender':
-                filter = {
-                    sender: account,
-                };
-
-                transfers = await TransferModel.find(filter);
-                break;
-
-            case 'receiver':
-                filter = {
-                    receiver: account,
-                };
-
-                transfers = await TransferModel.find(filter);
-                break;
-
-            case 'dual':
-                filter = {
-                    sender: account,
-                    receiver: account,
-                };
-
-                transfers = await TransferModel.find(filter);
-                break;
-
-            default:
-                const searchResult = await TransferModel.find({
-                    $or: [{ sender: account }, { receiver: account }],
-                });
-
-                transfers = searchResult;
-                break;
-        }
-
-        let beginId, endId;
-
-        if (from === -1) {
-            const cmpVal = transfers.length - 1 - limit;
-            beginId = cmpVal >= 0 ? cmpVal : 0;
-            endId = transfers.length;
-        } else {
-            beginId = from - limit;
-            endId = Math.min(from + 1, transfers.length);
-        }
-
-        const result = [];
-
-        for (let i = beginId; i < endId; i++) {
-            const transfer = transfers[i];
-            result.push([
-                i,
-                {
-                    op: [
-                        'transfer',
-                        {
-                            from: transfer.sender,
-                            to: transfer.receiver,
-                            amount: Utils.formatQuantity(transfer.quantity),
-                            memo: '{}',
-                        },
-                    ],
-                    trx_id: transfer.trx_id,
-                    block: transfer.block,
-                    timestamp: transfer.timestamp,
-                },
-            ]);
-        }
-
-        return result;
     }
 
     async getBalance({ userId, currencies, type }) {
@@ -270,7 +182,7 @@ class Wallet extends BasicController {
 
         let newSequenceKey;
 
-        if (rewards.length < limit) {
+        if (rewards.length <= limit) {
             newSequenceKey = null;
         } else {
             newSequenceKey = rewards[rewards.length - 1]._id;
@@ -332,7 +244,7 @@ class Wallet extends BasicController {
 
         let newSequenceKey;
 
-        if (items.length < limit) {
+        if (items.length <= limit) {
             newSequenceKey = null;
         } else {
             newSequenceKey = items[items.length - 1].id;
