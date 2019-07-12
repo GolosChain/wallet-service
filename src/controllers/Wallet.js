@@ -58,11 +58,9 @@ class Wallet extends BasicController {
         const filter = {};
 
         if (!currencies.includes('all')) {
-            filter.$or = currencies.map(currency => {
-                return {
-                    sym: currency,
-                };
-            });
+            filter.$or = currencies.map(currency => ({
+                sym: currency,
+            }));
         }
 
         if (sequenceKey) {
@@ -82,17 +80,13 @@ class Wallet extends BasicController {
         }
 
         return {
-            tokens: tokensList.map(tokenObject => {
-                if (tokenObject) {
-                    return {
-                        id: tokenObject._id,
-                        sym: tokenObject.sym,
-                        issuer: tokenObject.issuer,
-                        supply: tokenObject.supply,
-                        maxSupply: tokenObject.max_supply,
-                    };
-                }
-            }),
+            tokens: tokensList.map(tokenObject => ({
+                id: tokenObject._id,
+                sym: tokenObject.sym,
+                issuer: tokenObject.issuer,
+                supply: tokenObject.supply,
+                maxSupply: tokenObject.max_supply,
+            })),
             newSequenceKey,
         };
     }
