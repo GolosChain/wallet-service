@@ -87,6 +87,10 @@ class Main {
             ) {
                 await this._handleUpdateMetaAction(action, trxData);
             }
+
+            if (action.action === 'newusername') {
+                await this._handleCreateUsernameAction(action, trxData);
+            }
         }
     }
 
@@ -215,6 +219,40 @@ class Main {
         Logger.info('Created vesting change object:', vestChangeObject);
     }
 
+    async _handleCreateUsernameAction(action) {
+        if (!action.args) {
+            throw { code: 812, message: 'Invalid action object' };
+        }
+
+        const userId = action.args.owner;
+        const username = action.args.name;
+
+        const savedUserMeta = await UserMeta.findOne({ userId });
+
+        if (savedUserMeta) {
+            await UserMeta.updateOne(
+                { _id: savedUserMeta._id },
+                { $set: { 'meta.username': username } }
+            );
+            Logger.info(
+                `Changed meta data of user ${userId}: ${JSON.stringify(
+                    { username, userId },
+                    null,
+                    2
+                )}`
+            );
+        } else {
+            await UserMeta.create({ userId, username });
+            Logger.info(
+                `Created meta data of user ${userId}: ${JSON.stringify(
+                    { username, userId },
+                    null,
+                    2
+                )}`
+            );
+        }
+    }
+
     async _handleUpdateMetaAction(action) {
         if (!action.args) {
             throw { code: 812, message: 'Invalid action object' };
@@ -222,7 +260,7 @@ class Main {
 
         const meta = {
             userId: action.args.account,
-            username: action.args.meta.name,
+            name: action.args.meta.name,
         };
 
         const savedUserMeta = await UserMeta.findOne({ userId: meta.userId });
