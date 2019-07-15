@@ -1,6 +1,5 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
-const Logger = core.utils.Logger;
 const Utils = require('../utils/Utils');
 
 const TransferModel = require('../models/Transfer');
@@ -12,19 +11,31 @@ const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
-    async getDelegationState({ userId, direction = 'all' }) {
-        const filter = {};
+    async getDelegationState({ userId, direction }) {
+        const filter = {
+            $and: [
+                {
+                    isActual: true,
+                },
+            ],
+        };
+
+        const orFilter = [];
 
         if (direction !== 'in') {
-            filter.from = userId;
+            orFilter.push({ from: userId });
         }
 
         if (direction !== 'out') {
-            filter.to = userId;
+            orFilter.push({ to: userId });
         }
 
+        filter.$and.push({
+            $or: orFilter,
+        });
+
         const delegations = await DelegationModel.find(
-            { $and: [{ isActual: true }, { $or: [{ from: filter.from }, { to: filter.to }] }] },
+            filter,
             { _id: false, from: true, to: true, quantity: true, interestRate: true },
             { lean: true }
         );
@@ -43,43 +54,41 @@ class Wallet extends BasicController {
         return delegations;
     }
 
-    async getTokensInfo(args) {
-        let params;
+    async getTokensInfo({ currencies, limit, sequenceKey }) {
+        const filter = {};
 
-        if (Array.isArray(args) && args.length !== 0) {
-            params = args;
+        if (!currencies.includes('all')) {
+            filter.$or = currencies.map(currency => ({
+                sym: currency,
+            }));
+        }
+
+        if (sequenceKey) {
+            filter._id = {
+                $gt: sequenceKey,
+            };
+        }
+
+        const tokensList = await TokenModel.find(filter, {}, { lean: true }).limit(limit);
+
+        let newSequenceKey;
+
+        if (tokensList.length < limit) {
+            newSequenceKey = null;
         } else {
-            if (typeof args === 'object') {
-                params = args.tokens;
-            } else {
-                Logger.warn(`getTokensInfo: invalid argument ${args}`);
-                throw { code: 805, message: 'Wrong arguments' };
-            }
+            newSequenceKey = tokensList[tokensList.length - 1]._id;
         }
 
-        const res = { tokens: [] };
-
-        for (const token of params) {
-            if (typeof token !== 'string') {
-                Logger.warn(`getTokensInfo: invalid argument ${params}: ${token}`);
-                throw { code: 805, message: 'Wrong arguments' };
-            }
-
-            const tokenObject = await TokenModel.findOne({ sym: token });
-
-            if (tokenObject) {
-                const tokenInfo = {
-                    sym: tokenObject.sym,
-                    issuer: tokenObject.issuer,
-                    supply: tokenObject.supply,
-                    max_supply: tokenObject.max_supply,
-                };
-
-                res.tokens.push(tokenInfo);
-            }
-        }
-
-        return res;
+        return {
+            tokens: tokensList.map(tokenObject => ({
+                id: tokenObject._id,
+                sym: tokenObject.sym,
+                issuer: tokenObject.issuer,
+                supply: tokenObject.supply,
+                maxSupply: tokenObject.max_supply,
+            })),
+            newSequenceKey,
+        };
     }
 
     async getTransferHistory({ userId, direction, currencies, sequenceKey, limit }) {
@@ -152,97 +161,6 @@ class Wallet extends BasicController {
         return { items, sequenceKey: newSequenceKey };
     }
 
-    async filterAccountHistory(args) {
-        const params = await Utils.extractArgumentList({
-            args,
-            fields: ['account', 'from', 'limit', 'query'],
-        });
-
-        const { account, from, limit, query } = params;
-
-        if (limit < 0) {
-            throw { code: 805, message: 'Wrong arguments: limit must be positive' };
-        }
-
-        if (from > 0 && limit > from) {
-            throw { code: 805, message: `Wrong arguments: limit can't be greater than from` };
-        }
-
-        let transfers;
-        let filter;
-
-        switch (query.direction) {
-            case 'sender':
-                filter = {
-                    sender: account,
-                };
-
-                transfers = await TransferModel.find(filter);
-                break;
-
-            case 'receiver':
-                filter = {
-                    receiver: account,
-                };
-
-                transfers = await TransferModel.find(filter);
-                break;
-
-            case 'dual':
-                filter = {
-                    sender: account,
-                    receiver: account,
-                };
-
-                transfers = await TransferModel.find(filter);
-                break;
-
-            default:
-                const searchResult = await TransferModel.find({
-                    $or: [{ sender: account }, { receiver: account }],
-                });
-
-                transfers = searchResult;
-                break;
-        }
-
-        let beginId, endId;
-
-        if (from === -1) {
-            const cmpVal = transfers.length - 1 - limit;
-            beginId = cmpVal >= 0 ? cmpVal : 0;
-            endId = transfers.length;
-        } else {
-            beginId = from - limit;
-            endId = Math.min(from + 1, transfers.length);
-        }
-
-        const result = [];
-
-        for (let i = beginId; i < endId; i++) {
-            const transfer = transfers[i];
-            result.push([
-                i,
-                {
-                    op: [
-                        'transfer',
-                        {
-                            from: transfer.sender,
-                            to: transfer.receiver,
-                            amount: Utils.formatQuantity(transfer.quantity),
-                            memo: '{}',
-                        },
-                    ],
-                    trx_id: transfer.trx_id,
-                    block: transfer.block,
-                    timestamp: transfer.timestamp,
-                },
-            ]);
-        }
-
-        return result;
-    }
-
     async getBalance({ userId, currencies, type }) {
         return await Utils.getBalance({ userId, currencies, type });
     }
@@ -275,9 +193,10 @@ class Wallet extends BasicController {
         } else {
             newSequenceKey = rewards[rewards.length - 1]._id;
         }
-        let items = [];
-        for (const reward of rewards) {
-            items.push({
+
+        return {
+            sequenceKey: newSequenceKey,
+            items: rewards.map(reward => ({
                 id: reward._id,
                 userId: reward.userId,
                 block: reward.block,
@@ -289,10 +208,8 @@ class Wallet extends BasicController {
                 contentType: reward.contentType,
                 contentId: reward.contentId,
                 quantity: reward.quantity,
-            });
-        }
-
-        return { items, sequenceKey: newSequenceKey };
+            })),
+        };
     }
 
     async getVestingHistory({ userId, sequenceKey, limit }) {
@@ -341,8 +258,8 @@ class Wallet extends BasicController {
         return { items, sequenceKey: newSequenceKey };
     }
 
-    async convertVestingToToken({ vesting, type }) {
-        return await Utils.convertVestingToToken({ vesting, type });
+    async convertVestingToToken({ vesting }) {
+        return await Utils.convertVestingToToken({ vesting, type: 'string' });
     }
 
     async convertTokensToVesting({ tokens }) {
@@ -351,12 +268,19 @@ class Wallet extends BasicController {
 
     async _getUsername(account) {
         const accountMeta = await UserMeta.findOne({ userId: account });
+        const result = {
+            userId: account,
+        };
 
         if (accountMeta) {
-            return accountMeta.username;
+            result.username = accountMeta.username;
         }
 
-        return account;
+        if (accountMeta) {
+            result.name = accountMeta.name;
+        }
+
+        return result;
     }
 }
 

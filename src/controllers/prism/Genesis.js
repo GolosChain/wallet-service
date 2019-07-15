@@ -123,7 +123,7 @@ class Genesis {
                     sym,
                     issuer: data.issuer,
                     supply: data.supply,
-                    max_supply: data.max_supply,
+                    maxSupply: data.max_supply,
                 },
             },
             {

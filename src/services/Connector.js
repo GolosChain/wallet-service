@@ -1,7 +1,5 @@
 const core = require('gls-core-service');
 const BasicConnector = core.services.Connector;
-const env = require('../data/env');
-
 const Wallet = require('../controllers/Wallet');
 
 class Connector extends BasicConnector {
@@ -14,16 +12,12 @@ class Connector extends BasicConnector {
     async start() {
         await super.start({
             serverRoutes: {
-                filter_account_history: this._wallet.filterAccountHistory.bind(this._wallet),
                 getBalance: {
+                    inherits: ['userSpecific'],
                     handler: this._wallet.getBalance,
                     scope: this._wallet,
                     validation: {
-                        required: ['userId'],
                         properties: {
-                            userId: {
-                                type: 'string',
-                            },
                             currencies: {
                                 type: 'array',
                                 default: ['all'],
@@ -37,14 +31,11 @@ class Connector extends BasicConnector {
                     },
                 },
                 getTransferHistory: {
+                    inherits: ['userSpecific', 'pagination'],
                     handler: this._wallet.getTransferHistory,
                     scope: this._wallet,
                     validation: {
-                        required: ['userId'],
                         properties: {
-                            userId: {
-                                type: 'string',
-                            },
                             currencies: {
                                 type: 'array',
                                 default: ['all'],
@@ -54,46 +45,37 @@ class Connector extends BasicConnector {
                                 enum: ['in', 'out', 'all'],
                                 default: 'all',
                             },
-                            sequenceKey: {
-                                type: 'string',
-                            },
-                            limit: {
-                                type: 'number',
-                                default: 10,
+                        },
+                    },
+                },
+                getTokensInfo: {
+                    inherits: ['pagination'],
+                    handler: this._wallet.getTokensInfo,
+                    scope: this._wallet,
+                    validation: {
+                        properties: {
+                            currencies: {
+                                type: 'array',
+                                default: ['all'],
                             },
                         },
                     },
                 },
-                getTokensInfo: this._wallet.getTokensInfo.bind(this._wallet),
-                getVestingInfo: this._wallet.getVestingInfo.bind(this._wallet),
+                getVestingInfo: {
+                    handler: this._wallet.getVestingInfo,
+                    scope: this._wallet,
+                },
                 getVestingHistory: {
+                    inherits: ['userSpecific', 'pagination'],
                     handler: this._wallet.getVestingHistory,
                     scope: this._wallet,
-                    validation: {
-                        required: ['userId'],
-                        properties: {
-                            userId: {
-                                type: 'string',
-                            },
-                            sequenceKey: {
-                                type: 'string',
-                            },
-                            limit: {
-                                type: 'number',
-                                default: 10,
-                            },
-                        },
-                    },
                 },
                 getRewardsHistory: {
                     handler: this._wallet.getRewardsHistory,
                     scope: this._wallet,
+                    inherits: ['pagination', 'userSpecific'],
                     validation: {
-                        required: ['userId'],
                         properties: {
-                            userId: {
-                                type: 'string',
-                            },
                             types: {
                                 type: 'array',
                                 default: ['all'],
@@ -109,19 +91,74 @@ class Connector extends BasicConnector {
                                     ],
                                 },
                             },
-                            sequenceKey: {
+                        },
+                    },
+                },
+                getDelegationState: {
+                    handler: this._wallet.getDelegationState,
+                    scope: this._wallet,
+                    inherits: ['userSpecific'],
+                    validation: {
+                        properties: {
+                            direction: {
                                 type: 'string',
-                            },
-                            limit: {
-                                type: 'number',
-                                default: 10,
+                                default: 'all',
+                                enum: ['in', 'out', 'all'],
                             },
                         },
                     },
                 },
-                getDelegationState: this._wallet.getDelegationState.bind(this._wallet),
-                convertVestingToToken: this._wallet.convertVestingToToken.bind(this._wallet),
-                convertTokensToVesting: this._wallet.convertTokensToVesting.bind(this._wallet),
+                convertVestingToToken: {
+                    handler: this._wallet.convertVestingToToken,
+                    scope: this._wallet,
+                    validation: {
+                        required: ['vesting'],
+                        properties: {
+                            vesting: {
+                                type: 'string',
+                            },
+                        },
+                    },
+                },
+                convertTokensToVesting: {
+                    handler: this._wallet.convertTokensToVesting,
+                    scope: this._wallet,
+                    validation: {
+                        required: ['tokens'],
+                        properties: {
+                            tokens: {
+                                type: 'string',
+                            },
+                        },
+                    },
+                },
+            },
+            serverDefaults: {
+                parents: {
+                    pagination: {
+                        validation: {
+                            properties: {
+                                sequenceKey: {
+                                    type: ['string', 'null'],
+                                },
+                                limit: {
+                                    type: 'number',
+                                    default: 10,
+                                },
+                            },
+                        },
+                    },
+                    userSpecific: {
+                        validation: {
+                            required: ['userId'],
+                            properties: {
+                                userId: {
+                                    type: 'string',
+                                },
+                            },
+                        },
+                    },
+                },
             },
         });
 
