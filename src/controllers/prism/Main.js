@@ -242,8 +242,7 @@ class Main {
                 )}`
             );
         } else {
-            const userMeta = new UserMeta({ userId, username });
-            await userMeta.save();
+            await UserMeta.create({ userId, username });
             Logger.info(
                 `Created meta data of user ${userId}: ${JSON.stringify(
                     { username, userId },
