@@ -224,8 +224,6 @@ class Main {
             throw { code: 812, message: 'Invalid action object' };
         }
 
-        console.log(JSON.stringify(action, null, 4));
-
         const userId = action.args.owner;
         const username = action.args.name;
 
