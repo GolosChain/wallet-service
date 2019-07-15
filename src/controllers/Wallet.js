@@ -268,8 +268,15 @@ class Wallet extends BasicController {
 
     async _getUsername(account) {
         const accountMeta = await UserMeta.findOne({ userId: account });
+        const result = {
+            userId: account,
+        };
 
-        return { userId: account, username: accountMeta.username };
+        if (accountMeta) {
+            result.username = accountMeta.username;
+        }
+
+        return result;
     }
 }
 
