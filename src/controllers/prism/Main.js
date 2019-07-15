@@ -422,7 +422,7 @@ class Main {
             sym,
             issuer: event.args.issuer,
             supply: event.args.supply,
-            maxSupply: event.args.max_supply,
+            max_supply: event.args.max_supply,
         };
 
         if (tokenObject) {
