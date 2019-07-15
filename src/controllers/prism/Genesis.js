@@ -6,6 +6,8 @@ const VestingBalanceModel = require('../../models/VestingBalance');
 const TokenModel = require('../../models/Token');
 const TransferModel = require('../../models/Transfer');
 const DelegationModel = require('../../models/Delegation');
+const VestingStat = require('../../models/VestingStat');
+const Reward = require('../../models/Reward');
 const Utils = require('../../utils/Utils');
 
 class Genesis {
@@ -18,6 +20,7 @@ class Genesis {
         this._balancesVestingBulk = new BulkSaver(VestingBalanceModel, 'balances_vesting');
         this._transfersBulk = new BulkSaver(TransferModel, 'transfers');
         this._delegationsBulk = new BulkSaver(DelegationModel, 'delegations');
+        this._rewardsBulk = new BulkSaver(Reward, 'rewards');
     }
 
     async handle(type, data) {
@@ -45,6 +48,15 @@ class Genesis {
                 return true;
                 // TODO: Need process
                 return true;
+            case 'stat':
+                await this._handleStat(data);
+                return true;
+            case 'authreward':
+            case 'curreward':
+            case 'benreward':
+            case 'delreward':
+                this._handleReward(type, data);
+                return true;
             case 'domain':
             case 'message':
             case 'pin':
@@ -52,12 +64,113 @@ class Genesis {
                 // Skip
                 return true;
             default:
+                /*
+                TODO: implement
+                2019-07-15 10:24:12 <1> [log] New unknown genesis data: genesis.conv { owner: 'wxg2iat42thu',
+                amount: '20.101 GOLOS',
+                memo: '20.101 GOLOS (savings)' }
+                 */
+
                 if (!this._alreadyTypes[type]) {
                     this._alreadyTypes[type] = true;
                     Logger.log('New unknown genesis data:', type, data);
                 }
                 return false;
         }
+    }
+
+    _handleReward(eventType, data) {
+        switch (eventType) {
+            case 'authreward':
+                this._handleAuthorReward(data);
+                break;
+            case 'curreward':
+                this._handleCuratorsReward(data);
+                break;
+            case 'benreward':
+                this._handleBeneficiaryReward(data);
+                break;
+            case 'delreward':
+                this._handleDelegatorReward(data);
+                break;
+            default:
+                Logger.warn(`Unknown reward type: ${eventType}`);
+                return;
+        }
+    }
+
+    _handleCuratorsReward(data) {
+        //TODO: implement
+    }
+
+    _handleDelegatorReward(data) {
+        //TODO: implement
+    }
+
+    _handleBeneficiaryReward(data) {
+        const { benefactor: userId, author, permlink, reward: quantityRaw, time: timestamp } = data;
+        const { quantity, sym, tokenType } = this._parseAsset(quantityRaw);
+
+        try {
+            this._rewardsBulk.addEntry({
+                type: 'benefeciary',
+                contentType: 'post',
+                contentId: {
+                    userId: author,
+                    permlink,
+                },
+                tokenType,
+                block: 0,
+                trx_id: 0,
+                sym,
+                quantity,
+                timestamp,
+                userId,
+            });
+        } catch (error) {
+            Logger.error('Error during beneficiary rewards parsing', error, '\n', data);
+        }
+    }
+
+    _handleAuthorReward(data) {
+        const {
+            author,
+            permlink,
+            sbd_and_steem_payout: quantityRaw,
+            time: timestamp,
+            userId,
+        } = data;
+
+        const { quantity, sym, tokenType } = this._parseAsset(quantityRaw);
+
+        try {
+            this._rewardsBulk.addEntry({
+                type: 'author',
+                contentType: 'post',
+                contentId: {
+                    userId: author,
+                    permlink,
+                },
+                tokenType,
+                block: 0,
+                trx_id: 0,
+                sym,
+                quantity,
+                timestamp,
+                userId,
+            });
+        } catch (error) {
+            Logger.error('Error during author rewards parsing', error, '\n', data);
+        }
+    }
+
+    async _handleStat({ supply }) {
+        const [stat, sym] = supply.split(' ');
+
+        await VestingStat.create({
+            stat,
+            sym,
+        });
     }
 
     _handleDelegate(data) {
@@ -142,8 +255,31 @@ class Genesis {
         });
     }
 
+    _parseAsset(quantityRaw) {
+        const [quantity, sym] = quantityRaw.split(' ');
+        const asset = quantity.split('.')[1].length;
+
+        let tokenType;
+        switch (asset) {
+            case 3:
+                tokenType = 'liquid';
+                break;
+            case 6:
+                tokenType = 'vesting';
+                break;
+            default:
+                Logger.warn(`Unknown asset: "${sym},${asset}" `);
+                return;
+        }
+        return { quantity, sym, tokenType };
+    }
+
     async typeEnd(type) {
         switch (type) {
+            case 'authreward':
+            case 'curreward':
+            case 'benreward':
+                await this._rewardsBulk.finish();
             case 'account':
                 await Promise.all([
                     this._usersBulk.finish(),
@@ -153,6 +289,9 @@ class Genesis {
                 break;
             case 'transfer':
                 await this._transfersBulk.finish();
+                break;
+            case 'delegations':
+                await this._delegationsBulk.finish();
                 break;
             default:
             // Do nothing
@@ -169,7 +308,9 @@ class Genesis {
             this._usersBulk.getQueueLength() +
             this._balancesBulk.getQueueLength() +
             this._balancesVestingBulk.getQueueLength() +
-            this._transfersBulk.getQueueLength()
+            this._transfersBulk.getQueueLength() +
+            this._delegationsBulk.getQueueLength() +
+            this._rewardsBulk.getQueueLength()
         );
     }
 }
