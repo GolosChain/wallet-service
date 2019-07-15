@@ -112,7 +112,6 @@ class Connector extends BasicConnector {
                 convertVestingToToken: {
                     handler: this._wallet.convertVestingToToken,
                     scope: this._wallet,
-                    inherits: ['wallet'],
                     validation: {
                         required: ['vesting'],
                         properties: {
@@ -125,7 +124,6 @@ class Connector extends BasicConnector {
                 convertTokensToVesting: {
                     handler: this._wallet.convertTokensToVesting,
                     scope: this._wallet,
-                    inherits: ['wallet'],
                     validation: {
                         required: ['tokens'],
                         properties: {
