@@ -13,8 +13,9 @@ class Connector extends BasicConnector {
         await super.start({
             serverRoutes: {
                 getBalance: {
-                    inherits: ['wallet', 'userSpecific'],
+                    inherits: ['userSpecific'],
                     handler: this._wallet.getBalance,
+                    scope: this._wallet,
                     validation: {
                         properties: {
                             currencies: {
@@ -30,8 +31,9 @@ class Connector extends BasicConnector {
                     },
                 },
                 getTransferHistory: {
-                    inherits: ['wallet', 'userSpecific', 'pagination'],
+                    inherits: ['userSpecific', 'pagination'],
                     handler: this._wallet.getTransferHistory,
+                    scope: this._wallet,
                     validation: {
                         properties: {
                             currencies: {
@@ -47,8 +49,9 @@ class Connector extends BasicConnector {
                     },
                 },
                 getTokensInfo: {
-                    inherits: ['wallet', 'pagination'],
+                    inherits: ['pagination'],
                     handler: this._wallet.getTokensInfo,
+                    scope: this._wallet,
                     validation: {
                         properties: {
                             currencies: {
@@ -61,14 +64,17 @@ class Connector extends BasicConnector {
                 getVestingInfo: {
                     inherits: ['wallet'],
                     handler: this._wallet.getVestingInfo,
+                    scope: this._wallet,
                 },
                 getVestingHistory: {
-                    inherits: ['wallet', 'userSpecific', 'pagination'],
+                    inherits: ['userSpecific', 'pagination'],
                     handler: this._wallet.getVestingHistory,
+                    scope: this._wallet,
                 },
                 getRewardsHistory: {
                     handler: this._wallet.getRewardsHistory,
-                    inherits: ['wallet', 'pagination', 'userSpecific'],
+                    scope: this._wallet,
+                    inherits: ['pagination', 'userSpecific'],
                     validation: {
                         properties: {
                             types: {
@@ -91,7 +97,8 @@ class Connector extends BasicConnector {
                 },
                 getDelegationState: {
                     handler: this._wallet.getDelegationState,
-                    inherits: ['wallet', 'userSpecific'],
+                    scope: this._wallet,
+                    inherits: ['userSpecific'],
                     validation: {
                         properties: {
                             direction: {
@@ -104,6 +111,7 @@ class Connector extends BasicConnector {
                 },
                 convertVestingToToken: {
                     handler: this._wallet.convertVestingToToken,
+                    scope: this._wallet,
                     inherits: ['wallet'],
                     validation: {
                         required: ['vesting'],
@@ -116,6 +124,7 @@ class Connector extends BasicConnector {
                 },
                 convertTokensToVesting: {
                     handler: this._wallet.convertTokensToVesting,
+                    scope: this._wallet,
                     inherits: ['wallet'],
                     validation: {
                         required: ['tokens'],
@@ -129,9 +138,6 @@ class Connector extends BasicConnector {
             },
             serverDefaults: {
                 parents: {
-                    wallet: {
-                        scope: this._wallet,
-                    },
                     pagination: {
                         validation: {
                             properties: {
