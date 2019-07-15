@@ -62,7 +62,6 @@ class Connector extends BasicConnector {
                     },
                 },
                 getVestingInfo: {
-                    inherits: ['wallet'],
                     handler: this._wallet.getVestingInfo,
                     scope: this._wallet,
                 },
