@@ -11,8 +11,6 @@ const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
 
-Logger.info = () => {};
-
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
         for (const transaction of transactions) {
