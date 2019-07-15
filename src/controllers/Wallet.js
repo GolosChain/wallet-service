@@ -92,27 +92,25 @@ class Wallet extends BasicController {
     }
 
     async getTransferHistory({ userId, direction, currencies, sequenceKey, limit }) {
-        const directionFilter = { $or: [] };
-        const currenciesFilter = {};
+        const directionFilter = [];
+        const currenciesFilter = [];
 
         if (direction !== 'in') {
-            directionFilter.$or.push({ sender: userId });
+            directionFilter.push({ sender: userId });
         }
 
         if (direction !== 'out') {
-            directionFilter.$or.push({ receiver: userId });
+            directionFilter.push({ receiver: userId });
         }
 
         if (!currencies.includes('all')) {
-            currenciesFilter.$or = [];
             for (const sym of currencies) {
-                currenciesFilter.$or.push({ sym });
+                currenciesFilter.push({ sym });
             }
         }
 
         const filter = {
-            ...directionFilter,
-            ...currenciesFilter,
+            $and: [{ $or: [...directionFilter] }, { $or: [...currenciesFilter] }],
         };
 
         if (sequenceKey) {
