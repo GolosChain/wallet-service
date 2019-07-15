@@ -276,6 +276,10 @@ class Wallet extends BasicController {
             result.username = accountMeta.username;
         }
 
+        if (accountMeta) {
+            result.name = accountMeta.name;
+        }
+
         return result;
     }
 }
