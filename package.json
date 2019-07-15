@@ -20,7 +20,7 @@
   "dependencies": {
     "base58check": "^2.0.0",
     "eosjs-ecc": "^4.0.4",
-    "gls-core-service": "3.45.0",
+    "gls-core-service": "^3.47.0",
     "moment": "^2.24.0",
     "node-nats-streaming": "^0.2.2",
     "then-sleep": "^1.0.1"
