@@ -23,8 +23,7 @@ class Prism extends BasicService {
         }
 
         const subscriber = new BlockSubscribe({
-            onlyIrreversible: true,
-            blockHandler: this._handleBlock.bind(this),
+            handler: this._handleBlock.bind(this),
         });
 
         try {
@@ -35,9 +34,13 @@ class Prism extends BasicService {
         }
     }
 
-    async _handleBlock(block) {
+    async _handleBlock({ type, data }) {
+        if (type !== 'IRREVERSIBLE_BLOCK') {
+            return;
+        }
+
         try {
-            await this._mainPrismController.disperse(block);
+            await this._mainPrismController.disperse(data);
         } catch (error) {
             Logger.error('Cant disperse block:', error);
             process.exit(1);
