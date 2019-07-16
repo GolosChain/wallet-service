@@ -116,7 +116,7 @@ class Wallet extends BasicController {
         };
 
         if (sequenceKey) {
-            filter._id = { $gt: sequenceKey };
+            filter._id = { $lt: sequenceKey };
         }
 
         const transfers = await TransferModel.find(
@@ -179,7 +179,7 @@ class Wallet extends BasicController {
         }
 
         if (sequenceKey) {
-            filter._id = { $gt: sequenceKey };
+            filter._id = { $lt: sequenceKey };
         }
 
         const rewards = await RewardModel.find(filter, {}, { lean: true })
@@ -218,7 +218,7 @@ class Wallet extends BasicController {
         };
 
         if (sequenceKey) {
-            filter._id = { $gt: sequenceKey };
+            filter._id = { $lt: sequenceKey };
         }
 
         const vestingChanges = await VestingChange.find(filter, {}, { lean: true })
