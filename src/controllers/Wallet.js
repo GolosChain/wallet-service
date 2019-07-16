@@ -232,15 +232,17 @@ class Wallet extends BasicController {
         for (const change of vestingChanges) {
             // todo: do this in dispersion section
 
-            const { quantityRaw, sym } = await Utils.convertVestingToToken({
+            const { quantityRaw } = await Utils.convertVestingToToken({
                 vesting: change.diff,
             });
+
+            const { quantityRaw: getstsRaw } = await Utils.parseAsset(change.diff);
 
             items.push({
                 id: change._id,
                 who: change.who,
                 diff: {
-                    GESTS: change.diff,
+                    GESTS: getstsRaw,
                     GOLOS: quantityRaw,
                 },
                 block: change.block,
