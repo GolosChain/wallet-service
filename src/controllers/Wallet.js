@@ -110,8 +110,12 @@ class Wallet extends BasicController {
         }
 
         const filter = {
-            $and: [{ $or: [...directionFilter] }, { $or: [...currenciesFilter] }],
+            $and: [{ $or: [...directionFilter] }],
         };
+
+        if (currenciesFilter.length > 0) {
+            filter.$and.push({ $or: [...currenciesFilter] });
+        }
 
         if (sequenceKey) {
             filter._id = { $lt: sequenceKey };
