@@ -241,7 +241,7 @@ class Wallet extends BasicController {
                 who: change.who,
                 diff: {
                     GESTS: change.diff,
-                    GOLOS: `${quantityRaw} ${sym}`,
+                    GOLOS: quantityRaw,
                 },
                 block: change.block,
                 trxId: change.trx_id,
