@@ -31,7 +31,8 @@ module.exports = MongoDB.makeModel(
         },
         contentType: {
             type: String,
-            enum: ['comment', 'post'],
+            enum: ['comment', 'post', 'unknown'],
+            default: 'unknown',
         },
         contentId: {
             userId: {

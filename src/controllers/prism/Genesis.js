@@ -20,7 +20,10 @@ class Genesis {
         this._balancesVestingBulk = new BulkSaver(VestingBalanceModel, 'balances_vesting');
         this._transfersBulk = new BulkSaver(TransferModel, 'transfers');
         this._delegationsBulk = new BulkSaver(DelegationModel, 'delegations');
-        this._rewardsBulk = new BulkSaver(Reward, 'rewards');
+        this._curRewardsBulk = new BulkSaver(Reward, 'currewards');
+        this._authRewardsBulk = new BulkSaver(Reward, 'authrewards');
+        this._benRewardsBulk = new BulkSaver(Reward, 'benrewards');
+        this._delegRewardsBulk = new BulkSaver(Reward, 'delegrewards');
     }
 
     async handle(type, data) {
@@ -46,8 +49,7 @@ class Genesis {
             case 'delegate':
                 this._handleDelegate(data);
                 return true;
-                // TODO: Need process
-                return true;
+            // TODO: Need process
             case 'stat':
                 await this._handleStat(data);
                 return true;
@@ -100,68 +102,90 @@ class Genesis {
     }
 
     _handleCuratorsReward(data) {
-        //TODO: implement
+        const {
+            curator: userId,
+            reward: rewardRaw,
+            comment_author: author,
+            comment_permlink: permlink,
+            time: timestamp,
+        } = data;
+
+        const { quantity, sym, tokenType } = this._parseAsset(rewardRaw);
+
+        this._curRewardsBulk.addEntry({
+            type: 'curators',
+            contentId: {
+                userId: author,
+                permlink,
+            },
+            tokenType,
+            block: 0,
+            trx_id: 0,
+            sym,
+            quantity,
+            timestamp,
+            userId,
+        });
     }
 
     _handleDelegatorReward(data) {
-        //TODO: implement
+        const { delegator: userId, reward: quantityRaw, time: timestamp } = data;
+        const { quantity, sym, tokenType } = this._parseAsset(quantityRaw);
+
+        this._delegRewardsBulk.addEntry({
+            type: 'delegator',
+            contentType: 'unknown',
+            tokenType,
+            block: 0,
+            trx_id: 0,
+            sym,
+            quantity,
+            timestamp,
+            userId,
+        });
     }
 
     _handleBeneficiaryReward(data) {
         const { benefactor: userId, author, permlink, reward: quantityRaw, time: timestamp } = data;
         const { quantity, sym, tokenType } = this._parseAsset(quantityRaw);
 
-        try {
-            this._rewardsBulk.addEntry({
-                type: 'benefeciary',
-                contentType: 'post',
-                contentId: {
-                    userId: author,
-                    permlink,
-                },
-                tokenType,
-                block: 0,
-                trx_id: 0,
-                sym,
-                quantity,
-                timestamp,
-                userId,
-            });
-        } catch (error) {
-            Logger.error('Error during beneficiary rewards parsing', error, '\n', data);
-        }
+        this._benRewardsBulk.addEntry({
+            type: 'benefeciary',
+            contentType: 'unknown',
+            contentId: {
+                userId: author,
+                permlink,
+            },
+            tokenType,
+            block: 0,
+            trx_id: 0,
+            sym,
+            quantity,
+            timestamp,
+            userId,
+        });
     }
 
     _handleAuthorReward(data) {
-        const {
-            author,
-            permlink,
-            sbd_and_steem_payout: quantityRaw,
-            time: timestamp,
-            userId,
-        } = data;
+        const { author, permlink, sbd_and_steem_payout: quantityRaw, time: timestamp } = data;
 
         const { quantity, sym, tokenType } = this._parseAsset(quantityRaw);
 
-        try {
-            this._rewardsBulk.addEntry({
-                type: 'author',
-                contentType: 'post',
-                contentId: {
-                    userId: author,
-                    permlink,
-                },
-                tokenType,
-                block: 0,
-                trx_id: 0,
-                sym,
-                quantity,
-                timestamp,
-                userId,
-            });
-        } catch (error) {
-            Logger.error('Error during author rewards parsing', error, '\n', data);
-        }
+        this._authRewardsBulk.addEntry({
+            type: 'author',
+            contentType: 'post',
+            contentId: {
+                userId: author,
+                permlink,
+            },
+            tokenType,
+            block: 0,
+            trx_id: 0,
+            sym,
+            quantity,
+            timestamp,
+            userId: author,
+        });
     }
 
     async _handleStat({ supply }) {
@@ -277,9 +301,17 @@ class Genesis {
     async typeEnd(type) {
         switch (type) {
             case 'authreward':
+                await this._authRewardsBulk.finish();
+                break;
             case 'curreward':
+                await this._curRewardsBulk.finish();
+                break;
             case 'benreward':
-                await this._rewardsBulk.finish();
+                await this._benRewardsBulk.finish();
+                break;
+            case 'delreward':
+                await this._delegRewardsBulk.finish();
+                break;
             case 'account':
                 await Promise.all([
                     this._usersBulk.finish(),
@@ -310,7 +342,10 @@ class Genesis {
             this._balancesVestingBulk.getQueueLength() +
             this._transfersBulk.getQueueLength() +
             this._delegationsBulk.getQueueLength() +
-            this._rewardsBulk.getQueueLength()
+            this._curRewardsBulk.getQueueLength() +
+            this._authRewardsBulk.getQueueLength() +
+            this._delegRewardsBulk.getQueueLength() +
+            this._benRewardsBulk.getQueueLength()
         );
     }
 }
