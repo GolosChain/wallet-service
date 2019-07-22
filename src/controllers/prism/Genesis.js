@@ -5,9 +5,11 @@ const BalanceModel = require('../../models/Balance');
 const VestingBalanceModel = require('../../models/VestingBalance');
 const TokenModel = require('../../models/Token');
 const TransferModel = require('../../models/Transfer');
+const VestingChangeModel = require('../../models/VestingChange');
 const DelegationModel = require('../../models/Delegation');
 const VestingStat = require('../../models/VestingStat');
 const Reward = require('../../models/Reward');
+const GenesisConv = require('../../models/GenesisConv');
 const Utils = require('../../utils/Utils');
 
 class Genesis {
@@ -19,11 +21,13 @@ class Genesis {
         this._balancesBulk = new BulkSaver(BalanceModel, 'balances');
         this._balancesVestingBulk = new BulkSaver(VestingBalanceModel, 'balances_vesting');
         this._transfersBulk = new BulkSaver(TransferModel, 'transfers');
+        this._vestingChangesBulk = new BulkSaver(VestingChangeModel, 'vesting_changes');
         this._delegationsBulk = new BulkSaver(DelegationModel, 'delegations');
         this._curRewardsBulk = new BulkSaver(Reward, 'currewards');
         this._authRewardsBulk = new BulkSaver(Reward, 'authrewards');
         this._benRewardsBulk = new BulkSaver(Reward, 'benrewards');
         this._delegRewardsBulk = new BulkSaver(Reward, 'delegrewards');
+        this._genesisConvBulk = new BulkSaver(GenesisConv, 'genesisconv');
     }
 
     async handle(type, data) {
@@ -65,14 +69,10 @@ class Genesis {
             case 'block':
                 // Skip
                 return true;
+            case 'genesis.conv':
+                this._handleConv(data);
+                return true;
             default:
-                /*
-                TODO: implement
-                2019-07-15 10:24:12 <1> [log] New unknown genesis data: genesis.conv { owner: 'wxg2iat42thu',
-                amount: '20.101 GOLOS',
-                memo: '20.101 GOLOS (savings)' }
-                 */
-
                 if (!this._alreadyTypes[type]) {
                     this._alreadyTypes[type] = true;
                     Logger.log('New unknown genesis data:', type, data);
@@ -99,6 +99,30 @@ class Genesis {
                 Logger.warn(`Unknown reward type: ${eventType}`);
                 return;
         }
+    }
+
+    _handleConv(data) {
+        const { owner: userId, amount: quantity, memo } = data;
+        const sources = {};
+
+        let [sum, components] = memo.split(' = ');
+
+        if (!components) {
+            components = sum;
+            sum = quantity;
+        }
+
+        for (const conv of components.split(' + ')) {
+            const pattern = /(?<quantity>\d+.\d{3} \D{3,5}) \((?<source>.*)\)/;
+            const match = conv.match(pattern);
+            if (match.groups) {
+                const { quantity: convQuantity, source } = match.groups;
+
+                sources[source] = convQuantity;
+            }
+        }
+
+        this._genesisConvBulk.addEntry({ userId, sum, quantity, sources, memo });
     }
 
     _handleCuratorsReward(data) {
@@ -229,7 +253,24 @@ class Genesis {
         metrics.inc('genesis_type_account_processed');
     }
 
+    _handleVestingTransfer(data) {
+        const { from: who, quantity: diff, time: timestamp } = data;
+        const vestingChangeObject = {
+            who,
+            diff,
+            timestamp,
+            block: 0,
+            trx_id: 0,
+        };
+
+        this._vestingChangesBulk.addEntry(vestingChangeObject);
+    }
+
     _handleTransfer(data) {
+        if (data.to_vesting === true) {
+            return this._handleVestingTransfer(data);
+        }
+
         const { quantityRaw: quantity, sym } = Utils.parseAsset(data.quantity);
         const transferObject = {
             sender: data.from,
@@ -241,11 +282,6 @@ class Genesis {
             memo: data.memo,
             timestamp: new Date(data.time + 'Z'),
         };
-
-        if (!data.to || !data.from) {
-            Logger.warn('Invalid transfer data:', data);
-            return;
-        }
 
         this._transfersBulk.addEntry(transferObject);
     }
@@ -300,6 +336,9 @@ class Genesis {
 
     async typeEnd(type) {
         switch (type) {
+            case 'genesis.conv':
+                await this._genesisConvBulk.finish();
+                break;
             case 'authreward':
                 await this._authRewardsBulk.finish();
                 break;
@@ -321,6 +360,7 @@ class Genesis {
                 break;
             case 'transfer':
                 await this._transfersBulk.finish();
+                await this._vestingChangesBulk.finish();
                 break;
             case 'delegations':
                 await this._delegationsBulk.finish();
@@ -345,7 +385,9 @@ class Genesis {
             this._curRewardsBulk.getQueueLength() +
             this._authRewardsBulk.getQueueLength() +
             this._delegRewardsBulk.getQueueLength() +
-            this._benRewardsBulk.getQueueLength()
+            this._benRewardsBulk.getQueueLength() +
+            this._vestingChangesBulk.getQueueLength() +
+            this._genesisConvBulk.getQueueLength()
         );
     }
 }
