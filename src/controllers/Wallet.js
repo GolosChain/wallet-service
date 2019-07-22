@@ -6,11 +6,22 @@ const TransferModel = require('../models/Transfer');
 const DelegationModel = require('../models/Delegation');
 const TokenModel = require('../models/Token');
 const RewardModel = require('../models/Reward');
+const GenesisConvModel = require('../models/GenesisConv');
 
 const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
+    async getGenesisConv({ userId }) {
+        const filter = { userId };
+
+        return await GenesisConvModel.find(
+            filter,
+            { _id: false, __v: false, createdAt: false, updatedAt: false },
+            { lean: true }
+        );
+    }
+
     async getDelegationState({ userId, direction }) {
         const filter = {
             $and: [

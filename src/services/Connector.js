@@ -132,7 +132,13 @@ class Connector extends BasicConnector {
                         },
                     },
                 },
+                getGenesisConv: {
+                    handler: this._wallet.getGenesisConv,
+                    scope: this._wallet,
+                    inherits: ['userSpecific'],
+                },
             },
+
             serverDefaults: {
                 parents: {
                     pagination: {
