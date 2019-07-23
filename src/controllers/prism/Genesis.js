@@ -294,9 +294,7 @@ class Genesis {
             {
                 $set: {
                     sym,
-                    issuer: data.issuer,
-                    supply: data.supply,
-                    maxSupply: data.max_supply,
+                    ...data,
                 },
             },
             {
