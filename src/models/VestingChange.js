@@ -32,9 +32,6 @@ module.exports = MongoDB.makeModel(
                     who: 1,
                     _id: -1,
                 },
-                options: {
-                    unique: false,
-                },
             },
         ],
     }
