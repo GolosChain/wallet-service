@@ -13,6 +13,27 @@ const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
+    constructor(...args) {
+        super(...args);
+        this._requestsInProcess = 0;
+        this._requestsFinishedSinceLastTime = 0;
+
+        setInterval(() => {
+            metrics.set('rewards_requests_in_progress', this.requestsInProcess);
+            metrics.set('rewards_rps', this._requestsFinishedSinceLastTime / 1000);
+            this._requestsFinishedSinceLastTime = 0;
+        }, 1000);
+    }
+
+    set requestsInProcess(val) {
+        metrics.set('requests_in_process', val);
+        this._requestsInProcess = val;
+    }
+
+    get requestsInProcess() {
+        return this._requestsInProcess;
+    }
+
     async getGenesisConv({ userId }) {
         const filter = { userId };
 
@@ -185,6 +206,9 @@ class Wallet extends BasicController {
 
     async getRewardsHistory({ userId, types, sequenceKey, limit }) {
         const fullRequestEndFunc = metrics.startTimer('rewards_processed');
+
+        this.requestsInProcess++;
+
         const filter = { userId };
 
         if (!types.includes('all')) {
@@ -217,6 +241,9 @@ class Wallet extends BasicController {
         }
 
         fullRequestEndFunc();
+
+        this.requestsInProcess--;
+        this._requestsFinishedSinceLastTime++;
 
         return {
             sequenceKey: newSequenceKey,
