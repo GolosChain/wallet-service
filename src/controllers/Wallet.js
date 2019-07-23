@@ -1,5 +1,6 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
+const metrics = core.utils.metrics;
 const Utils = require('../utils/Utils');
 
 const TransferModel = require('../models/Transfer');
@@ -183,21 +184,29 @@ class Wallet extends BasicController {
     }
 
     async getRewardsHistory({ userId, types, sequenceKey, limit }) {
+        const fullRequestEndFunc = metrics.startTimer('rewards_processed');
         const filter = { userId };
 
         if (!types.includes('all')) {
-            filter.$or = types.map(type => {
-                return { type };
-            });
+            if (types.length > 1) {
+                filter.$or = types.map(type => {
+                    return { type };
+                });
+            } else {
+                filter.type = types[0];
+            }
         }
 
         if (sequenceKey) {
             filter._id = { $lt: sequenceKey };
         }
+        const dbRequestEndFunc = metrics.startTimer('rewards_fetched');
 
         const rewards = await RewardModel.find(filter, {}, { lean: true })
             .limit(limit)
             .sort({ _id: -1 });
+
+        dbRequestEndFunc();
 
         let newSequenceKey;
 
@@ -206,6 +215,8 @@ class Wallet extends BasicController {
         } else {
             newSequenceKey = rewards[rewards.length - 1]._id;
         }
+
+        fullRequestEndFunc();
 
         return {
             sequenceKey: newSequenceKey,
