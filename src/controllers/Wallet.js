@@ -20,7 +20,7 @@ class Wallet extends BasicController {
 
         setInterval(() => {
             metrics.set('rewards_requests_in_progress', this.requestsInProcess);
-            metrics.set('rewards_rps', this._requestsFinishedSinceLastTime / 1000);
+            metrics.set('rewards_rps', this._requestsFinishedSinceLastTime);
             this._requestsFinishedSinceLastTime = 0;
         }, 1000);
     }
