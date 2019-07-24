@@ -143,7 +143,7 @@ class Main {
         trxData,
         receiver: receiverOriginal,
         quantity: quantityString,
-        parsedMemo: { isVesting, user, type, contentType, author, permlink },
+        parsedMemo: { isVesting, user, type, author, permlink },
     }) {
         const userId = user || receiverOriginal;
         const { quantityRaw, sym } = Utils.parseAsset(quantityString);
@@ -152,7 +152,6 @@ class Main {
             ...trxData,
             userId,
             type,
-            contentType,
             contentId: {
                 userId: author,
                 permlink,
@@ -193,7 +192,7 @@ class Main {
     }
 
     _parseRewardMemo(memo) {
-        const pattern = /((?<isVesting>send to: )(?<user>.*);|.*?) *(?<type>[\S]*).*(?<contentType>post|comment) (?<author>.*):(?<permlink>.*)/;
+        const pattern = /((?<isVesting>send to: )(?<user>.*);|.*?) *(?<type>[\S]*).*post (?<author>.*):(?<permlink>.*)/;
         const match = memo.match(pattern);
         if (match) {
             return match.groups;

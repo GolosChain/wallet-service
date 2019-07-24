@@ -158,7 +158,6 @@ class Genesis {
 
         this._delegRewardsBulk.addEntry({
             type: 'delegator',
-            contentType: 'unknown',
             tokenType,
             block: 0,
             trx_id: 0,
@@ -175,7 +174,6 @@ class Genesis {
 
         this._benRewardsBulk.addEntry({
             type: 'benefeciary',
-            contentType: 'unknown',
             contentId: {
                 userId: author,
                 permlink,
@@ -197,7 +195,6 @@ class Genesis {
 
         this._authRewardsBulk.addEntry({
             type: 'author',
-            contentType: 'post',
             contentId: {
                 userId: author,
                 permlink,
