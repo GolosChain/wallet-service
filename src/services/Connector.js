@@ -182,13 +182,11 @@ class Connector extends BasicConnector {
     _handleMetricsIn(...params) {
         this._metricUtils.requestIn('all');
         //todo add method-specific metric
-        return params;
     }
 
     _handleMetricsOut(...params) {
         this._metricUtils.requestOut('all');
         //todo add method-specific metric
-        return params;
     }
 }
 
