@@ -2,7 +2,7 @@ const core = require('gls-core-service');
 const metrics = core.utils.metrics;
 
 class MetricsUtils {
-    constructor({ prefix = 'wallet', interval = 1000 }) {
+    constructor({ prefix = 'wallet', interval = 10000 }) {
         this._prefix = prefix;
         this.totalRequestsIn = 0;
         this.totalRequestsOut = 0;
@@ -46,7 +46,7 @@ class MetricsUtils {
         }
         metrics.set(`${this._prefix}_total_requests_in`, this.totalRequestsIn);
         metrics.set(`${this._prefix}_total_requests_out`, this.totalRequestsOut);
-        metrics.set(`${this._prefix}_total_requests_rps`, this.currentRPS);
+        metrics.set(`${this._prefix}_total_requests_rps`, this.currentRPS / (this.interval / 1000));
         // this is the last step
         this.currentRPS = 0;
     }
