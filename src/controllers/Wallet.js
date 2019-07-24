@@ -1,6 +1,5 @@
 const core = require('gls-core-service');
 const BasicController = core.controllers.Basic;
-const metrics = core.utils.metrics;
 const Utils = require('../utils/Utils');
 
 const TransferModel = require('../models/Transfer');
@@ -15,23 +14,6 @@ const UserMeta = require('../models/UserMeta');
 class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
-        this._requestsInProcess = 0;
-        this._requestsFinishedSinceLastTime = 0;
-
-        setInterval(() => {
-            metrics.set('rewards_requests_in_progress', this.requestsInProcess);
-            metrics.set('rewards_rps', this._requestsFinishedSinceLastTime);
-            this._requestsFinishedSinceLastTime = 0;
-        }, 1000);
-    }
-
-    set requestsInProcess(val) {
-        metrics.set('requests_in_process', val);
-        this._requestsInProcess = val;
-    }
-
-    get requestsInProcess() {
-        return this._requestsInProcess;
     }
 
     async getGenesisConv({ userId }) {
@@ -205,10 +187,6 @@ class Wallet extends BasicController {
     }
 
     async getRewardsHistory({ userId, types, sequenceKey, limit }) {
-        const fullRequestEndFunc = metrics.startTimer('rewards_processed');
-
-        this.requestsInProcess++;
-
         const filter = { userId };
 
         if (!types.includes('all')) {
@@ -224,13 +202,10 @@ class Wallet extends BasicController {
         if (sequenceKey) {
             filter._id = { $lt: sequenceKey };
         }
-        const dbRequestEndFunc = metrics.startTimer('rewards_fetched');
 
         const rewards = await RewardModel.find(filter, {}, { lean: true })
             .limit(limit)
             .sort({ _id: -1 });
-
-        dbRequestEndFunc();
 
         let newSequenceKey;
 
@@ -239,11 +214,6 @@ class Wallet extends BasicController {
         } else {
             newSequenceKey = rewards[rewards.length - 1]._id;
         }
-
-        fullRequestEndFunc();
-
-        this.requestsInProcess--;
-        this._requestsFinishedSinceLastTime++;
 
         return {
             sequenceKey: newSequenceKey,

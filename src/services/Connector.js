@@ -1,19 +1,27 @@
 const core = require('gls-core-service');
 const BasicConnector = core.services.Connector;
 const Wallet = require('../controllers/Wallet');
+const MetricsUtils = require('../utils/MetricsUtils');
 
 class Connector extends BasicConnector {
     constructor() {
         super();
 
         this._wallet = new Wallet({ connector: this });
+        this._metricUtils = new MetricsUtils({ prefix: 'wallet' });
+    }
+
+    async stop() {
+        this._metricUtils.stop();
+        await super.stop();
     }
 
     async start() {
+        this._metricUtils.start();
         await super.start({
             serverRoutes: {
                 getBalance: {
-                    inherits: ['userSpecific'],
+                    inherits: ['userSpecific', 'metrics'],
                     handler: this._wallet.getBalance,
                     scope: this._wallet,
                     validation: {
@@ -31,7 +39,7 @@ class Connector extends BasicConnector {
                     },
                 },
                 getTransferHistory: {
-                    inherits: ['userSpecific', 'pagination'],
+                    inherits: ['userSpecific', 'pagination', 'metrics'],
                     handler: this._wallet.getTransferHistory,
                     scope: this._wallet,
                     validation: {
@@ -49,7 +57,7 @@ class Connector extends BasicConnector {
                     },
                 },
                 getTokensInfo: {
-                    inherits: ['pagination'],
+                    inherits: ['pagination', 'metrics'],
                     handler: this._wallet.getTokensInfo,
                     scope: this._wallet,
                     validation: {
@@ -62,18 +70,19 @@ class Connector extends BasicConnector {
                     },
                 },
                 getVestingInfo: {
+                    inherits: ['metrics'],
                     handler: this._wallet.getVestingInfo,
                     scope: this._wallet,
                 },
                 getVestingHistory: {
-                    inherits: ['userSpecific', 'pagination'],
+                    inherits: ['userSpecific', 'pagination', 'metrics'],
                     handler: this._wallet.getVestingHistory,
                     scope: this._wallet,
                 },
                 getRewardsHistory: {
                     handler: this._wallet.getRewardsHistory,
                     scope: this._wallet,
-                    inherits: ['pagination', 'userSpecific'],
+                    inherits: ['pagination', 'userSpecific', 'metrics'],
                     validation: {
                         properties: {
                             types: {
@@ -90,7 +99,7 @@ class Connector extends BasicConnector {
                 getDelegationState: {
                     handler: this._wallet.getDelegationState,
                     scope: this._wallet,
-                    inherits: ['userSpecific'],
+                    inherits: ['userSpecific', 'metrics'],
                     validation: {
                         properties: {
                             direction: {
@@ -104,6 +113,7 @@ class Connector extends BasicConnector {
                 convertVestingToToken: {
                     handler: this._wallet.convertVestingToToken,
                     scope: this._wallet,
+                    inherits: ['metrics'],
                     validation: {
                         required: ['vesting'],
                         properties: {
@@ -116,6 +126,7 @@ class Connector extends BasicConnector {
                 convertTokensToVesting: {
                     handler: this._wallet.convertTokensToVesting,
                     scope: this._wallet,
+                    inherits: ['metrics'],
                     validation: {
                         required: ['tokens'],
                         properties: {
@@ -128,7 +139,7 @@ class Connector extends BasicConnector {
                 getGenesisConv: {
                     handler: this._wallet.getGenesisConv,
                     scope: this._wallet,
-                    inherits: ['userSpecific'],
+                    inherits: ['userSpecific', 'metrics'],
                 },
             },
 
@@ -157,11 +168,27 @@ class Connector extends BasicConnector {
                             },
                         },
                     },
+                    metrics: {
+                        before: [{ handler: this._handleMetricsIn, scope: this }],
+                        after: [{ handler: this._handleMetricsOut, scope: this }],
+                    },
                 },
             },
         });
 
         await super.setDefaultResponse(null);
+    }
+
+    _handleMetricsIn(...params) {
+        this._metricUtils.requestIn('all');
+        //todo add method-specific metric
+        return params;
+    }
+
+    _handleMetricsOut(...params) {
+        this._metricUtils.requestOut('all');
+        //todo add method-specific metric
+        return params;
     }
 }
 
