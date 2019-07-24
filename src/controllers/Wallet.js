@@ -218,7 +218,6 @@ class Wallet extends BasicController {
                 tokenType: reward.tokenType,
                 sym: reward.sym,
                 type: reward.type,
-                contentType: reward.contentType,
                 contentId: reward.contentId,
                 quantity: reward.quantity,
             })),
