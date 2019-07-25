@@ -11,6 +11,8 @@ const GenesisConvModel = require('../models/GenesisConv');
 const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
+const redis = require('../utils/Redis');
+
 class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
@@ -203,9 +205,22 @@ class Wallet extends BasicController {
             filter._id = { $lt: sequenceKey };
         }
 
+        // redis get
+
+        const redisKey = JSON.stringify({ filter, limit });
+        const stored = redis.get(redisKey);
+
+        if (stored) {
+            return stored;
+        }
+
+        // if not in redis
         const rewards = await RewardModel.find(filter, {}, { lean: true })
             .limit(limit)
             .sort({ _id: -1 });
+
+        // redis set
+        // redis expire
 
         let newSequenceKey;
 
@@ -215,7 +230,7 @@ class Wallet extends BasicController {
             newSequenceKey = rewards[rewards.length - 1]._id;
         }
 
-        return {
+        const result = {
             sequenceKey: newSequenceKey,
             items: rewards.map(reward => ({
                 id: reward._id,
@@ -230,6 +245,11 @@ class Wallet extends BasicController {
                 quantity: reward.quantity,
             })),
         };
+
+        redis.set(redisKey, result);
+        redis.expire(redisKey, 120);
+
+        return result;
     }
 
     async getVestingHistory({ userId, sequenceKey, limit }) {

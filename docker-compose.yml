@@ -4,7 +4,7 @@ services:
     container_name: wallet-mongo
     image: mongo
     restart: always
-    command: --wiredTigerCacheSizeGB 7.0
+    command: --wiredTigerCacheSizeGB 5.0
     volumes:
       - wallet-mongodb-vol:/data/db
     ports:
@@ -12,6 +12,14 @@ services:
     networks:
       - services-tier
     mem_limit: 6144m
+
+  redis:
+    image: redis
+    container_name: wallet-redis
+    networks:
+      - services-tier
+    ports:
+      - 127.0.0.1:6379:6379
 
   wallet-node:
     container_name: wallet-node
