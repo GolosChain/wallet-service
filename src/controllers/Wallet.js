@@ -207,8 +207,8 @@ class Wallet extends BasicController {
 
         // redis get
 
-        const redisKey = JSON.stringify({ filter, limit });
-        const stored = redis.get(redisKey);
+        const redisKey = `${JSON.stringify({ filter, limit })}`;
+        const stored = await redis.get(redisKey);
 
         if (stored) {
             return stored;
@@ -246,8 +246,8 @@ class Wallet extends BasicController {
             })),
         };
 
-        redis.set(redisKey, result);
-        redis.expire(redisKey, 120);
+        await redis.set(redisKey, result);
+        await redis.expire(redisKey, 120);
 
         return result;
     }
