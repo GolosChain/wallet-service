@@ -12,7 +12,10 @@ class Main extends BasicMain {
         const connector = new Connector();
         const prism = new Prism();
 
-        this.startMongoBeforeBoot();
+        this.startMongoBeforeBoot(null, {
+            useNewUrlParser: true,
+            poolSize: 500,
+        });
         this.addNested(prism, connector);
     }
 
