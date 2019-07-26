@@ -12,14 +12,6 @@ const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
-    constructor(...args) {
-        super(...args);
-        this.redis = new Redis({ url: 'redis://wallet-redis:6379' });
-        this.redis.start().catch(error => {
-            console.error('Redis start error -- ', error);
-        });
-    }
-
     async getGenesisConv({ userId }) {
         const filter = { userId };
 
