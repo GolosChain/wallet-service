@@ -4,22 +4,14 @@ services:
     container_name: wallet-mongo
     image: mongo
     restart: always
-    command: --wiredTigerCacheSizeGB 3.0
+    command: --wiredTigerCacheSizeGB 6.0
     volumes:
       - wallet-mongodb-vol:/data/db
     ports:
       - 127.0.0.1:27017:27017
     networks:
       - services-tier
-    mem_limit: 4096m
-
-  redis:
-    image: redis
-    container_name: wallet-redis
-    networks:
-      - services-tier
-    ports:
-      - 127.0.0.1:6379:6379
+    mem_limit: 6144m
 
   wallet-node:
     container_name: wallet-node
@@ -36,7 +28,6 @@ services:
       - $GLS_METRICS_HOST:$GLS_METRICS_PORT:$GLS_METRICS_PORT
     env_file:
       - .env
-    cpus: 3
     mem_limit: 2048m
 
 

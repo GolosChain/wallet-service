@@ -209,21 +209,9 @@ class Wallet extends BasicController {
             filter._id = { $lt: sequenceKey };
         }
 
-        // redis get
-        const redisKey = { filter, limit };
-        const stored = await this.redis.readCache(redisKey);
-
-        if (stored) {
-            return stored;
-        }
-
-        // if not in redis
         const rewards = await RewardModel.find(filter, {}, { lean: true })
             .limit(limit)
             .sort({ _id: -1 });
-
-        // redis set
-        // redis expire
 
         let newSequenceKey;
 
@@ -233,7 +221,7 @@ class Wallet extends BasicController {
             newSequenceKey = rewards[rewards.length - 1]._id;
         }
 
-        const result = {
+        return {
             sequenceKey: newSequenceKey,
             items: rewards.map(reward => ({
                 id: reward._id,
@@ -248,12 +236,6 @@ class Wallet extends BasicController {
                 quantity: reward.quantity,
             })),
         };
-
-        this.redis.setCache(redisKey, result).catch(error => {
-            console.error('Error during caching -- ', error);
-        });
-
-        return result;
     }
 
     async getVestingHistory({ userId, sequenceKey, limit }) {
