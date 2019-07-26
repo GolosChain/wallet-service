@@ -11,11 +11,15 @@ const GenesisConvModel = require('../models/GenesisConv');
 const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
-const redis = require('../utils/Redis');
+const Redis = require('../services/Redis');
 
 class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
+        this.redis = new Redis({ url: 'redis://wallet-redis:6379' });
+        this.redis.start().catch(error => {
+            console.error('Redis start error -- ', error);
+        });
     }
 
     async getGenesisConv({ userId }) {
@@ -206,12 +210,11 @@ class Wallet extends BasicController {
         }
 
         // redis get
-
-        const redisKey = `${JSON.stringify({ filter, limit })}`;
-        const stored = await redis.get(redisKey);
+        const redisKey = { filter, limit };
+        const stored = await this.redis.readCache(redisKey);
 
         if (stored) {
-            return JSON.parse(stored);
+            return stored;
         }
 
         // if not in redis
@@ -246,8 +249,9 @@ class Wallet extends BasicController {
             })),
         };
 
-        await redis.set(redisKey, JSON.stringify(result));
-        await redis.expire(redisKey, 120);
+        this.redis.setCache(redisKey, result).catch(error => {
+            console.error('Error during caching -- ', error);
+        });
 
         return result;
     }
