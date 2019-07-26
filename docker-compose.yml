@@ -11,7 +11,7 @@ services:
       - 127.0.0.1:27017:27017
     networks:
       - services-tier
-    mem_limit: 4096
+    mem_limit: 4096m
 
   redis:
     image: redis
