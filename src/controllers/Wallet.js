@@ -9,7 +9,6 @@ const RewardModel = require('../models/Reward');
 const GenesisConvModel = require('../models/GenesisConv');
 
 const VestingChange = require('../models/VestingChange');
-const UserMeta = require('../models/UserMeta');
 
 class Wallet extends BasicController {
     async getGenesisConv({ userId }) {
@@ -132,23 +131,57 @@ class Wallet extends BasicController {
             filter._id = { $lt: sequenceKey };
         }
 
-        const transfers = await TransferModel.find(
+        const pipeline = [
             {
-                ...filter,
+                $match: filter,
             },
-            {},
-            { lean: true }
-        )
-            .limit(limit)
-            .sort({ _id: -1 });
+            {
+                $limit: limit,
+            },
+            {
+                $sort: {
+                    _id: -1.0,
+                },
+            },
+            {
+                $lookup: {
+                    from: 'usermetas',
+                    localField: 'sender',
+                    foreignField: 'userId',
+                    as: 'senderMeta',
+                },
+            },
+            {
+                $lookup: {
+                    from: 'usermetas',
+                    localField: 'receiver',
+                    foreignField: 'userId',
+                    as: 'receiverMeta',
+                },
+            },
+        ];
+
+        const transfers = await TransferModel.aggregate(pipeline);
 
         const items = [];
 
         for (const transfer of transfers) {
-            // todo: add username field in model and resolve user names when dispersing blocks
+            const receiverName = {
+                userId: transfer.receiver,
+            };
+            const senderName = {
+                userId: transfer.sender,
+            };
 
-            const senderName = await this._getUsername(transfer.sender);
-            const receiverName = await this._getUsername(transfer.receiver);
+            if (transfer.receiverMeta[0]) {
+                receiverName.username = transfer.receiverMeta[0].username;
+                receiverName.name = transfer.receiverMeta[0].name;
+            }
+
+            if (transfer.senderMeta[0]) {
+                senderName.username = transfer.senderMeta[0].username;
+                senderName.name = transfer.senderMeta[0].name;
+            }
 
             items.push({
                 id: transfer._id,
@@ -282,23 +315,6 @@ class Wallet extends BasicController {
 
     async convertTokensToVesting({ tokens }) {
         return await Utils.convertTokensToVesting({ tokens });
-    }
-
-    async _getUsername(account) {
-        const accountMeta = await UserMeta.findOne({ userId: account });
-        const result = {
-            userId: account,
-        };
-
-        if (accountMeta) {
-            result.username = accountMeta.username;
-        }
-
-        if (accountMeta) {
-            result.name = accountMeta.name;
-        }
-
-        return result;
     }
 }
 
