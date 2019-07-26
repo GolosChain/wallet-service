@@ -18,7 +18,7 @@ class Redis extends BasicService {
         });
     }
 
-    async setCache(key, value, { dbPrefix = '', ttl = 3 }) {
+    async setCache(key, value, { dbPrefix = '', ttl = 30 }) {
         const stringKey = this._stringifyData(key);
         const stringValue = this._stringifyData(value);
 
