@@ -30,6 +30,18 @@ module.exports = MongoDB.makeModel(
                     userId: 1,
                     _id: -1,
                 },
+                options: {
+                    background: true,
+                },
+            },
+            {
+                fields: {
+                    userId: 1,
+                    _id: 1,
+                },
+                options: {
+                    background: true,
+                },
             },
         ],
     }

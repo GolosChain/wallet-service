@@ -34,8 +34,72 @@ module.exports = MongoDB.makeModel(
                     to: 1,
                     _id: -1,
                 },
-                partialFilterExpression: {
-                    isActual: true,
+                options: {
+                    background: true,
+                    partialFilterExpression: {
+                        isActual: true,
+                    },
+                },
+            },
+            {
+                fields: {
+                    from: 1,
+                    to: 1,
+                    _id: 1,
+                },
+                options: {
+                    background: true,
+                    partialFilterExpression: {
+                        isActual: true,
+                    },
+                },
+            },
+            {
+                fields: {
+                    to: 1,
+                    _id: 1,
+                },
+                options: {
+                    background: true,
+                    partialFilterExpression: {
+                        isActual: true,
+                    },
+                },
+            },
+            {
+                fields: {
+                    to: 1,
+                    _id: -1,
+                },
+                options: {
+                    background: true,
+                    partialFilterExpression: {
+                        isActual: true,
+                    },
+                },
+            },
+            {
+                fields: {
+                    from: 1,
+                    _id: 1,
+                },
+                options: {
+                    background: true,
+                    partialFilterExpression: {
+                        isActual: true,
+                    },
+                },
+            },
+            {
+                fields: {
+                    from: 1,
+                    _id: -1,
+                },
+                options: {
+                    background: true,
+                    partialFilterExpression: {
+                        isActual: true,
+                    },
                 },
             },
         ],

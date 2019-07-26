@@ -45,6 +45,38 @@ module.exports = MongoDB.makeModel(
                     sym: 1,
                     _id: -1,
                 },
+                options: {
+                    background: true,
+                },
+            },
+            {
+                fields: {
+                    receiver: 1,
+                    sym: 1,
+                    _id: -1,
+                },
+                options: {
+                    background: true,
+                },
+            },
+            {
+                fields: {
+                    sender: 1,
+                    sym: 1,
+                    _id: -1,
+                },
+                options: {
+                    background: true,
+                },
+            },
+            {
+                fields: {
+                    sym: 1,
+                    _id: -1,
+                },
+                options: {
+                    background: true,
+                },
             },
         ],
     }

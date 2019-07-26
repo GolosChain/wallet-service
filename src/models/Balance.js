@@ -33,6 +33,7 @@ module.exports = MongoDB.makeModel(
                 },
                 options: {
                     unique: true,
+                    background: true,
                 },
             },
         ],
