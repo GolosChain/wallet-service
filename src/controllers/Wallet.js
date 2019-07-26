@@ -11,8 +11,6 @@ const GenesisConvModel = require('../models/GenesisConv');
 const VestingChange = require('../models/VestingChange');
 const UserMeta = require('../models/UserMeta');
 
-const Redis = require('../services/Redis');
-
 class Wallet extends BasicController {
     constructor(...args) {
         super(...args);
