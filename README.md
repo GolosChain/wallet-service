@@ -634,7 +634,7 @@ Golos_wallet -- сервис, который предоставляет удоб
                     "userId": "la3jqfmtkgms",
                     "permlink": "re-panichodl-re-prettykaty-borba-s-botami-1562250930101t-c883-427f-be55-f698dc06b535uid-20190704t145018733z"
                 },
-                "quantity": "0.123 GOLOS"
+                "quantity": "0.123"
             },
             {
                 "id": "5d274cb3eef0a2962fe7bcfc",
@@ -650,7 +650,7 @@ Golos_wallet -- сервис, который предоставляет удоб
                     "userId": "la3jqfmtkgms",
                     "permlink": "re-panichodl-re-prettykaty-borba-s-botami-1562250930101t-c883-427f-be55-f698dc06b535uid-20190704t145018733z"
                 },
-                "quantity": "2.390 GOLOS"
+                "quantity": "2.390"
             }
         ],
         "sequenceKey": "5d274cb3eef0a2962fe7bcfc"
