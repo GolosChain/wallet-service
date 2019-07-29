@@ -12,7 +12,7 @@ class Main extends BasicMain {
         const connector = new Connector();
         const prism = new Prism();
 
-        this.startMongoBeforeBoot(null, {
+        this.startMongoBeforeBoot({
             useNewUrlParser: true,
             poolSize: 500,
         });

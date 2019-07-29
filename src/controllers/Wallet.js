@@ -140,7 +140,7 @@ class Wallet extends BasicController {
             },
             {
                 $sort: {
-                    _id: -1.0,
+                    _id: -1,
                 },
             },
             {
