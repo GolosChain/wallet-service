@@ -50,8 +50,21 @@ module.exports = MongoDB.makeModel(
         index: [
             {
                 fields: {
-                    sender: 1,
-                    receiver: 1,
+                    userId: 1,
+                    type: 1,
+                    _id: -1,
+                },
+                options: {
+                    background: true,
+                },
+            },
+            {
+                fields: {
+                    userId: 1,
+                    _id: -1,
+                },
+                options: {
+                    background: true,
                 },
             },
         ],

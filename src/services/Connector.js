@@ -81,14 +81,7 @@ class Connector extends BasicConnector {
                                 default: ['all'],
                                 items: {
                                     type: 'string',
-                                    enum: [
-                                        'transfer',
-                                        'benefeciary',
-                                        'curators',
-                                        'author',
-                                        'delegator',
-                                        'all',
-                                    ],
+                                    enum: ['benefeciary', 'curators', 'author', 'delegator', 'all'],
                                 },
                             },
                         },
