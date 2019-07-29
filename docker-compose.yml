@@ -29,6 +29,7 @@ services:
     env_file:
       - .env
     mem_limit: 2048m
+    cpus: 3
 
 
 volumes:
