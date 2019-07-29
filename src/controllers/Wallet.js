@@ -136,12 +136,12 @@ class Wallet extends BasicController {
                 $match: filter,
             },
             {
-                $limit: limit,
-            },
-            {
                 $sort: {
                     _id: -1,
                 },
+            },
+            {
+                $limit: limit,
             },
             {
                 $lookup: {
