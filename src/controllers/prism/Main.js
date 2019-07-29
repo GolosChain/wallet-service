@@ -162,13 +162,13 @@ class Main {
         // todo: uncomment when stats will work properly
         if (isVesting) {
             rewardObject.tokenType = 'vesting';
-            rewardObject.quantity = quantityString;
+            rewardObject.quantity = quantityRaw;
 
             // todo: use this when vesting stat works properly
             // rewardObject.quantity = await Utils.convertTokensToVesting({ tokens: quantityRaw });
         } else {
             rewardObject.tokenType = 'liquid';
-            rewardObject.quantity = quantityString;
+            rewardObject.quantity = quantityRaw;
         }
 
         const reward = new RewardModel(rewardObject);
