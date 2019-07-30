@@ -7,6 +7,7 @@ const DelegationModel = require('../models/Delegation');
 const TokenModel = require('../models/Token');
 const RewardModel = require('../models/Reward');
 const GenesisConvModel = require('../models/GenesisConv');
+const Withdrawal = require('../models/Withdrawal');
 
 const VestingChange = require('../models/VestingChange');
 
@@ -315,6 +316,21 @@ class Wallet extends BasicController {
 
     async convertTokensToVesting({ tokens }) {
         return await Utils.convertTokensToVesting({ tokens });
+    }
+
+    async getWithdrawStatus({ userId }) {
+        const withdrawObject = await Withdrawal.findOne({ owner: userId });
+
+        if (withdrawObject) {
+            return {
+                userId,
+                remainingPayments: withdrawObject.remaining_payments,
+                nextPayout: withdrawObject.next_payout,
+                toWithdraw: withdrawObject.to_withdraw,
+            };
+        } else {
+            return {};
+        }
     }
 }
 

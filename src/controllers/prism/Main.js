@@ -10,6 +10,8 @@ const VestingStat = require('../../models/VestingStat');
 const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
+const Withdrawal = require('../../models/Withdrawal');
+const VestingParams = require('../../models/VestingParams');
 
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
@@ -54,7 +56,9 @@ class Main {
                 action.receiver === 'gls.vesting' &&
                 (action.action === 'transfer' ||
                     action.action === 'delegate' ||
-                    action.action === 'timeoutconv') &&
+                    action.action === 'timeoutconv' ||
+                    action.action === 'withdraw' ||
+                    action.action === 'stopwithdraw') &&
                 (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
                 await this._handleVestingEvents({ events: action.events, action: action.action });
@@ -66,6 +70,12 @@ class Main {
                             event: action.args,
                             type: action.action,
                         });
+                        break;
+                    case 'withdraw':
+                        await this._handleWithdrawAction(action, trxData);
+                        break;
+                    case 'stopwithdraw':
+                        await this._handleStopwithdrawAction(action);
                         break;
                     default:
                     // do nothing
@@ -90,6 +100,13 @@ class Main {
 
             if (action.action === 'newusername') {
                 await this._handleCreateUsernameAction(action, trxData);
+            }
+            if (
+                action.receiver === 'gls.vesting' &&
+                action.code === 'gls.vesting' &&
+                action.action === 'setparams'
+            ) {
+                await this._handleSetParamsAction(action);
             }
         }
     }
@@ -186,6 +203,13 @@ class Main {
                 quantity,
                 receiver,
                 parsedMemo,
+            });
+        }
+
+        if (sender === 'gls.vesting' && memo.includes('withdraw')) {
+            await this._handleWithdrawTransfer({
+                timestamp: trxData.timestamp,
+                receiver,
             });
         }
         return await this._createTransferEvent({ trxData, sender, quantity, receiver, memo });
@@ -510,6 +534,119 @@ class Main {
                 ': ',
                 vestingLogObject
             );
+        }
+    }
+
+    // TODO
+    async _handleSetParamsAction(action) {
+        const { params } = action.args;
+
+        for (param of params) {
+            if (param[0] === 'vesting_withdraw') {
+                const vestingParamsObject = await VestingParams.findOne();
+
+                const newVestingBalanceObject = {
+                    intervals: 13,
+                    interval_seconds: 120,
+                };
+
+                newVestingBalanceObject.intervals = param[1].intervals;
+                newVestingBalanceObject.interval_seconds = param[1].interval_seconds;
+
+                if (vestingParamsObject) {
+                    await vestingParamsObject.updateOne(
+                        { _id: vestingParamsObject._id },
+                        { $set: newVestingBalanceObject }
+                    );
+
+                    Logger.info('Updated vesting params', vestingParamsObject);
+                } else {
+                    const vestingParams = new VestingParams(vestingParamsObject);
+                    await vestingParams.save();
+
+                    Logger.info('Created vesting params: ', vestingParams.toObject());
+                }
+            }
+        }
+    }
+
+    async _handleWithdrawAction(action, trxData) {
+        const { from, to, quantity } = action.args;
+
+        const { quantityRaw } = Utils.parseAsset(quantity);
+
+        // TODO
+        let intervals = 13;
+        let intervalSeconds = 120;
+
+        const vestingParamsObject = await VestingParams.findOne();
+        if (vestingParamsObject) {
+            intervals = vestingParamsObject.intervals;
+            intervalSeconds = vestingParamsObject.interval_seconds;
+        }
+
+        const withdrawObject = await Withdrawal.findOne({ owner: from });
+
+        const rate = parseFloat(quantityRaw / intervals).toFixed(6);
+
+        const newWithdrawObject = {
+            owner: from,
+            to,
+            quantity,
+            withdraw_rate: rate,
+            remaining_payments: intervals,
+            interval_seconds: intervalSeconds,
+            next_payout: Utils.calculateWithdrawNextPayout(trxData.timestamp, intervalSeconds),
+            to_withdraw: quantity,
+        };
+        if (withdrawObject) {
+            await Withdrawal.updateOne({ _id: withdrawObject._id }, { $set: newWithdrawObject });
+
+            Logger.info('Updated withdraw object of user', from, ':', withdrawObject);
+        } else {
+            const withdraw = new Withdrawal(newWithdrawObject);
+            await withdraw.save();
+
+            Logger.info('Created withdraw object: ', withdraw.toObject());
+        }
+    }
+
+    async _handleStopwithdrawAction(action) {
+        const { owner } = action.args;
+
+        const withdrawObject = await Withdrawal.findOne({ owner });
+        if (withdrawObject) {
+            await Withdrawal.deleteOne({ owner });
+            Logger.info('Deleted withdraw object of user', owner, ':', withdrawObject);
+        }
+    }
+
+    async _handleWithdrawTransfer({ receiver, timestamp }) {
+        const withdrawObject = await Withdrawal.findOne({ owner: receiver });
+        if (withdrawObject) {
+            const remainingPayments = withdrawObject.remaining_payments;
+            if (remainingPayments > 0) {
+                const currentWithdrawAmount = Utils.parseAsset(withdrawObject.to_withdraw);
+                const newWithdrawAmount = parseFloat(
+                    currentWithdrawAmount.quantityRaw - withdrawObject.withdraw_rate
+                ).toFixed(6);
+
+                const newWithdrawObject = {
+                    remaining_payments: remainingPayments - 1,
+                    next_payout: Utils.calculateWithdrawNextPayout(timestamp, intervalSeconds),
+                    to_withdraw: newWithdrawAmount,
+                };
+
+                await Withdrawal.updateOne(
+                    { _id: withdrawObject._id },
+                    { $set: newWithdrawObject }
+                );
+
+                Logger.info('Updated withdraw object of user', receiver, ':', withdrawObject);
+            } else {
+                await Withdrawal.deleteOne({ owner: receiver });
+                Logger.info('Deleted withdraw object of user', receiver, ':', withdrawObject);
+            }
         }
     }
 }

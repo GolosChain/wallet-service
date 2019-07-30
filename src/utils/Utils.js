@@ -285,6 +285,12 @@ class Utils {
             .dp(0)
             .toString();
     }
+
+    static calculateWithdrawNextPayout(timestamp, intervalSeconds) {
+        const np = new Date(timestamp);
+        np.setSeconds(np.getSeconds() + intervalSeconds);
+        return np;
+    }
 }
 
 module.exports = Utils;

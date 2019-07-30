@@ -130,6 +130,11 @@ class Connector extends BasicConnector {
                     scope: this._wallet,
                     inherits: ['userSpecific'],
                 },
+                getWithdrawStatus: {
+                    handler: this._wallet.getWithdrawStatus,
+                    scope: this._wallet,
+                    inherits: ['userSpecific'],
+                },
             },
 
             serverDefaults: {
