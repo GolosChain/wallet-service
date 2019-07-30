@@ -633,7 +633,7 @@ class Main {
 
                 const newWithdrawObject = {
                     remaining_payments: remainingPayments - 1,
-                    next_payout: Utils.calculateWithdrawNextPayout(timestamp, intervalSeconds),
+                    next_payout: Utils.calculateWithdrawNextPayout(timestamp, withdrawObject.interval_seconds),
                     to_withdraw: newWithdrawAmount,
                 };
 
