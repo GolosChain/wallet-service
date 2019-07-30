@@ -545,23 +545,23 @@ class Main {
             if (param[0] === 'vesting_withdraw') {
                 const vestingParamsObject = await VestingParams.findOne();
 
-                const newVestingBalanceObject = {
+                const newVestingParamsObject = {
                     intervals: 13,
                     interval_seconds: 120,
                 };
 
-                newVestingBalanceObject.intervals = param[1].intervals;
-                newVestingBalanceObject.interval_seconds = param[1].interval_seconds;
+                newVestingParamsObject.intervals = param[1].intervals;
+                newVestingParamsObject.interval_seconds = param[1].interval_seconds;
 
                 if (vestingParamsObject) {
                     await vestingParamsObject.updateOne(
                         { _id: vestingParamsObject._id },
-                        { $set: newVestingBalanceObject }
+                        { $set: newVestingParamsObject }
                     );
 
-                    Logger.info('Updated vesting params', vestingParamsObject);
+                    Logger.info('Updated vesting params', newVestingParamsObject);
                 } else {
-                    const vestingParams = new VestingParams(vestingParamsObject);
+                    const vestingParams = new VestingParams(newVestingParamsObject);
                     await vestingParams.save();
 
                     Logger.info('Created vesting params: ', vestingParams.toObject());
@@ -602,7 +602,7 @@ class Main {
         if (withdrawObject) {
             await Withdrawal.updateOne({ _id: withdrawObject._id }, { $set: newWithdrawObject });
 
-            Logger.info('Updated withdraw object of user', from, ':', withdrawObject);
+            Logger.info('Updated withdraw object of user', from, ':', newWithdrawObject);
         } else {
             const withdraw = new Withdrawal(newWithdrawObject);
             await withdraw.save();
@@ -616,7 +616,7 @@ class Main {
 
         const withdrawObject = await Withdrawal.findOne({ owner });
         if (withdrawObject) {
-            await Withdrawal.deleteOne({ owner });
+            await Withdrawal.deleteOne({ _id: withdrawObject._id });
             Logger.info('Deleted withdraw object of user', owner, ':', withdrawObject);
         }
     }
@@ -642,9 +642,9 @@ class Main {
                     { $set: newWithdrawObject }
                 );
 
-                Logger.info('Updated withdraw object of user', receiver, ':', withdrawObject);
+                Logger.info('Updated withdraw object of user', receiver, ':', newWithdrawObject);
             } else {
-                await Withdrawal.deleteOne({ owner: receiver });
+                await Withdrawal.deleteOne({ _id: withdrawObject._id });
                 Logger.info('Deleted withdraw object of user', receiver, ':', withdrawObject);
             }
         }
