@@ -53,7 +53,6 @@ class Genesis {
             case 'delegate':
                 this._handleDelegate(data);
                 return true;
-            // TODO: Need process
             case 'stat':
                 await this._handleStat(data);
                 return true;
@@ -109,20 +108,25 @@ class Genesis {
 
         if (!components) {
             components = sum;
-            sum = quantity;
+            sum = Genesis.parseGenesisConvMemoComponent(components).convQuantity;
         }
 
-        for (const conv of components.split(' + ')) {
-            const pattern = /(?<quantity>\d+.\d{3} \D{3,5}) \((?<source>.*)\)/;
-            const match = conv.match(pattern);
-            if (match.groups) {
-                const { quantity: convQuantity, source } = match.groups;
-
-                sources[source] = convQuantity;
-            }
+        for (const component of components.split(' + ')) {
+            const { convQuantity, source } = Genesis.parseGenesisConvMemoComponent(component);
+            sources[source] = convQuantity;
         }
 
         this._genesisConvBulk.addEntry({ userId, sum, quantity, sources, memo });
+    }
+
+    static parseGenesisConvMemoComponent(component) {
+        const pattern = /(?<quantity>\d+.\d{3} \D{3,5}) \((?<source>.*)\)/;
+        const match = component.match(pattern);
+        if (match.groups) {
+            const { quantity: convQuantity, source } = match.groups;
+            return { convQuantity, source };
+        }
+        return {};
     }
 
     _handleCuratorsReward(data) {
