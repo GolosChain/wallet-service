@@ -18,7 +18,7 @@ module.exports = MongoDB.makeModel(
         },
         trx_id: {
             type: String,
-            required: true,
+            default: null,
         },
         timestamp: {
             type: Date,
