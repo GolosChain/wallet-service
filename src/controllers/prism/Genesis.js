@@ -148,7 +148,7 @@ class Genesis {
             },
             tokenType,
             block: 0,
-            trx_id: 0,
+            trx_id: null,
             sym,
             quantity,
             timestamp,
@@ -164,7 +164,7 @@ class Genesis {
             type: 'delegator',
             tokenType,
             block: 0,
-            trx_id: 0,
+            trx_id: null,
             sym,
             quantity,
             timestamp,
@@ -184,7 +184,7 @@ class Genesis {
             },
             tokenType,
             block: 0,
-            trx_id: 0,
+            trx_id: null,
             sym,
             quantity,
             timestamp,
@@ -205,7 +205,7 @@ class Genesis {
             },
             tokenType,
             block: 0,
-            trx_id: 0,
+            trx_id: null,
             sym,
             quantity,
             timestamp,
@@ -261,7 +261,7 @@ class Genesis {
             diff,
             timestamp,
             block: 0,
-            trx_id: 0,
+            trx_id: null,
         };
 
         this._vestingChangesBulk.addEntry(vestingChangeObject);
@@ -279,7 +279,7 @@ class Genesis {
             quantity,
             sym,
             block: 0,
-            trx_id: '0',
+            trx_id: null,
             memo: data.memo,
             timestamp: new Date(data.time + 'Z'),
         };
