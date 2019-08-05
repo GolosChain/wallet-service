@@ -321,16 +321,17 @@ class Wallet extends BasicController {
     async getWithdrawStatus({ userId }) {
         const withdrawObject = await Withdrawal.findOne({ owner: userId });
 
-        if (withdrawObject) {
-            return {
-                userId,
-                remainingPayments: withdrawObject.remaining_payments,
-                nextPayout: withdrawObject.next_payout,
-                toWithdraw: withdrawObject.to_withdraw,
-            };
-        } else {
+        if (!withdrawObject) {
             return {};
         }
+
+        return {
+            userId,
+            quantity: withdrawObject.quantity,
+            remainingPayments: withdrawObject.remaining_payments,
+            nextPayout: withdrawObject.next_payout,
+            toWithdraw: withdrawObject.to_withdraw,
+        };
     }
 }
 

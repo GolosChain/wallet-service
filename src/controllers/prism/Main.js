@@ -1,5 +1,6 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
+const env = require('../data/env');
 const Utils = require('../../utils/Utils');
 const TransferModel = require('../../models/Transfer');
 const RewardModel = require('../../models/Reward');
@@ -537,17 +538,16 @@ class Main {
         }
     }
 
-    // TODO
     async _handleSetParamsAction(action) {
         const { params } = action.args;
 
-        for (param of params) {
+        for (const param of params) {
             if (param[0] === 'vesting_withdraw') {
                 const vestingParamsObject = await VestingParams.findOne();
 
                 const newVestingParamsObject = {
-                    intervals: 13,
-                    interval_seconds: 120,
+                    intervals: env.GLS_WITHDRAW_INTERWALS,
+                    interval_seconds: env.GLS_WITHDRAW_INTERWALS_SECONDS,
                 };
 
                 newVestingParamsObject.intervals = param[1].intervals;
@@ -575,9 +575,8 @@ class Main {
 
         const { quantityRaw } = Utils.parseAsset(quantity);
 
-        // TODO
-        let intervals = 13;
-        let intervalSeconds = 120;
+        let intervals = env.GLS_WITHDRAW_INTERWALS;
+        let intervalSeconds = env.GLS_WITHDRAW_INTERWALS_SECONDS;
 
         const vestingParamsObject = await VestingParams.findOne();
         if (vestingParamsObject) {
@@ -625,7 +624,7 @@ class Main {
         const withdrawObject = await Withdrawal.findOne({ owner: receiver });
         if (withdrawObject) {
             const remainingPayments = withdrawObject.remaining_payments;
-            if (remainingPayments > 0) {
+            if (remainingPayments - 1 !== 0) {
                 const currentWithdrawAmount = Utils.parseAsset(withdrawObject.to_withdraw);
                 const newWithdrawAmount = parseFloat(
                     currentWithdrawAmount.quantityRaw - withdrawObject.withdraw_rate
@@ -633,7 +632,10 @@ class Main {
 
                 const newWithdrawObject = {
                     remaining_payments: remainingPayments - 1,
-                    next_payout: Utils.calculateWithdrawNextPayout(timestamp, withdrawObject.interval_seconds),
+                    next_payout: Utils.calculateWithdrawNextPayout(
+                        timestamp,
+                        withdrawObject.interval_seconds
+                    ),
                     to_withdraw: newWithdrawAmount,
                 };
 
