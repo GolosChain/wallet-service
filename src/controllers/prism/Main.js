@@ -542,30 +542,31 @@ class Main {
         const { params } = action.args;
 
         for (const param of params) {
-            if (param[0] === 'vesting_withdraw') {
-                const vestingParamsObject = await VestingParams.findOne();
+            if (param[0] !== 'vesting_withdraw') {
+                continue;
+            }
 
-                const newVestingParamsObject = {
-                    intervals: env.GLS_WITHDRAW_INTERWALS,
-                    interval_seconds: env.GLS_WITHDRAW_INTERWALS_SECONDS,
-                };
+            const vestingParamsObject = await VestingParams.findOne();
+            const newVestingParamsObject = {
+                intervals: env.GLS_WITHDRAW_INTERWALS,
+                interval_seconds: env.GLS_WITHDRAW_INTERWALS_SECONDS,
+            };
 
-                newVestingParamsObject.intervals = param[1].intervals;
-                newVestingParamsObject.interval_seconds = param[1].interval_seconds;
+            newVestingParamsObject.intervals = param[1].intervals;
+            newVestingParamsObject.interval_seconds = param[1].interval_seconds;
 
-                if (vestingParamsObject) {
-                    await vestingParamsObject.updateOne(
-                        { _id: vestingParamsObject._id },
-                        { $set: newVestingParamsObject }
-                    );
+            if (vestingParamsObject) {
+                await vestingParamsObject.updateOne(
+                    { _id: vestingParamsObject._id },
+                    { $set: newVestingParamsObject }
+                );
 
-                    Logger.info('Updated vesting params', newVestingParamsObject);
-                } else {
-                    const vestingParams = new VestingParams(newVestingParamsObject);
-                    await vestingParams.save();
+                Logger.info('Updated vesting params', newVestingParamsObject);
+            } else {
+                const vestingParams = new VestingParams(newVestingParamsObject);
+                await vestingParams.save();
 
-                    Logger.info('Created vesting params: ', vestingParams.toObject());
-                }
+                Logger.info('Created vesting params: ', vestingParams.toObject());
             }
         }
     }
@@ -573,7 +574,7 @@ class Main {
     async _handleWithdrawAction(action, trxData) {
         const { from, to, quantity } = action.args;
 
-        const { quantityRaw } = Utils.parseAsset(quantity);
+        const { quantity: bigNumQuantity } = Utils.parseAsset(quantity);
 
         let intervals = env.GLS_WITHDRAW_INTERWALS;
         let intervalSeconds = env.GLS_WITHDRAW_INTERWALS_SECONDS;
@@ -586,7 +587,7 @@ class Main {
 
         const withdrawObject = await Withdrawal.findOne({ owner: from });
 
-        const rate = parseFloat(quantityRaw / intervals).toFixed(6);
+        const rate = parseFloat(bigNumQuantity.div(intervals).toString()).toFixed(6);
 
         const newWithdrawObject = {
             owner: from,
@@ -622,33 +623,31 @@ class Main {
 
     async _handleWithdrawTransfer({ receiver, timestamp }) {
         const withdrawObject = await Withdrawal.findOne({ owner: receiver });
-        if (withdrawObject) {
-            const remainingPayments = withdrawObject.remaining_payments;
-            if (remainingPayments - 1 !== 0) {
-                const currentWithdrawAmount = Utils.parseAsset(withdrawObject.to_withdraw);
-                const newWithdrawAmount = parseFloat(
-                    currentWithdrawAmount.quantityRaw - withdrawObject.withdraw_rate
-                ).toFixed(6);
+        if (!withdrawObject) {
+            return;
+        }
+        const remainingPayments = withdrawObject.remaining_payments;
+        if (remainingPayments - 1 !== 0) {
+            const currentWithdrawAmount = Utils.parseAsset(withdrawObject.to_withdraw);
+            const newWithdrawAmount = parseFloat(
+                currentWithdrawAmount.quantityRaw - withdrawObject.withdraw_rate
+            ).toFixed(6);
 
-                const newWithdrawObject = {
-                    remaining_payments: remainingPayments - 1,
-                    next_payout: Utils.calculateWithdrawNextPayout(
-                        timestamp,
-                        withdrawObject.interval_seconds
-                    ),
-                    to_withdraw: newWithdrawAmount,
-                };
+            const newWithdrawObject = {
+                remaining_payments: remainingPayments - 1,
+                next_payout: Utils.calculateWithdrawNextPayout(
+                    timestamp,
+                    withdrawObject.interval_seconds
+                ),
+                to_withdraw: newWithdrawAmount,
+            };
 
-                await Withdrawal.updateOne(
-                    { _id: withdrawObject._id },
-                    { $set: newWithdrawObject }
-                );
+            await Withdrawal.updateOne({ _id: withdrawObject._id }, { $set: newWithdrawObject });
 
-                Logger.info('Updated withdraw object of user', receiver, ':', newWithdrawObject);
-            } else {
-                await Withdrawal.deleteOne({ _id: withdrawObject._id });
-                Logger.info('Deleted withdraw object of user', receiver, ':', withdrawObject);
-            }
+            Logger.info('Updated withdraw object of user', receiver, ':', newWithdrawObject);
+        } else {
+            await Withdrawal.deleteOne({ _id: withdrawObject._id });
+            Logger.info('Deleted withdraw object of user', receiver, ':', withdrawObject);
         }
     }
 }
