@@ -38,6 +38,16 @@ module.exports = MongoDB.makeModel(
         },
     },
     {
-        // index
+        index: [
+            {
+                fields: {
+                    owner: 1,
+                },
+                options: {
+                    unique: true,
+                    background: true,
+                },
+            },
+        ],
     }
 );
