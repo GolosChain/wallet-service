@@ -5,6 +5,7 @@ const VestingBalance = require('../models/VestingBalance');
 const VestingStat = require('../models/VestingStat');
 const BalanceModel = require('../models/Balance');
 const TokenModel = require('../models/Token');
+const Withdrawal = require('../models/Withdrawal');
 
 class Utils {
     static async extractArgumentList({ args, fields }) {
@@ -244,11 +245,24 @@ class Utils {
             type: 'parsed',
         });
 
+        const withdrawObject = await Withdrawal.findOne({ owner: userId });
+        let withdraw = {};
+
+        if (withdrawObject) {
+            withdraw = {
+                quantity: withdrawObject.quantity,
+                remainingPayments: withdrawObject.remaining_payments,
+                nextPayout: withdrawObject.next_payout,
+                toWithdraw: withdrawObject.to_withdraw,
+            };
+        }
+
         return {
             account,
             vesting: { GESTS: vestingBalance.vesting, GOLOS: vestingInGolos },
             delegated: { GESTS: vestingBalance.delegated, GOLOS: delegatedInGolos },
             received: { GESTS: vestingBalance.received, GOLOS: receivedInGolos },
+            withdraw,
         };
     }
 
@@ -284,6 +298,12 @@ class Utils {
             .div(divider)
             .dp(0)
             .toString();
+    }
+
+    static calculateWithdrawNextPayout(timestamp, intervalSeconds) {
+        const np = new Date(timestamp);
+        np.setSeconds(np.getSeconds() + intervalSeconds);
+        return np;
     }
 }
 

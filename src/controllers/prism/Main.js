@@ -1,5 +1,6 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
+const env = require('../data/env');
 const Utils = require('../../utils/Utils');
 const TransferModel = require('../../models/Transfer');
 const RewardModel = require('../../models/Reward');
@@ -10,6 +11,8 @@ const VestingStat = require('../../models/VestingStat');
 const VestingBalance = require('../../models/VestingBalance');
 const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
+const Withdrawal = require('../../models/Withdrawal');
+const VestingParams = require('../../models/VestingParams');
 
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
@@ -54,7 +57,9 @@ class Main {
                 action.receiver === 'gls.vesting' &&
                 (action.action === 'transfer' ||
                     action.action === 'delegate' ||
-                    action.action === 'timeoutconv') &&
+                    action.action === 'timeoutconv' ||
+                    action.action === 'withdraw' ||
+                    action.action === 'stopwithdraw') &&
                 (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
                 await this._handleVestingEvents({ events: action.events, action: action.action });
@@ -66,6 +71,12 @@ class Main {
                             event: action.args,
                             type: action.action,
                         });
+                        break;
+                    case 'withdraw':
+                        await this._handleWithdrawAction(action, trxData);
+                        break;
+                    case 'stopwithdraw':
+                        await this._handleStopwithdrawAction(action);
                         break;
                     default:
                     // do nothing
@@ -90,6 +101,13 @@ class Main {
 
             if (action.action === 'newusername') {
                 await this._handleCreateUsernameAction(action, trxData);
+            }
+            if (
+                action.receiver === 'gls.vesting' &&
+                action.code === 'gls.vesting' &&
+                action.action === 'setparams'
+            ) {
+                await this._handleSetParamsAction(action);
             }
         }
     }
@@ -186,6 +204,13 @@ class Main {
                 quantity,
                 receiver,
                 parsedMemo,
+            });
+        }
+
+        if (sender === 'gls.vesting' && memo.includes('withdraw')) {
+            await this._handleWithdrawTransfer({
+                timestamp: trxData.timestamp,
+                receiver,
             });
         }
         return await this._createTransferEvent({ trxData, sender, quantity, receiver, memo });
@@ -510,6 +535,119 @@ class Main {
                 ': ',
                 vestingLogObject
             );
+        }
+    }
+
+    async _handleSetParamsAction(action) {
+        const { params } = action.args;
+
+        for (const param of params) {
+            if (param[0] !== 'vesting_withdraw') {
+                continue;
+            }
+
+            const vestingParamsObject = await VestingParams.findOne();
+            const newVestingParamsObject = {
+                intervals: env.GLS_WITHDRAW_INTERWALS,
+                interval_seconds: env.GLS_WITHDRAW_INTERWALS_SECONDS,
+            };
+
+            newVestingParamsObject.intervals = param[1].intervals;
+            newVestingParamsObject.interval_seconds = param[1].interval_seconds;
+
+            if (vestingParamsObject) {
+                await vestingParamsObject.updateOne(
+                    { _id: vestingParamsObject._id },
+                    { $set: newVestingParamsObject }
+                );
+
+                Logger.info('Updated vesting params', newVestingParamsObject);
+            } else {
+                const vestingParams = new VestingParams(newVestingParamsObject);
+                await vestingParams.save();
+
+                Logger.info('Created vesting params: ', vestingParams.toObject());
+            }
+        }
+    }
+
+    async _handleWithdrawAction(action, trxData) {
+        const { from, to, quantity } = action.args;
+
+        const { quantity: bigNumQuantity } = Utils.parseAsset(quantity);
+
+        let intervals = env.GLS_WITHDRAW_INTERWALS;
+        let intervalSeconds = env.GLS_WITHDRAW_INTERWALS_SECONDS;
+
+        const vestingParamsObject = await VestingParams.findOne();
+        if (vestingParamsObject) {
+            intervals = vestingParamsObject.intervals;
+            intervalSeconds = vestingParamsObject.interval_seconds;
+        }
+
+        const withdrawObject = await Withdrawal.findOne({ owner: from });
+
+        const rate = parseFloat(bigNumQuantity.div(intervals).toString()).toFixed(6);
+
+        const newWithdrawObject = {
+            owner: from,
+            to,
+            quantity,
+            withdraw_rate: rate,
+            remaining_payments: intervals,
+            interval_seconds: intervalSeconds,
+            next_payout: Utils.calculateWithdrawNextPayout(trxData.timestamp, intervalSeconds),
+            to_withdraw: quantity,
+        };
+        if (withdrawObject) {
+            await Withdrawal.updateOne({ _id: withdrawObject._id }, { $set: newWithdrawObject });
+
+            Logger.info('Updated withdraw object of user', from, ':', newWithdrawObject);
+        } else {
+            const withdraw = new Withdrawal(newWithdrawObject);
+            await withdraw.save();
+
+            Logger.info('Created withdraw object: ', withdraw.toObject());
+        }
+    }
+
+    async _handleStopwithdrawAction(action) {
+        const { owner } = action.args;
+
+        const withdrawObject = await Withdrawal.findOne({ owner });
+        if (withdrawObject) {
+            await Withdrawal.deleteOne({ _id: withdrawObject._id });
+            Logger.info('Deleted withdraw object of user', owner, ':', withdrawObject);
+        }
+    }
+
+    async _handleWithdrawTransfer({ receiver, timestamp }) {
+        const withdrawObject = await Withdrawal.findOne({ owner: receiver });
+        if (!withdrawObject) {
+            return;
+        }
+        const remainingPayments = withdrawObject.remaining_payments;
+        if (remainingPayments - 1 !== 0) {
+            const currentWithdrawAmount = Utils.parseAsset(withdrawObject.to_withdraw);
+            const newWithdrawAmount = parseFloat(
+                currentWithdrawAmount.quantityRaw - withdrawObject.withdraw_rate
+            ).toFixed(6);
+
+            const newWithdrawObject = {
+                remaining_payments: remainingPayments - 1,
+                next_payout: Utils.calculateWithdrawNextPayout(
+                    timestamp,
+                    withdrawObject.interval_seconds
+                ),
+                to_withdraw: newWithdrawAmount,
+            };
+
+            await Withdrawal.updateOne({ _id: withdrawObject._id }, { $set: newWithdrawObject });
+
+            Logger.info('Updated withdraw object of user', receiver, ':', newWithdrawObject);
+        } else {
+            await Withdrawal.deleteOne({ _id: withdrawObject._id });
+            Logger.info('Deleted withdraw object of user', receiver, ':', withdrawObject);
         }
     }
 }
