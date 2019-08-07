@@ -65,6 +65,10 @@ class Connector extends BasicConnector {
                     handler: this._wallet.getVestingInfo,
                     scope: this._wallet,
                 },
+                getVestingSupplyAndBalance: {
+                    handler: this._wallet.getVestingSupplyAndBalance,
+                    scope: this._wallet,
+                },
                 getVestingHistory: {
                     inherits: ['userSpecific', 'pagination'],
                     handler: this._wallet.getVestingHistory,
