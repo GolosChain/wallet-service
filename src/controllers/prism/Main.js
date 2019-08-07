@@ -1,6 +1,6 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
-const env = require('../data/env');
+const env = require('../../data/env');
 const Utils = require('../../utils/Utils');
 const TransferModel = require('../../models/Transfer');
 const RewardModel = require('../../models/Reward');

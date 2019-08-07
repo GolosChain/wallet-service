@@ -216,6 +216,10 @@ class Wallet extends BasicController {
         return await Utils.getVestingInfo();
     }
 
+    async getVestingSupplyAndBalance() {
+        return await Utils.getVestingSupplyAndBalance();
+    }
+
     async getRewardsHistory({ userId, types, sequenceKey, limit }) {
         const filter = { userId };
 
