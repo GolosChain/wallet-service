@@ -245,7 +245,7 @@ class Utils {
             type: 'parsed',
         });
 
-        const withdrawObject = await Withdrawal.findOne({ owner: userId });
+        const withdrawObject = await Withdrawal.findOne({ owner: account });
         let withdraw = {};
 
         if (withdrawObject) {
