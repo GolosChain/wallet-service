@@ -1,4 +1,7 @@
 const core = require('gls-core-service');
+const fetch = require('node-fetch');
+const { JsonRpc } = require('cyberwayjs');
+const env = require('../data/env');
 const Logger = core.utils.Logger;
 const BigNum = core.types.BigNum;
 const VestingBalance = require('../models/VestingBalance');
@@ -7,42 +10,11 @@ const BalanceModel = require('../models/Balance');
 const TokenModel = require('../models/Token');
 const Withdrawal = require('../models/Withdrawal');
 
+const RPC = new JsonRpc(env.GLS_CYBERWAY_HTTP_URL, { fetch });
+
 class Utils {
-    static async extractArgumentList({ args, fields }) {
-        if (!Array.isArray(fields)) {
-            Logger.warn('_extractArgumentList: invalid argument');
-            throw { code: 805, message: 'Wrong arguments' };
-        }
-
-        for (const f of fields) {
-            if (typeof f !== 'string') {
-                Logger.warn('_extractArgumentList: invalid argument:', f);
-                throw { code: 805, message: 'Wrong arguments' };
-            }
-        }
-
-        const result = {};
-
-        if (args) {
-            if (Array.isArray(args)) {
-                if (args.length !== fields.length) {
-                    Logger.warn(
-                        `_extractArgumentList: invalid argument: args.length !== fields.length`
-                    );
-                    throw { code: 805, message: 'Wrong arguments' };
-                }
-
-                for (const i in args) {
-                    result[fields[i]] = args[i];
-                }
-            } else {
-                for (const f of fields) {
-                    result[f] = args[f];
-                }
-            }
-        }
-
-        return result;
+    static async getAccount({ userId }) {
+        return await RPC.fetch('/v1/chain/get_account', { account_name: userId });
     }
 
     static checkAsset(asset) {
@@ -141,7 +113,7 @@ class Utils {
         return { stat: vestingStat.stat };
     }
 
-    static async getBalance({ userId, currencies, type }) {
+    static async getBalance({ userId, currencies, type, shouldFetchStake = false }) {
         const result = {
             userId,
         };
@@ -194,6 +166,11 @@ class Utils {
                     }
                 }
             }
+        }
+
+        if (shouldFetchStake) {
+            const { stake_info: stakeInfo } = await Utils.getAccount({ userId });
+            result.stakeInfo = stakeInfo;
         }
 
         return result;
