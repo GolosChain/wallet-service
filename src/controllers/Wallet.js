@@ -209,7 +209,7 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ userId, currencies, type }) {
-        return await Utils.getBalance({ userId, currencies, type });
+        return await Utils.getBalance({ userId, currencies, type, shouldFetchStake: true });
     }
 
     async getVestingInfo() {
