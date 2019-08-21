@@ -15,7 +15,7 @@ class Wallet extends BasicController {
     async getClaimHistory({ userId, tokens, limit, sequenceKey }) {
         const filter = { userId };
 
-        if (tokens !== 'all') {
+        if (!tokens.includes('all')) {
             filter.$or = tokens.map(sym => ({ sym }));
         }
 
