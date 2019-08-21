@@ -13,6 +13,7 @@ const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
 const Withdrawal = require('../../models/Withdrawal');
 const VestingParams = require('../../models/VestingParams');
+const Claim = require('../../models/Claim');
 
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
@@ -44,9 +45,11 @@ class Main {
                     case 'bulktransfer':
                         await this._handleBulkTransferAction(action, trxData);
                         break;
+                    case 'claim':
+                        await this._handleClaimAction(action, trxData);
+                    // do not break here: we still have to handle events
                     case 'issue':
                     case 'create':
-                    case 'claim':
                         await this._handleEvents({ events: action.events });
                         break;
                     default:
@@ -110,6 +113,23 @@ class Main {
                 await this._handleSetParamsAction(action);
             }
         }
+    }
+
+    async _handleClaimAction(action, trxData) {
+        const { owner: userId, quantity } = action;
+
+        const { quantityRaw, sym } = Utils.parseAsset(quantity);
+
+        const claim = new Claim({
+            userId,
+            quantity: quantityRaw,
+            sym,
+            ...trxData,
+        });
+
+        await claim.save();
+
+        Logger.info('Created claim object: ', claim.toObject());
     }
 
     async _handleBulkTransferAction(action, trxData) {

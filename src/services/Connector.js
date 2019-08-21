@@ -139,6 +139,22 @@ class Connector extends BasicConnector {
                     scope: this._wallet,
                     inherits: ['userSpecific'],
                 },
+                getClaimHistory: {
+                    handler: this._wallet.getClaimHistory,
+                    scope: this._wallet,
+                    inherits: ['pagination', 'userSpecific'],
+                    validation: {
+                        properties: {
+                            tokens: {
+                                type: 'array',
+                                default: ['all'],
+                                items: {
+                                    type: 'string',
+                                },
+                            },
+                        },
+                    },
+                },
             },
 
             serverDefaults: {
