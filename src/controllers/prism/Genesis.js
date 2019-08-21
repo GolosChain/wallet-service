@@ -139,7 +139,7 @@ class Genesis {
         } = data;
 
         if (!userId || !permlink) {
-            console.error('Missing contentId in genesis reward: ', JSON.stringify(data, null, 4));
+            Logger.error('Missing contentId in genesis reward: ', JSON.stringify(data, null, 4));
             return;
         }
 
