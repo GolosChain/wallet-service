@@ -116,7 +116,7 @@ class Main {
     }
 
     async _handleClaimAction(action, trxData) {
-        const { owner: userId, quantity } = action;
+        const { owner: userId, quantity } = action.args;
 
         const { quantityRaw, sym } = Utils.parseAsset(quantity);
 
