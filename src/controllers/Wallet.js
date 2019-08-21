@@ -8,10 +8,42 @@ const TokenModel = require('../models/Token');
 const RewardModel = require('../models/Reward');
 const GenesisConvModel = require('../models/GenesisConv');
 const Withdrawal = require('../models/Withdrawal');
-
 const VestingChange = require('../models/VestingChange');
+const Claim = require('../models/Claim');
 
 class Wallet extends BasicController {
+    async getClaimHistory({ userId, tokens, limit, sequenceKey }) {
+        const filter = { userId };
+
+        if (tokens !== 'all') {
+            filter.$or = tokens.map(sym => ({ sym }));
+        }
+
+        if (sequenceKey) {
+            filter._id = { $gt: sequenceKey };
+        }
+
+        const claims = await Claim.find(
+            filter,
+            {
+                _id: false,
+                __v: false,
+                createdAt: false,
+                updatedAt: false,
+            },
+            { lean: true }
+        )
+            .sort({ _id: -1 })
+            .limit(limit);
+
+        let newSequenceKey = null;
+        if (claims.length === limit) {
+            newSequenceKey = claims[claims.length - 1]._id;
+        }
+
+        return { claims, newSequenceKey };
+    }
+
     async getGenesisConv({ userId }) {
         const filter = { userId };
 
