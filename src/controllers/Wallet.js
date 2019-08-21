@@ -41,7 +41,13 @@ class Wallet extends BasicController {
             newSequenceKey = claims[claims.length - 1]._id;
         }
 
-        return { claims, newSequenceKey };
+        return {
+            claims: claims.map(({ trx_id, ...rest }) => ({
+                trxId: trx_id,
+                ...rest,
+            })),
+            newSequenceKey,
+        };
     }
 
     async getGenesisConv({ userId }) {
