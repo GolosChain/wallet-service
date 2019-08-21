@@ -32,9 +32,11 @@ module.exports = MongoDB.makeModel(
         contentId: {
             userId: {
                 type: String,
+                required: true,
             },
             permlink: {
                 type: String,
+                required: true,
             },
         },
         tokenType: {
