@@ -47,6 +47,7 @@ class Main {
                         break;
                     case 'claim':
                         await this._handleClaimAction(action, trxData);
+                    // do not break here: we still have to handle events
                     case 'issue':
                     case 'create':
                         await this._handleEvents({ events: action.events });

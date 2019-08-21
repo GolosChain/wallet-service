@@ -138,6 +138,11 @@ class Genesis {
             time: timestamp,
         } = data;
 
+        if (!userId || !permlink) {
+            Logger.error('Missing contentId in genesis reward: ', JSON.stringify(data, null, 4));
+            return;
+        }
+
         const { quantity, sym, tokenType } = this._parseAsset(rewardRaw);
 
         this._curRewardsBulk.addEntry({
