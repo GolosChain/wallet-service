@@ -125,9 +125,10 @@ class Utils {
                 vesting: total,
                 delegated: outDelegate,
                 received: inDelegated,
+                withdraw,
             } = await Utils.getVestingBalance({ account: userId });
 
-            result.vesting = { total, outDelegate, inDelegated };
+            result.vesting = { total, outDelegate, inDelegated, withdraw };
         }
 
         if (type !== 'vesting') {
