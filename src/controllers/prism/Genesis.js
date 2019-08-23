@@ -130,13 +130,10 @@ class Genesis {
     }
 
     _handleCuratorsReward(data) {
-        const {
-            curator: userId,
-            reward: rewardRaw,
-            comment_author: author,
-            comment_permlink: permlink,
-            time: timestamp,
-        } = data;
+        const { curator: userId, reward: rewardRaw, time: timestamp } = data;
+
+        const author = data.comment_author || data.author;
+        const permlink = data.comment_permlink || data.permlink;
 
         if (!userId || !permlink) {
             Logger.error('Missing contentId in genesis reward: ', JSON.stringify(data, null, 4));
