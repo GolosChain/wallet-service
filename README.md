@@ -832,7 +832,7 @@ Golos_wallet -- сервис, который предоставляет удоб
     "jsonrpc": "2.0",
     "id": 1,
     "result": {
-        "items": [
+        "claims": [
             {
                 "id": "5d274cb3eef0a2d1c5e7bcfa",
                 "userId": "la3jqfmtkgms",

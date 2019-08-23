@@ -15,7 +15,7 @@ class Wallet extends BasicController {
     async getClaimHistory({ userId, tokens, limit, sequenceKey }) {
         const filter = { userId };
 
-        if (tokens !== 'all') {
+        if (!tokens.includes('all')) {
             filter.$or = tokens.map(sym => ({ sym }));
         }
 
@@ -41,7 +41,13 @@ class Wallet extends BasicController {
             newSequenceKey = claims[claims.length - 1]._id;
         }
 
-        return { claims, newSequenceKey };
+        return {
+            claims: claims.map(({ trx_id, ...rest }) => ({
+                trxId: trx_id,
+                ...rest,
+            })),
+            newSequenceKey,
+        };
     }
 
     async getGenesisConv({ userId }) {
