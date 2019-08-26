@@ -175,15 +175,11 @@ class Genesis {
     }
 
     _handleBeneficiaryReward(data) {
-        const { benefactor: userId, author, permlink, reward: quantityRaw, time: timestamp } = data;
+        const { benefactor: userId, reward: quantityRaw, time: timestamp } = data;
         const { quantity, sym, tokenType } = this._parseAsset(quantityRaw);
 
         this._benRewardsBulk.addEntry({
             type: 'benefeciary',
-            contentId: {
-                userId: author,
-                permlink,
-            },
             tokenType,
             block: 0,
             trx_id: null,
