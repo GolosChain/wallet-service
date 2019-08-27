@@ -24,7 +24,7 @@ class Wallet extends BasicController {
         for (const item of items.producers) {
             if (!currentUserId) {
                 item.hasVote = false;
-                item.quantity = 0;
+                item.voteQuantity = 0;
                 continue;
             }
 
@@ -35,12 +35,12 @@ class Wallet extends BasicController {
 
             if (delegateVote) {
                 item.hasVote = true;
-                item.quantity = delegateVote.quantity;
+                item.voteQuantity = delegateVote.quantity;
                 continue;
             }
 
             item.hasVote = false;
-            item.quantity = 0;
+            item.voteQuantity = 0;
         }
 
         return items;
