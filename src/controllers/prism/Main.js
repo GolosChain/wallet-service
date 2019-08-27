@@ -1,5 +1,6 @@
 const core = require('gls-core-service');
 const Logger = core.utils.Logger;
+const BigNum = core.types.BigNum;
 const env = require('../../data/env');
 const Utils = require('../../utils/Utils');
 const TransferModel = require('../../models/Transfer');
@@ -13,6 +14,7 @@ const VestingChange = require('../../models/VestingChange');
 const UserMeta = require('../../models/UserMeta');
 const Withdrawal = require('../../models/Withdrawal');
 const VestingParams = require('../../models/VestingParams');
+const DelegateVote = require('../../models/DelegateVote');
 const Claim = require('../../models/Claim');
 
 class Main {
@@ -111,6 +113,14 @@ class Main {
                 action.action === 'setparams'
             ) {
                 await this._handleSetParamsAction(action);
+            }
+
+            if (
+                action.receiver === 'cyber.stake' &&
+                action.code === 'cyber.stake' &&
+                action.action === 'delegatevote'
+            ) {
+                await this._handleDelegateVoteAction(action);
             }
         }
     }
@@ -668,6 +678,68 @@ class Main {
         } else {
             await Withdrawal.deleteOne({ _id: withdrawObject._id });
             Logger.info('Deleted withdraw object of user', receiver, ':', withdrawObject);
+        }
+    }
+
+    async _handleDelegateVoteAction(action) {
+        const { grantor_name: grantor, recipient_name: recipient, quantity } = action.args;
+
+        const { quantity: bigNumQuantity, sym } = Utils.parseAsset(quantity);
+
+        const delegateVoteInfo = {
+            grantor,
+            recipient,
+            sym,
+        };
+
+        const savedVote = await DelegateVote.findOne(delegateVoteInfo);
+
+        if (savedVote) {
+            const quantityNew = new BigNum(savedVote.quantity).plus(bigNumQuantity);
+            const newDelegateVoteInfo = {
+                ...delegateVoteInfo,
+                quantity: quantityNew,
+            };
+
+            await DelegateVote.updateOne(
+                { _id: savedVote._id },
+                {
+                    $set: newDelegateVoteInfo,
+                    $push: {
+                        votes: {
+                            ...delegateVoteInfo,
+                            quantity: bigNumQuantity,
+                        },
+                    },
+                }
+            );
+            Logger.info(
+                `Changed delegate vote for ${recipient}: ${JSON.stringify(
+                    newDelegateVoteInfo,
+                    null,
+                    2
+                )}`
+            );
+        } else {
+            const newDelegateVoteInfo = {
+                ...delegateVoteInfo,
+                quantity: bigNumQuantity,
+                votes: [
+                    {
+                        ...delegateVoteInfo,
+                        quantity: bigNumQuantity,
+                    },
+                ],
+            };
+
+            await DelegateVote.create(newDelegateVoteInfo);
+            Logger.info(
+                `Created delegate vote for ${recipient}: ${JSON.stringify(
+                    newDelegateVoteInfo,
+                    null,
+                    2
+                )}`
+            );
         }
     }
 }

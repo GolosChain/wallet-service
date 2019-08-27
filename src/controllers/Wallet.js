@@ -9,9 +9,43 @@ const RewardModel = require('../models/Reward');
 const GenesisConvModel = require('../models/GenesisConv');
 const Withdrawal = require('../models/Withdrawal');
 const VestingChange = require('../models/VestingChange');
+const DelegateVote = require('../models/DelegateVote');
 const Claim = require('../models/Claim');
 
 class Wallet extends BasicController {
+    constructor({ rpcActualizer, ...params }) {
+        super(params);
+        this._rpcActualizer = rpcActualizer;
+    }
+
+    async getValidators({ currentUserId }) {
+        const items = this._rpcActualizer.getProducers();
+
+        for (const item of items.producers) {
+            if (!currentUserId) {
+                item.hasVote = false;
+                item.voteQuantity = 0;
+                continue;
+            }
+
+            const delegateVote = await DelegateVote.findOne({
+                grantor: currentUserId,
+                recipient: item.id,
+            });
+
+            if (delegateVote) {
+                item.hasVote = true;
+                item.voteQuantity = delegateVote.quantity;
+                continue;
+            }
+
+            item.hasVote = false;
+            item.voteQuantity = 0;
+        }
+
+        return items;
+    }
+
     async getClaimHistory({ userId, tokens, limit, sequenceKey }) {
         const filter = { userId };
 
