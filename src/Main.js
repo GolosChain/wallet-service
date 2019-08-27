@@ -12,15 +12,13 @@ class Main extends BasicMain {
 
         const rpcActualizer = new RpcActualizer();
 
-        this.addNested(rpcActualizer);
-
         const connector = new Connector({ rpcActualizer });
         const prism = new Prism();
 
         this.startMongoBeforeBoot(null, {
             poolSize: 500,
         });
-        this.addNested(prism, connector);
+        this.addNested(rpcActualizer, prism, connector);
     }
 
     async boot() {
