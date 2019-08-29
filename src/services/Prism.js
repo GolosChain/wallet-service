@@ -35,15 +35,22 @@ class Prism extends BasicService {
     }
 
     async _handleBlock({ type, data }) {
-        if (type !== 'IRREVERSIBLE_BLOCK') {
-            return;
-        }
+        switch (type) {
+            case 'IRREVERSIBLE_BLOCK':
+                await this._mainPrismController.registerLIB(data.blockNum);
+                break;
+            case 'BLOCK':
+                try {
+                    await this._mainPrismController.disperse(data);
+                } catch (error) {
+                    Logger.error('Cant disperse block:', error);
+                    process.exit(1);
+                }
+                break;
 
-        try {
-            await this._mainPrismController.disperse(data);
-        } catch (error) {
-            Logger.error('Cant disperse block:', error);
-            process.exit(1);
+            case 'FORK':
+                Logger.info('STARTING FORK ON BLOCK', data.baseBlockNum);
+                await this._mainPrismController.handleFork(data.baseBlockNum);
         }
     }
 
