@@ -3,15 +3,20 @@ const BasicConnector = core.services.Connector;
 const Wallet = require('../controllers/Wallet');
 
 class Connector extends BasicConnector {
-    constructor() {
+    constructor({ rpcActualizer }) {
         super();
 
-        this._wallet = new Wallet({ connector: this });
+        this._wallet = new Wallet({ connector: this, rpcActualizer });
     }
 
     async start() {
         await super.start({
             serverRoutes: {
+                getValidators: {
+                    inherits: ['userRelativity'],
+                    handler: this._wallet.getValidators,
+                    scope: this._wallet,
+                },
                 getBalance: {
                     inherits: ['userSpecific'],
                     handler: this._wallet.getBalance,
@@ -177,6 +182,15 @@ class Connector extends BasicConnector {
                             required: ['userId'],
                             properties: {
                                 userId: {
+                                    type: 'string',
+                                },
+                            },
+                        },
+                    },
+                    userRelativity: {
+                        validation: {
+                            properties: {
+                                currentUserId: {
                                     type: 'string',
                                 },
                             },

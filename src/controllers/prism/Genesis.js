@@ -130,13 +130,10 @@ class Genesis {
     }
 
     _handleCuratorsReward(data) {
-        const {
-            curator: userId,
-            reward: rewardRaw,
-            comment_author: author,
-            comment_permlink: permlink,
-            time: timestamp,
-        } = data;
+        const { curator: userId, reward: rewardRaw, time: timestamp } = data;
+
+        const author = data.comment_author || data.author;
+        const permlink = data.comment_permlink || data.permlink;
 
         if (!userId || !permlink) {
             Logger.error('Missing contentId in genesis reward: ', JSON.stringify(data, null, 4));
@@ -178,15 +175,11 @@ class Genesis {
     }
 
     _handleBeneficiaryReward(data) {
-        const { benefactor: userId, author, permlink, reward: quantityRaw, time: timestamp } = data;
+        const { benefactor: userId, reward: quantityRaw, time: timestamp } = data;
         const { quantity, sym, tokenType } = this._parseAsset(quantityRaw);
 
         this._benRewardsBulk.addEntry({
             type: 'benefeciary',
-            contentId: {
-                userId: author,
-                permlink,
-            },
             tokenType,
             block: 0,
             trx_id: null,
