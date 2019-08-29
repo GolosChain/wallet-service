@@ -36,12 +36,12 @@ class Prism extends BasicService {
 
     async _handleBlock({ type, data }) {
         switch (type) {
-            case 'BLOCK':
             case 'IRREVERSIBLE_BLOCK':
-                const isIrreversible = type === 'IRREVERSIBLE_BLOCK';
-
+                await this._mainPrismController.registerLIB(data.blockNum);
+                break;
+            case 'BLOCK':
                 try {
-                    await this._mainPrismController.disperse(data, isIrreversible);
+                    await this._mainPrismController.disperse(data);
                 } catch (error) {
                     Logger.error('Cant disperse block:', error);
                     process.exit(1);

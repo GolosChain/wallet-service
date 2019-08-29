@@ -22,7 +22,7 @@ module.exports = MongoDB.makeModel(
         },
         isIrreversible: {
             type: Boolean,
-            required: true,
+            default: false,
         },
         timestamp: {
             type: Date,

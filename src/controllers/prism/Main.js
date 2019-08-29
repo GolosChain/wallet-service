@@ -20,18 +20,17 @@ const Claim = require('../../models/Claim');
 const REVERSIBLE_MODELS = [RewardModel, TransferModel, VestingChange, Claim];
 
 class Main {
-    async disperse({ transactions, blockTime, blockNum }, isIrreversible) {
+    async disperse({ transactions, blockTime, blockNum }) {
         for (const transaction of transactions) {
             await this._disperseTransaction({
                 ...transaction,
                 blockNum,
                 blockTime,
-                isIrreversible,
             });
         }
     }
 
-    async _registerLIB(blockNum) {
+    async registerLIB(blockNum) {
         const markAsIrreversibleOperations = [];
         for (const model of REVERSIBLE_MODELS) {
             markAsIrreversibleOperations.push(
@@ -73,15 +72,10 @@ class Main {
             return;
         }
 
-        if (transaction.isIrreversible) {
-            await this._registerLIB(transaction.blockNum);
-        }
-
         const trxData = {
             trxId: transaction.id,
             blockNum: transaction.blockNum,
             timestamp: transaction.blockTime,
-            isIrreversible: transaction.isIrreversible,
         };
 
         for (const action of transaction.actions) {
