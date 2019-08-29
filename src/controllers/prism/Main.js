@@ -478,10 +478,7 @@ class Main {
                 objectToModify[idString] = balance;
                 objectToModify[`payments.${neededTokenPaymentsId}`] = payments;
 
-                await BalanceModel.updateOne(
-                    { _id: balanceModel._id },
-                    { $set: { objectToModify } }
-                );
+                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: objectToModify });
             } else {
                 balanceModel.balances.push(balance);
                 balanceModel.payments.push(payments);
