@@ -31,22 +31,40 @@ class Main {
         }
     }
 
-    async _removeReversibleBlockVersion(blockNum) {
-        const removeOperations = [];
+    async _registerLIB(blockNum) {
+        const markAsIrreversibleOperations = [];
         for (const model of REVERSIBLE_MODELS) {
-            removeOperations.push(
-                model
-                    .deleteMany({ blockNum: { $lte: blockNum }, isIrreversible: false })
-                    .catch(error => {
-                        Logger.error(
-                            `Error during reversing block ${blockNum} in model ${model.modelName}`,
-                            error
-                        );
-                    })
+            markAsIrreversibleOperations.push(
+                model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
+                    Logger.error(
+                        `Error during setting block ${blockNum} in model ${
+                            model.modelName
+                        } as irreversible`,
+                        error
+                    );
+                })
             );
         }
 
-        return Promise.all(removeOperations);
+        return Promise.all(markAsIrreversibleOperations);
+    }
+
+    async handleFork(baseBlockNum) {
+        const irrelevantDataDeleteOperations = [];
+
+        for (const model of REVERSIBLE_MODELS) {
+            irrelevantDataDeleteOperations.push(
+                model.deleteMany({ blockNum: { $gt: baseBlockNum } }).catch(error => {
+                    Logger.error(
+                        `Error during reversion to base block ${baseBlockNum} during fork`,
+                        error
+                    );
+                    process.exit(1);
+                })
+            );
+        }
+
+        return Promise.all(irrelevantDataDeleteOperations);
     }
 
     async _disperseTransaction(transaction) {
@@ -56,7 +74,7 @@ class Main {
         }
 
         if (transaction.isIrreversible) {
-            await this._removeReversibleBlockVersion(transaction.blockNum);
+            await this._registerLIB(transaction.blockNum);
         }
 
         const trxData = {
