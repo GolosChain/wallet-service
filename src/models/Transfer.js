@@ -23,13 +23,17 @@ module.exports = MongoDB.makeModel(
         memo: {
             type: String,
         },
-        block: {
+        blockNum: {
             type: Number,
             required: true,
         },
-        trx_id: {
+        trxId: {
             type: String,
             default: null,
+        },
+        isIrreversible: {
+            type: Boolean,
+            required: true,
         },
         timestamp: {
             type: Date,
@@ -73,6 +77,15 @@ module.exports = MongoDB.makeModel(
                 fields: {
                     sym: 1,
                     _id: -1,
+                },
+                options: {
+                    background: true,
+                },
+            },
+            // for irreversible search
+            {
+                fields: {
+                    blockNum: 1,
                 },
                 options: {
                     background: true,

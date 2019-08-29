@@ -17,11 +17,36 @@ const VestingParams = require('../../models/VestingParams');
 const DelegateVote = require('../../models/DelegateVote');
 const Claim = require('../../models/Claim');
 
+const REVERSIBLE_MODELS = [RewardModel, TransferModel, VestingChange, Claim];
+
 class Main {
-    async disperse({ transactions, blockTime, blockNum }) {
+    async disperse({ transactions, blockTime, blockNum }, isIrreversible) {
         for (const transaction of transactions) {
-            await this._disperseTransaction({ ...transaction, blockNum, blockTime });
+            await this._disperseTransaction({
+                ...transaction,
+                blockNum,
+                blockTime,
+                isIrreversible,
+            });
         }
+    }
+
+    async _removeReversibleBlockVersion(blockNum) {
+        const removeOperations = [];
+        for (const model of REVERSIBLE_MODELS) {
+            removeOperations.push(
+                model
+                    .deleteMany({ blockNum: { $lte: blockNum }, isIrreversible: false })
+                    .catch(error => {
+                        Logger.error(
+                            `Error during reversing block ${blockNum} in model ${model.modelName}`,
+                            error
+                        );
+                    })
+            );
+        }
+
+        return Promise.all(removeOperations);
     }
 
     async _disperseTransaction(transaction) {
@@ -30,10 +55,15 @@ class Main {
             return;
         }
 
+        if (transaction.isIrreversible) {
+            await this._removeReversibleBlockVersion(transaction.blockNum);
+        }
+
         const trxData = {
-            trx_id: transaction.id,
-            block: transaction.blockNum,
+            trxId: transaction.id,
+            blockNum: transaction.blockNum,
             timestamp: transaction.blockTime,
+            isIrreversible: transaction.isIrreversible,
         };
 
         for (const action of transaction.actions) {
@@ -431,14 +461,21 @@ class Main {
                 objectToModify[idString] = balance;
                 objectToModify[`payments.${neededTokenPaymentsId}`] = payments;
 
-                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: objectToModify });
+                await BalanceModel.updateOne(
+                    { _id: balanceModel._id },
+                    { $set: { objectToModify } }
+                );
             } else {
-                await balanceModel.balances.push(balance);
-                await balanceModel.payments.push(payments);
+                balanceModel.balances.push(balance);
+                balanceModel.payments.push(payments);
+
                 await balanceModel.save();
             }
 
-            Logger.info('Updated balance object of user', name, ':', { balance, payments });
+            Logger.info('Updated balance object of user', name, ':', {
+                balance,
+                payments,
+            });
         } else {
             const newBalance = new BalanceModel({
                 name,
@@ -447,7 +484,10 @@ class Main {
 
             await newBalance.save();
 
-            Logger.info('Created balance object of user', name, ':', { balance, payments });
+            Logger.info('Created balance object of user', name, ':', {
+                balance,
+                payments,
+            });
         }
     }
 

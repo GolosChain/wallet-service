@@ -35,15 +35,15 @@ class Prism extends BasicService {
     }
 
     async _handleBlock({ type, data }) {
-        if (type !== 'IRREVERSIBLE_BLOCK') {
-            return;
-        }
+        if (type === 'BLOCK' || type === 'IRREVERSIBLE_BLOCK') {
+            const isIrreversible = type === 'IRREVERSIBLE_BLOCK';
 
-        try {
-            await this._mainPrismController.disperse(data);
-        } catch (error) {
-            Logger.error('Cant disperse block:', error);
-            process.exit(1);
+            try {
+                await this._mainPrismController.disperse(data, isIrreversible);
+            } catch (error) {
+                Logger.error('Cant disperse block:', error);
+                process.exit(1);
+            }
         }
     }
 

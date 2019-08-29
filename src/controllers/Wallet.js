@@ -76,10 +76,7 @@ class Wallet extends BasicController {
         }
 
         return {
-            claims: claims.map(({ trx_id, ...rest }) => ({
-                trxId: trx_id,
-                ...rest,
-            })),
+            claims,
             newSequenceKey,
         };
     }
@@ -262,10 +259,11 @@ class Wallet extends BasicController {
                 receiver: receiverName,
                 quantity: transfer.quantity,
                 sym: transfer.sym,
-                trxId: transfer.trx_id,
+                trxId: transfer.trxId,
                 memo: transfer.memo,
-                block: transfer.block,
+                blockNum: transfer.blockNum,
                 timestamp: transfer.timestamp,
+                isIrreversible: transfer.isIrreversible,
             });
         }
 
@@ -281,7 +279,12 @@ class Wallet extends BasicController {
     }
 
     async getBalance({ userId, currencies, type }) {
-        return await Utils.getBalance({ userId, currencies, type, shouldFetchStake: true });
+        return await Utils.getBalance({
+            userId,
+            currencies,
+            type,
+            shouldFetchStake: true,
+        });
     }
 
     async getVestingInfo() {
@@ -326,14 +329,15 @@ class Wallet extends BasicController {
             items: rewards.map(reward => ({
                 id: reward._id,
                 userId: reward.userId,
-                block: reward.block,
-                trxId: reward.trx_id,
+                blockNum: reward.blockNum,
+                trxId: reward.trxId,
                 timestamp: reward.timestamp,
                 tokenType: reward.tokenType,
                 sym: reward.sym,
                 type: reward.type,
                 contentId: reward.contentId,
                 quantity: reward.quantity,
+                isIrreversible: reward.isIrreversible,
             })),
         };
     }
@@ -369,9 +373,10 @@ class Wallet extends BasicController {
                     GESTS: getstsRaw,
                     GOLOS: quantityRaw,
                 },
-                block: change.block,
-                trxId: change.trx_id,
+                blockNum: change.blockNum,
+                trxId: change.trxId,
                 timestamp: change.timestamp,
+                isIrreversible: change.isIrreversible,
             });
         }
 
