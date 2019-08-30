@@ -34,16 +34,14 @@ class Main {
         const markAsIrreversibleOperations = [];
         for (const model of REVERSIBLE_MODELS) {
             markAsIrreversibleOperations.push(
-                model
-                    .updateMany({ blockNum: { $lt: blockNum } }, { $set: { isIrreversible: true } })
-                    .catch(error => {
-                        Logger.error(
-                            `Error during setting block ${blockNum} in model ${
-                                model.modelName
-                            } as irreversible`,
-                            error
-                        );
-                    })
+                model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
+                    Logger.error(
+                        `Error during setting block ${blockNum} in model ${
+                            model.modelName
+                        } as irreversible`,
+                        error
+                    );
+                })
             );
         }
 
@@ -55,7 +53,7 @@ class Main {
 
         for (const model of REVERSIBLE_MODELS) {
             irrelevantDataDeleteOperations.push(
-                model.deleteMany({ blockNum: baseBlockNum }).catch(error => {
+                model.deleteMany({ blockNum: { $gt: baseBlockNum } }).catch(error => {
                     Logger.error(
                         `Error during reversion to base block ${baseBlockNum} during fork`,
                         error
