@@ -55,7 +55,7 @@ class Main {
 
         for (const model of REVERSIBLE_MODELS) {
             irrelevantDataDeleteOperations.push(
-                model.deleteMany({ blockNum: { $gt: baseBlockNum } }).catch(error => {
+                model.deleteMany({ blockNum: baseBlockNum }).catch(error => {
                     Logger.error(
                         `Error during reversion to base block ${baseBlockNum} during fork`,
                         error
