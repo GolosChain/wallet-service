@@ -281,7 +281,7 @@ class Genesis {
             receiver: data.to,
             quantity,
             sym,
-            blockNumNum: 0,
+            blockNum: 0,
             trxId: null,
             isIrreversible: true,
             memo: data.memo,
