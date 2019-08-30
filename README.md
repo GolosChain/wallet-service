@@ -221,7 +221,7 @@ Golos_wallet -- сервис, который предоставляет удоб
                 "sym": "GOLOS",
                 "trxId": "3e43c4411e1ef5638c5b477ec52b4a11de582218e491f0d9ef4f0b878455b3d6",
                 "memo": "memo",
-                "block": 148764,
+                "blockNum": 148764,
                 "timestamp": "2019-06-16T19:36:24.000Z"
             },
             {
@@ -232,7 +232,7 @@ Golos_wallet -- сервис, который предоставляет удоб
                 "sym": "GOLOS",
                 "trxId": "f481be42e6c227667f6d96d9acbe18f68dd05fd5ce063d05b4fa9355de3c8267",
                 "memo": "",
-                "block": 148754,
+                "blockNum": 148754,
                 "timestamp": "2019-06-16T19:35:54.000Z"
             }
         ],
@@ -385,7 +385,7 @@ Golos_wallet -- сервис, который предоставляет удоб
         [
             0,
             {
-                "block": 905226,
+                "blockNum": 905226,
                 "op": [
                     "transfer",
                     {
@@ -396,13 +396,13 @@ Golos_wallet -- сервис, который предоставляет удоб
                     }
                 ],
                 "timestamp": "2019-04-01T18:34:27.000",
-                "trx_id": "551fd2f848bc32ee256c2880b2186b5307908448f37ca7850e09ef46142f5b9b"
+                "trxId": "551fd2f848bc32ee256c2880b2186b5307908448f37ca7850e09ef46142f5b9b"
             }
         ],
         [
             1,
             {
-                "block": 905227,
+                "blockNum": 905227,
                 "op": [
                     "transfer",
                     {
@@ -413,7 +413,7 @@ Golos_wallet -- сервис, который предоставляет удоб
                     }
                 ],
                 "timestamp": "2019-04-01T18:34:30.000",
-                "trx_id": "6619198ac252582755e641a743a1fe7663ec28b726180f21c50e1d4dd62af737"
+                "trxId": "6619198ac252582755e641a743a1fe7663ec28b726180f21c50e1d4dd62af737"
             }
         ]
     ]
@@ -524,8 +524,8 @@ Golos_wallet -- сервис, который предоставляет удоб
                     "GESTS": "3.400499 GOLOS",
                     "GOLOS": "0.001 GOLOS"
                 },
-                "block": 148784,
-                "trx_id": "a11067a743e4b184bc192064c4106846fa639cdf61ce5482be897db9d53dc719",
+                "blockNum": 148784,
+                "trxId": "a11067a743e4b184bc192064c4106846fa639cdf61ce5482be897db9d53dc719",
                 "timestamp": "2019-06-16T19:37:24.000Z"
             },
             {
@@ -535,8 +535,8 @@ Golos_wallet -- сервис, который предоставляет удоб
                     "GESTS": "3.400499 GOLOS",
                     "GOLOS": "0.001 GOLOS"
                 },
-                "block": 148782,
-                "trx_id": "caf54540d2e9126b1a7e29990778bf15df281c6c73eea7664d8f84cd4479bd02",
+                "blockNum": 148782,
+                "trxId": "caf54540d2e9126b1a7e29990778bf15df281c6c73eea7664d8f84cd4479bd02",
                 "timestamp": "2019-06-16T19:37:18.000Z"
             },
             {
@@ -546,8 +546,8 @@ Golos_wallet -- сервис, который предоставляет удоб
                     "GESTS": "17002.498552 GOLOS",
                     "GOLOS": "5 GOLOS"
                 },
-                "block": 148754,
-                "trx_id": "bdce9b1a94c04db62b18c1eef1b704d587635c0238e466c00c3beb2c5dbc4c2e",
+                "blockNum": 148754,
+                "trxId": "bdce9b1a94c04db62b18c1eef1b704d587635c0238e466c00c3beb2c5dbc4c2e",
                 "timestamp": "2019-06-16T19:35:54.000Z"
             },
             {
@@ -557,8 +557,8 @@ Golos_wallet -- сервис, который предоставляет удоб
                     "GESTS": "3400.499710 GOLOS",
                     "GOLOS": "1 GOLOS"
                 },
-                "block": 148754,
-                "trx_id": "c05c10c25c7ca3f724c57ce6bd7db4bf2246f76fb0ee25b73765e2f1cfc7000d",
+                "blockNum": 148754,
+                "trxId": "c05c10c25c7ca3f724c57ce6bd7db4bf2246f76fb0ee25b73765e2f1cfc7000d",
                 "timestamp": "2019-06-16T19:35:54.000Z"
             }
         ],
@@ -619,7 +619,7 @@ Golos_wallet -- сервис, который предоставляет удоб
             {
                 "id": "5d274cb3eef0a2d1c5e7bcfa",
                 "userId": "la3jqfmtkgms",
-                "block": 31832,
+                "blockNum": 31832,
                 "trxId": "d260f20ac581ab105b5ae3c9a00d3a7d46a53347c778bf044ccf9d567033d1c1",
                 "timestamp": "2019-07-11T14:50:21.000Z",
                 "tokenType": "vesting",
@@ -635,7 +635,7 @@ Golos_wallet -- сервис, который предоставляет удоб
             {
                 "id": "5d274cb3eef0a2962fe7bcfc",
                 "userId": "la3jqfmtkgms",
-                "block": 31832,
+                "blockNum": 31832,
                 "trxId": "d260f20ac581ab105b5ae3c9a00d3a7d46a53347c778bf044ccf9d567033d1c1",
                 "timestamp": "2019-07-11T14:50:21.000Z",
                 "tokenType": "vesting",
@@ -836,7 +836,7 @@ Golos_wallet -- сервис, который предоставляет удоб
             {
                 "id": "5d274cb3eef0a2d1c5e7bcfa",
                 "userId": "la3jqfmtkgms",
-                "block": 31832,
+                "blockNum": 31832,
                 "trxId": "d260f20ac581ab105b5ae3c9a00d3a7d46a53347c778bf044ccf9d567033d1c1",
                 "timestamp": "2019-07-11T14:50:21.000Z",
                 "sym": "GOLOS",
@@ -845,7 +845,7 @@ Golos_wallet -- сервис, который предоставляет удоб
             {
                 "id": "5d274cb3eef0a2962fe7bcfc",
                 "userId": "la3jqfmtkgms",
-                "block": 31832,
+                "blockNum": 31832,
                 "trxId": "d260f20ac581ab105b5ae3c9a00d3a7d46a53347c778bf044ccf9d567033d1c1",
                 "timestamp": "2019-07-11T14:50:21.000Z",
                 "sym": "GOLOS",

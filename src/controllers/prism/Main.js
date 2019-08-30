@@ -35,10 +35,7 @@ class Main {
         for (const model of REVERSIBLE_MODELS) {
             markAsIrreversibleOperations.push(
                 model
-                    .updateMany(
-                        { blockNum: { $lte: blockNum } },
-                        { $set: { isIrreversible: true } }
-                    )
+                    .updateMany({ blockNum: { $lt: blockNum } }, { $set: { isIrreversible: true } })
                     .catch(error => {
                         Logger.error(
                             `Error during setting block ${blockNum} in model ${
