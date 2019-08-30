@@ -29,7 +29,7 @@ class Prism extends BasicService {
         try {
             await subscriber.start();
         } catch (error) {
-            Logger.error('Cant start block subscriber:', error);
+            Logger.error('Cant start blockNum subscriber:', error);
             process.exit(1);
         }
     }
@@ -43,7 +43,7 @@ class Prism extends BasicService {
                 try {
                     await this._mainPrismController.disperse(data);
                 } catch (error) {
-                    Logger.error('Cant disperse block:', error);
+                    Logger.error('Cant disperse blockNum:', error);
                     process.exit(1);
                 }
                 break;

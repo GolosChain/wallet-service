@@ -65,7 +65,7 @@ class Genesis {
             case 'domain':
             case 'message':
             case 'pin':
-            case 'block':
+            case 'blockNum':
                 // Skip
                 return true;
             case 'genesis.conv':
@@ -149,8 +149,9 @@ class Genesis {
                 permlink,
             },
             tokenType,
-            block: 0,
-            trx_id: null,
+            blockNum: 0,
+            trxId: null,
+            isIrreversible: true,
             sym,
             quantity,
             timestamp,
@@ -165,8 +166,9 @@ class Genesis {
         this._delegRewardsBulk.addEntry({
             type: 'delegator',
             tokenType,
-            block: 0,
-            trx_id: null,
+            blockNum: 0,
+            trxId: null,
+            isIrreversible: true,
             sym,
             quantity,
             timestamp,
@@ -181,8 +183,9 @@ class Genesis {
         this._benRewardsBulk.addEntry({
             type: 'benefeciary',
             tokenType,
-            block: 0,
-            trx_id: null,
+            blockNum: 0,
+            trxId: null,
+            isIrreversible: true,
             sym,
             quantity,
             timestamp,
@@ -202,8 +205,9 @@ class Genesis {
                 permlink,
             },
             tokenType,
-            block: 0,
-            trx_id: null,
+            blockNum: 0,
+            trxId: null,
+            isIrreversible: true,
             sym,
             quantity,
             timestamp,
@@ -258,8 +262,9 @@ class Genesis {
             who,
             diff,
             timestamp,
-            block: 0,
-            trx_id: null,
+            blockNum: 0,
+            trxId: null,
+            isIrreversible: true,
         };
 
         this._vestingChangesBulk.addEntry(vestingChangeObject);
@@ -276,8 +281,9 @@ class Genesis {
             receiver: data.to,
             quantity,
             sym,
-            block: 0,
-            trx_id: null,
+            blockNumNum: 0,
+            trxId: null,
+            isIrreversible: true,
             memo: data.memo,
             timestamp: new Date(data.time + 'Z'),
         };
