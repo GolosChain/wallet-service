@@ -29,7 +29,7 @@ class Prism extends BasicService {
         try {
             await subscriber.start();
         } catch (error) {
-            Logger.error('Cant start blockNum subscriber:', error);
+            Logger.error('Cant start block subscriber:', error);
             process.exit(1);
         }
     }

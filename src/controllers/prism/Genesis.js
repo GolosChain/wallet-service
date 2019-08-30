@@ -65,7 +65,7 @@ class Genesis {
             case 'domain':
             case 'message':
             case 'pin':
-            case 'blockNum':
+            case 'block':
                 // Skip
                 return true;
             case 'genesis.conv':
