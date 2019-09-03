@@ -17,11 +17,51 @@ const VestingParams = require('../../models/VestingParams');
 const DelegateVote = require('../../models/DelegateVote');
 const Claim = require('../../models/Claim');
 
+const REVERSIBLE_MODELS = [RewardModel, TransferModel, VestingChange, Claim];
+
 class Main {
     async disperse({ transactions, blockTime, blockNum }) {
         for (const transaction of transactions) {
-            await this._disperseTransaction({ ...transaction, blockNum, blockTime });
+            await this._disperseTransaction({
+                ...transaction,
+                blockNum,
+                blockTime,
+            });
         }
+    }
+
+    async registerLIB(blockNum) {
+        const markAsIrreversibleOperations = [];
+        for (const model of REVERSIBLE_MODELS) {
+            markAsIrreversibleOperations.push(
+                model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
+                    Logger.error(
+                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
+                        error
+                    );
+                })
+            );
+        }
+
+        return Promise.all(markAsIrreversibleOperations);
+    }
+
+    async handleFork(baseBlockNum) {
+        const irrelevantDataDeleteOperations = [];
+
+        for (const model of REVERSIBLE_MODELS) {
+            irrelevantDataDeleteOperations.push(
+                model.deleteMany({ blockNum: { $gt: baseBlockNum } }).catch(error => {
+                    Logger.error(
+                        `Error during reversion to base block ${baseBlockNum} during fork`,
+                        error
+                    );
+                    process.exit(1);
+                })
+            );
+        }
+
+        return Promise.all(irrelevantDataDeleteOperations);
     }
 
     async _disperseTransaction(transaction) {
@@ -31,8 +71,8 @@ class Main {
         }
 
         const trxData = {
-            trx_id: transaction.id,
-            block: transaction.blockNum,
+            trxId: transaction.id,
+            blockNum: transaction.blockNum,
             timestamp: transaction.blockTime,
         };
 
@@ -121,6 +161,14 @@ class Main {
                 action.action === 'delegatevote'
             ) {
                 await this._handleDelegateVoteAction(action);
+            }
+
+            if (
+                action.receiver === 'cyber.stake' &&
+                action.code === 'cyber.stake' &&
+                action.action === 'recallvote'
+            ) {
+                await this._handleRecallVoteAction(action);
             }
         }
     }
@@ -433,12 +481,16 @@ class Main {
 
                 await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: objectToModify });
             } else {
-                await balanceModel.balances.push(balance);
-                await balanceModel.payments.push(payments);
+                balanceModel.balances.push(balance);
+                balanceModel.payments.push(payments);
+
                 await balanceModel.save();
             }
 
-            Logger.info('Updated balance object of user', name, ':', { balance, payments });
+            Logger.info('Updated balance object of user', name, ':', {
+                balance,
+                payments,
+            });
         } else {
             const newBalance = new BalanceModel({
                 name,
@@ -447,7 +499,10 @@ class Main {
 
             await newBalance.save();
 
-            Logger.info('Created balance object of user', name, ':', { balance, payments });
+            Logger.info('Created balance object of user', name, ':', {
+                balance,
+                payments,
+            });
         }
     }
 
@@ -705,12 +760,6 @@ class Main {
                 { _id: savedVote._id },
                 {
                     $set: newDelegateVoteInfo,
-                    $push: {
-                        votes: {
-                            ...delegateVoteInfo,
-                            quantity: bigNumQuantity,
-                        },
-                    },
                 }
             );
             Logger.info(
@@ -724,12 +773,6 @@ class Main {
             const newDelegateVoteInfo = {
                 ...delegateVoteInfo,
                 quantity: bigNumQuantity,
-                votes: [
-                    {
-                        ...delegateVoteInfo,
-                        quantity: bigNumQuantity,
-                    },
-                ],
             };
 
             await DelegateVote.create(newDelegateVoteInfo);
@@ -739,6 +782,28 @@ class Main {
                     null,
                     2
                 )}`
+            );
+        }
+    }
+
+    async _handleRecallVoteAction(action) {
+        const {
+            grantor_name: grantor,
+            recipient_name: recipient,
+            token_code: sym,
+            pct,
+        } = action.args;
+
+        const vote = await DelegateVote.findOne({
+            grantor,
+            recipient,
+            sym,
+        });
+
+        if (vote) {
+            await DelegateVote.updateOne(
+                { _id: vote._id },
+                { $set: { quantity: vote.quantity.times(1 - pct / 10000) } }
             );
         }
     }
