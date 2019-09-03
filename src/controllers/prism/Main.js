@@ -36,7 +36,9 @@ class Main {
             markAsIrreversibleOperations.push(
                 model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
                     Logger.error(
-                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
+                        `Error during setting block ${blockNum} in model ${
+                            model.modelName
+                        } as irreversible`,
                         error
                     );
                 })
@@ -203,6 +205,7 @@ class Main {
             });
         }
         await this._handleEvents({ events: action.events });
+        await this._handleVestingEvents({ events: action.events });
     }
 
     async _handleTransferAction(action, trxData) {
@@ -215,6 +218,7 @@ class Main {
         });
 
         await this._handleEvents({ events: action.events });
+        await this._handleVestingEvents({ events: action.events });
     }
 
     async _createTransferEvent({ trxData, sender, receiver, quantity, memo }) {
