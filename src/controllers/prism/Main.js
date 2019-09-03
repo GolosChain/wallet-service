@@ -487,7 +487,7 @@ class Main {
                 balanceModel.payments.push(payments);
             }
 
-            await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: { ...balanceModel } });
+            await BalanceModel.updateOne({ _id: balanceModel._id }, balanceModel);
 
             Logger.info('Updated balance object of user', name, ':', {
                 balance,
