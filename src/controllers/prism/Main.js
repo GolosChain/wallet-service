@@ -36,7 +36,9 @@ class Main {
             markAsIrreversibleOperations.push(
                 model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
                     Logger.error(
-                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
+                        `Error during setting block ${blockNum} in model ${
+                            model.modelName
+                        } as irreversible`,
                         error
                     );
                 })
@@ -100,8 +102,7 @@ class Main {
 
             if (
                 action.receiver === 'gls.vesting' &&
-                (action.action === 'transfer' ||
-                    action.action === 'delegate' ||
+                (action.action === 'delegate' ||
                     action.action === 'timeoutconv' ||
                     action.action === 'withdraw' ||
                     action.action === 'stopwithdraw') &&
@@ -203,6 +204,7 @@ class Main {
             });
         }
         await this._handleEvents({ events: action.events });
+        await this._handleVestingEvents({ events: action.events });
     }
 
     async _handleTransferAction(action, trxData) {
@@ -215,6 +217,7 @@ class Main {
         });
 
         await this._handleEvents({ events: action.events });
+        await this._handleVestingEvents({ events: action.events });
     }
 
     async _createTransferEvent({ trxData, sender, receiver, quantity, memo }) {
@@ -450,13 +453,13 @@ class Main {
 
     async _createOrUpdateUserBalance({ name, balance, payments }) {
         // todo: refactor this!
-        const balanceModel = await BalanceModel.findOne({ name });
+        const balanceModel = await BalanceModel.findOne({ name }, {}, { lean: true });
         const { sym } = Utils.parseAsset(balance);
         if (balanceModel) {
             // Check balance of tokens listed in balance.balances array
             const neededSym = sym;
             let neededTokenBalanceId = null;
-            let neededTokenPaymentsId = 0;
+            let neededTokenPaymentsId = null;
 
             for (let i = 0; i < balanceModel.balances.length; i++) {
                 const { sym: tokenSym } = await Utils.parseAsset(balanceModel.balances[i]);
@@ -473,19 +476,19 @@ class Main {
             }
 
             // Modify if such token is present and create new one otherwise
-            if (neededTokenBalanceId != null) {
-                let objectToModify = {};
-                const idString = 'balances.' + neededTokenBalanceId;
-                objectToModify[idString] = balance;
-                objectToModify[`payments.${neededTokenPaymentsId}`] = payments;
-
-                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: objectToModify });
+            if (neededTokenBalanceId !== null) {
+                balanceModel.balances[neededTokenBalanceId] = balance;
             } else {
                 balanceModel.balances.push(balance);
-                balanceModel.payments.push(payments);
-
-                await balanceModel.save();
             }
+
+            if (neededTokenPaymentsId !== null) {
+                balanceModel.payments[neededTokenPaymentsId] = payments;
+            } else {
+                balanceModel.payments.push(payments);
+            }
+
+            await BalanceModel.updateOne({ _id: balanceModel._id }, balanceModel);
 
             Logger.info('Updated balance object of user', name, ':', {
                 balance,
