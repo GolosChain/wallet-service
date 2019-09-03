@@ -452,7 +452,7 @@ class Main {
 
     async _createOrUpdateUserBalance({ name, balance, payments }) {
         // todo: refactor this!
-        const balanceModel = await BalanceModel.findOne({ name });
+        const balanceModel = await BalanceModel.findOne({ name }, {}, { lean: true });
         const { sym } = Utils.parseAsset(balance);
         if (balanceModel) {
             // Check balance of tokens listed in balance.balances array
@@ -487,7 +487,7 @@ class Main {
                 balanceModel.payments.push(payments);
             }
 
-            await balanceModel.save();
+            await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: { ...balanceModel } });
 
             Logger.info('Updated balance object of user', name, ':', {
                 balance,
