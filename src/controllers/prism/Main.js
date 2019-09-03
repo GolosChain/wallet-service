@@ -36,9 +36,7 @@ class Main {
             markAsIrreversibleOperations.push(
                 model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
                     Logger.error(
-                        `Error during setting block ${blockNum} in model ${
-                            model.modelName
-                        } as irreversible`,
+                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
                         error
                     );
                 })
@@ -163,6 +161,14 @@ class Main {
                 action.action === 'delegatevote'
             ) {
                 await this._handleDelegateVoteAction(action);
+            }
+
+            if (
+                action.receiver === 'cyber.stake' &&
+                action.code === 'cyber.stake' &&
+                action.action === 'recallvote'
+            ) {
+                await this._handleRecallVoteAction(action);
             }
         }
     }
@@ -754,12 +760,6 @@ class Main {
                 { _id: savedVote._id },
                 {
                     $set: newDelegateVoteInfo,
-                    $push: {
-                        votes: {
-                            ...delegateVoteInfo,
-                            quantity: bigNumQuantity,
-                        },
-                    },
                 }
             );
             Logger.info(
@@ -773,12 +773,6 @@ class Main {
             const newDelegateVoteInfo = {
                 ...delegateVoteInfo,
                 quantity: bigNumQuantity,
-                votes: [
-                    {
-                        ...delegateVoteInfo,
-                        quantity: bigNumQuantity,
-                    },
-                ],
             };
 
             await DelegateVote.create(newDelegateVoteInfo);
@@ -788,6 +782,28 @@ class Main {
                     null,
                     2
                 )}`
+            );
+        }
+    }
+
+    async _handleRecallVoteAction(action) {
+        const {
+            grantor_name: grantor,
+            recipient_name: recipient,
+            token_code: sym,
+            pct,
+        } = action.args;
+
+        const vote = await DelegateVote.findOne({
+            grantor,
+            recipient,
+            sym,
+        });
+
+        if (vote) {
+            await DelegateVote.updateOne(
+                { _id: vote._id },
+                { $set: { quantity: vote.quantity.times(1 - pct / 10000) } }
             );
         }
     }
