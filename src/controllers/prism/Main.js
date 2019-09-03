@@ -102,8 +102,7 @@ class Main {
 
             if (
                 action.receiver === 'gls.vesting' &&
-                (action.action === 'transfer' ||
-                    action.action === 'delegate' ||
+                (action.action === 'delegate' ||
                     action.action === 'timeoutconv' ||
                     action.action === 'withdraw' ||
                     action.action === 'stopwithdraw') &&
@@ -205,6 +204,7 @@ class Main {
             });
         }
         await this._handleEvents({ events: action.events });
+        await this._handleVestingEvents({ events: action.events });
     }
 
     async _handleTransferAction(action, trxData) {
@@ -217,6 +217,7 @@ class Main {
         });
 
         await this._handleEvents({ events: action.events });
+        await this._handleVestingEvents({ events: action.events });
     }
 
     async _createTransferEvent({ trxData, sender, receiver, quantity, memo }) {
