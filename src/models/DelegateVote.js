@@ -1,6 +1,5 @@
 const core = require('gls-core-service');
 const MongoDB = core.services.MongoDB;
-const BigNum = core.types.BigNum;
 const MongoBigNum = core.types.MongoBigNum;
 
 module.exports = MongoDB.makeModel(
@@ -21,10 +20,6 @@ module.exports = MongoDB.makeModel(
         sym: {
             type: String,
             required: true,
-        },
-        votes: {
-            type: Array,
-            default: [],
         },
     },
     {
