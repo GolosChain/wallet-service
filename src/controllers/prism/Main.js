@@ -36,7 +36,9 @@ class Main {
             markAsIrreversibleOperations.push(
                 model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
                     Logger.error(
-                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
+                        `Error during setting block ${blockNum} in model ${
+                            model.modelName
+                        } as irreversible`,
                         error
                     );
                 })
@@ -456,7 +458,7 @@ class Main {
             // Check balance of tokens listed in balance.balances array
             const neededSym = sym;
             let neededTokenBalanceId = null;
-            let neededTokenPaymentsId = 0;
+            let neededTokenPaymentsId = null;
 
             for (let i = 0; i < balanceModel.balances.length; i++) {
                 const { sym: tokenSym } = await Utils.parseAsset(balanceModel.balances[i]);
@@ -473,19 +475,19 @@ class Main {
             }
 
             // Modify if such token is present and create new one otherwise
-            if (neededTokenBalanceId != null) {
-                let objectToModify = {};
-                const idString = 'balances.' + neededTokenBalanceId;
-                objectToModify[idString] = balance;
-                objectToModify[`payments.${neededTokenPaymentsId}`] = payments;
-
-                await BalanceModel.updateOne({ _id: balanceModel._id }, { $set: objectToModify });
+            if (neededTokenBalanceId !== null) {
+                balanceModel.balances[neededTokenBalanceId] = balance;
             } else {
                 balanceModel.balances.push(balance);
-                balanceModel.payments.push(payments);
-
-                await balanceModel.save();
             }
+
+            if (neededTokenPaymentsId !== null) {
+                balanceModel.payments[neededTokenPaymentsId] = payments;
+            } else {
+                balanceModel.payments.push(payments);
+            }
+
+            await balanceModel.save();
 
             Logger.info('Updated balance object of user', name, ':', {
                 balance,
