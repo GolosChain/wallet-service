@@ -79,6 +79,9 @@ class Main {
         };
 
         for (const action of transaction.actions) {
+            await this._handleVestingEvents({ events: action.events, action: action.action });
+            await this._handleEvents({ events: action.events });
+
             if (action.code === 'cyber.token' && action.receiver === 'cyber.token') {
                 switch (action.action) {
                     case 'transfer':
@@ -91,12 +94,7 @@ class Main {
                         break;
                     case 'claim':
                         await this._handleClaimAction(action, trxData);
-                    // do not break here: we still have to handle events
-                    case 'issue':
-                    case 'create':
-                        await this._handleEvents({ events: action.events });
                         break;
-                    default:
                 }
             }
 
@@ -109,8 +107,6 @@ class Main {
                     action.action === 'stopwithdraw') &&
                 (action.code === 'cyber.token' || action.code === 'gls.vesting')
             ) {
-                await this._handleVestingEvents({ events: action.events, action: action.action });
-
                 switch (action.action) {
                     case 'delegate':
                     case 'undelegate':
@@ -204,7 +200,6 @@ class Main {
                 memo,
             });
         }
-        await this._handleEvents({ events: action.events });
     }
 
     async _handleTransferAction(action, trxData) {
@@ -215,8 +210,6 @@ class Main {
             quantity: action.args.quantity,
             memo: action.args.memo,
         });
-
-        await this._handleEvents({ events: action.events });
     }
 
     async _createTransferEvent({ trxData, sender, receiver, quantity, memo }) {
@@ -551,8 +544,7 @@ class Main {
 
     async _handleVestingStatEvent(event) {
         // Ensure given event is stat event
-        // TODO: Add correct `event.code` check, when it'll be stable...
-        if (!(event.event === 'stat')) {
+        if (!(event.code === 'gls.vesting' && event === 'stat')) {
             return;
         }
 
@@ -579,9 +571,7 @@ class Main {
 
     async _handleVestingBalanceEvent(event) {
         // Ensure given event is balance event
-
-        // TODO: Add correct `event.code` check, when it'll be stable...
-        if (event.event !== 'balance') {
+        if (!(event.code === 'gls.vesting' && event === 'balance')) {
             return;
         }
 
