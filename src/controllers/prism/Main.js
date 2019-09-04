@@ -571,7 +571,7 @@ class Main {
 
     async _handleVestingBalanceEvent(event) {
         // Ensure given event is balance event
-        if (!(event.code === 'gls.vesting' && event === 'balance')) {
+        if (!(event.code === 'gls.vesting' && event.event === 'balance')) {
             return;
         }
 
