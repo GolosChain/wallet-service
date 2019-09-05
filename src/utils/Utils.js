@@ -1,6 +1,7 @@
 const core = require('gls-core-service');
 const fetch = require('node-fetch');
-const { JsonRpc } = require('cyberwayjs');
+const { JsonRpc, Api } = require('cyberwayjs');
+const { TextEncoder, TextDecoder } = require('text-encoding');
 const env = require('../data/env');
 const Logger = core.utils.Logger;
 const BigNum = core.types.BigNum;
@@ -9,10 +10,22 @@ const VestingStat = require('../models/VestingStat');
 const BalanceModel = require('../models/Balance');
 const TokenModel = require('../models/Token');
 const Withdrawal = require('../models/Withdrawal');
+const DelegateVestingProposal = require('../models/DelegateVestingProposal');
 
 const RPC = new JsonRpc(env.GLS_CYBERWAY_HTTP_URL, { fetch });
 
+const API = new Api({
+    rpc: RPC,
+    signatureProvider: null,
+    textDecoder: new TextDecoder(),
+    textEncoder: new TextEncoder(),
+});
+
 class Utils {
+    static getCyberApi() {
+        return API;
+    }
+
     static async getAccount({ userId }) {
         return await RPC.fetch('/v1/chain/get_account', { account_name: userId });
     }
@@ -282,6 +295,60 @@ class Utils {
         const np = new Date(timestamp);
         np.setSeconds(np.getSeconds() + intervalSeconds);
         return np;
+    }
+
+    static async getVestingDelegationProposals({ app, userId }) {
+        const query = {
+            toUserId: userId,
+            expiration: { $gt: new Date() },
+            isSignedByAuthor: true,
+        };
+
+        if (app === 'gls') {
+            query.communityId = 'gls';
+        } else {
+            query.communityId = { $ne: 'gls' };
+        }
+
+        const proposals = await DelegateVestingProposal.aggregate([
+            {
+                $match: query,
+            },
+            {
+                $sort: {
+                    expiration: 1,
+                },
+            },
+            {
+                $lookup: {
+                    from: 'usermetas',
+                    localField: 'userId',
+                    foreignField: 'userId',
+                    as: 'usermeta',
+                },
+            },
+            {
+                $project: {
+                    _id: false,
+                    proposer: true,
+                    proposalId: true,
+                    expiration: true,
+                    userId: true,
+                    data: true,
+                    'usermeta.username': true,
+                },
+            },
+        ]);
+
+        for (const proposal of proposals) {
+            if (proposal.usermeta.length) {
+                proposal.username = proposal.usermeta[0].username;
+            }
+
+            delete proposal.usermeta;
+        }
+
+        return proposals;
     }
 }
 

@@ -23,6 +23,11 @@ class Connector extends BasicConnector {
                     scope: this._wallet,
                     validation: {
                         properties: {
+                            app: {
+                                type: 'string',
+                                enum: ['cyber', 'gls'],
+                                default: 'cyber',
+                            },
                             currencies: {
                                 type: 'array',
                                 default: ['all'],
@@ -31,6 +36,10 @@ class Connector extends BasicConnector {
                                 type: 'string',
                                 enum: ['all', 'liquid', 'vesting'],
                                 default: 'all',
+                            },
+                            includeVestingDelegationProposals: {
+                                type: 'boolean',
+                                default: false,
                             },
                         },
                     },
