@@ -41,7 +41,9 @@ class Main {
             markAsIrreversibleOperations.push(
                 model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
                     Logger.error(
-                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
+                        `Error during setting block ${blockNum} in model ${
+                            model.modelName
+                        } as irreversible`,
                         error
                     );
                 })
