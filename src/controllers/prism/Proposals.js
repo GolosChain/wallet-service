@@ -30,21 +30,21 @@ class Proposals {
             return;
         }
 
-        const proposal = {
-            proposer,
-            proposalId,
-            requested: requested.map(({ actor, permission }) => ({
-                userId: actor,
-                permission,
-            })),
-        };
-
         const action = trx.actions[0];
         const [communityId, type] = action.account.split('.');
         const pathName = `${type}->${action.name}`;
 
         switch (pathName) {
             case 'vesting->delegate':
+                const proposal = {
+                    proposer,
+                    proposalId,
+                    requested: requested.map(({ actor, permission }) => ({
+                        userId: actor,
+                        permission,
+                    })),
+                };
+
                 const expiration = new Date(trx.expiration + 'Z');
                 const [{ data }] = await Utils.getCyberApi().deserializeActions(trx.actions);
 
