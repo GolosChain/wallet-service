@@ -16,10 +16,15 @@ const Withdrawal = require('../../models/Withdrawal');
 const VestingParams = require('../../models/VestingParams');
 const DelegateVote = require('../../models/DelegateVote');
 const Claim = require('../../models/Claim');
+const Proposals = require('./Proposals');
 
 const REVERSIBLE_MODELS = [RewardModel, TransferModel, VestingChange, Claim];
 
 class Main {
+    constructor() {
+        this._proposals = new Proposals();
+    }
+
     async disperse({ transactions, blockTime, blockNum }) {
         for (const transaction of transactions) {
             await this._disperseTransaction({
@@ -36,9 +41,7 @@ class Main {
             markAsIrreversibleOperations.push(
                 model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
                     Logger.error(
-                        `Error during setting block ${blockNum} in model ${
-                            model.modelName
-                        } as irreversible`,
+                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
                         error
                     );
                 })
@@ -145,6 +148,7 @@ class Main {
             if (action.action === 'newusername') {
                 await this._handleCreateUsernameAction(action, trxData);
             }
+
             if (
                 action.receiver === 'gls.vesting' &&
                 action.code === 'gls.vesting' &&
@@ -168,6 +172,8 @@ class Main {
             ) {
                 await this._handleRecallVoteAction(action);
             }
+
+            await this._proposals.disperseAction(action, transaction);
         }
     }
 
@@ -227,7 +233,7 @@ class Main {
 
         await transfer.save();
 
-        Logger.info('Created transfer object: ', transfer.toObject());
+        Logger.info('Created transfer object:', transfer.toObject());
     }
 
     async _createRewardEvent({

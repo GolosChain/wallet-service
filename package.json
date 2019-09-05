@@ -25,6 +25,7 @@
     "moment": "^2.24.0",
     "node-fetch": "^2.6.0",
     "node-nats-streaming": "^0.2.2",
+    "text-encoding": "^0.7.0",
     "then-sleep": "^1.0.1"
   },
   "devDependencies": {

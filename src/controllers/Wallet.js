@@ -278,13 +278,25 @@ class Wallet extends BasicController {
         return { items, sequenceKey: newSequenceKey };
     }
 
-    async getBalance({ userId, currencies, type }) {
-        return await Utils.getBalance({
+    async getBalance({ userId, currencies, type, includeVestingDelegationProposals, app }) {
+        const balances = await Utils.getBalance({
             userId,
             currencies,
             type,
             shouldFetchStake: true,
         });
+
+        if (includeVestingDelegationProposals) {
+            return {
+                ...balances,
+                vestingDelegationProposals: await Utils.getVestingDelegationProposals({
+                    app,
+                    userId,
+                }),
+            };
+        }
+
+        return balances;
     }
 
     async getVestingInfo() {
