@@ -240,11 +240,21 @@ class Utils {
         let withdraw = {};
 
         if (withdrawObject) {
+            const { quantityRaw: quantity } = await Utils.convertVestingToToken({
+                vesting: withdrawObject.quantity,
+                type: 'parsed',
+            });
+
+            const { quantityRaw: toWithdraw } = await Utils.convertVestingToToken({
+                vesting: withdrawObject.to_withdraw,
+                type: 'parsed',
+            });
+
             withdraw = {
-                quantity: withdrawObject.quantity,
+                quantity: `${quantity} GOLOS`,
                 remainingPayments: withdrawObject.remaining_payments,
                 nextPayout: withdrawObject.next_payout,
-                toWithdraw: withdrawObject.to_withdraw,
+                toWithdraw: `${toWithdraw} GOLOS`,
             };
         }
 
