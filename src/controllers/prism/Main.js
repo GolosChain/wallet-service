@@ -17,6 +17,7 @@ const VestingParams = require('../../models/VestingParams');
 const DelegateVote = require('../../models/DelegateVote');
 const Claim = require('../../models/Claim');
 const Proposals = require('./Proposals');
+const { verbose } = require('../../utils/logs');
 
 const REVERSIBLE_MODELS = [RewardModel, TransferModel, VestingChange, Claim];
 
@@ -41,9 +42,7 @@ class Main {
             markAsIrreversibleOperations.push(
                 model.updateMany({ blockNum }, { $set: { isIrreversible: true } }).catch(error => {
                     Logger.error(
-                        `Error during setting block ${blockNum} in model ${
-                            model.modelName
-                        } as irreversible`,
+                        `Error during setting block ${blockNum} in model ${model.modelName} as irreversible`,
                         error
                     );
                 })
@@ -193,7 +192,7 @@ class Main {
 
         await claim.save();
 
-        Logger.info('Created claim object: ', claim.toObject());
+        verbose('Created claim object: ', claim.toObject());
     }
 
     async _handleBulkTransferAction(action, trxData) {
@@ -235,7 +234,7 @@ class Main {
 
         await transfer.save();
 
-        Logger.info('Created transfer object:', transfer.toObject());
+        verbose('Created transfer object:', transfer.toObject());
     }
 
     async _createRewardEvent({
@@ -274,7 +273,7 @@ class Main {
 
         await reward.save();
 
-        Logger.info('Created reward object: ', JSON.stringify(rewardObject, null, 4));
+        verbose('Created reward object: ', JSON.stringify(rewardObject, null, 4));
     }
 
     async _handleTransferOrReward({ trxData, sender, receiver, quantity, memo }) {
@@ -321,7 +320,7 @@ class Main {
 
         await vestChange.save();
 
-        Logger.info('Created vesting change object:', vestChangeObject);
+        verbose('Created vesting change object:', vestChangeObject);
     }
 
     async _handleCreateUsernameAction(action) {
@@ -339,7 +338,7 @@ class Main {
                 { _id: savedUserMeta._id },
                 { $set: { 'meta.username': username } }
             );
-            Logger.info(
+            verbose(
                 `Changed meta data of user ${userId}: ${JSON.stringify(
                     { username, userId },
                     null,
@@ -348,7 +347,7 @@ class Main {
             );
         } else {
             await UserMeta.create({ userId, username });
-            Logger.info(
+            verbose(
                 `Created meta data of user ${userId}: ${JSON.stringify(
                     { username, userId },
                     null,
@@ -372,15 +371,11 @@ class Main {
 
         if (savedUserMeta) {
             await UserMeta.updateOne({ _id: savedUserMeta._id }, { $set: meta });
-            Logger.info(
-                `Changed meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`
-            );
+            verbose(`Changed meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`);
         } else {
             const userMeta = new UserMeta(meta);
             await userMeta.save();
-            Logger.info(
-                `Created meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`
-            );
+            verbose(`Created meta data of user ${meta.userId}: ${JSON.stringify(meta, null, 2)}`);
         }
     }
 
@@ -420,10 +415,7 @@ class Main {
         delegationModel.quantity = `${updatedSum.toFixed(6)} ${sym}`;
         await delegationModel.save();
 
-        Logger.info(
-            'Updated delegation record',
-            JSON.stringify(delegationModel.toObject(), null, 4)
-        );
+        verbose('Updated delegation record', JSON.stringify(delegationModel.toObject(), null, 4));
     }
 
     async _findOrCreateDelegationModel({ from, to, interestRate: interestRateRaw }) {
@@ -447,7 +439,7 @@ class Main {
         });
 
         const savedModel = await newModel.save();
-        Logger.info('Created new delegation record', JSON.stringify(newModel.toObject(), null, 4));
+        verbose('Created new delegation record', JSON.stringify(newModel.toObject(), null, 4));
         return savedModel;
     }
 
@@ -490,7 +482,7 @@ class Main {
 
             await BalanceModel.updateOne({ _id: balanceModel._id }, balanceModel);
 
-            Logger.info('Updated balance object of user', name, ':', {
+            verbose('Updated balance object of user', name, ':', {
                 balance,
                 payments,
             });
@@ -502,7 +494,7 @@ class Main {
 
             await newBalance.save();
 
-            Logger.info('Created balance object of user', name, ':', {
+            verbose('Created balance object of user', name, ':', {
                 balance,
                 payments,
             });
@@ -540,13 +532,13 @@ class Main {
         if (tokenObject) {
             await TokenModel.updateOne({ _id: tokenObject._id }, { $set: newTokenInfo });
 
-            Logger.info('Updated', sym, 'token info:', newTokenInfo);
+            verbose('Updated', sym, 'token info:', newTokenInfo);
         } else {
             const newToken = new TokenModel(newTokenInfo);
 
             await newToken.save();
 
-            Logger.info('Created', sym, 'token info:', newTokenInfo);
+            verbose('Created', sym, 'token info:', newTokenInfo);
         }
     }
 
@@ -567,13 +559,13 @@ class Main {
         if (statObject) {
             await statObject.updateOne({ _id: statObject._id }, { $set: newStats });
 
-            Logger.info('Updated', sym, 'token info:', newStats);
+            verbose('Updated', sym, 'token info:', newStats);
         } else {
             const newVestingStat = new VestingStat(newStats);
 
             await newVestingStat.save();
 
-            Logger.info('Created', sym, 'token info:', newStats);
+            verbose('Created', sym, 'token info:', newStats);
         }
     }
 
@@ -603,7 +595,7 @@ class Main {
                 { $set: newVestingBalance }
             );
 
-            Logger.info(
+            verbose(
                 'Updated vesting balance object of user',
                 event.args.account,
                 ':',
@@ -614,7 +606,7 @@ class Main {
 
             await newVestingBalanceObject.save();
 
-            Logger.info(
+            verbose(
                 'Created vesting balance object of user',
                 event.args.account,
                 ': ',
@@ -646,12 +638,12 @@ class Main {
                     { $set: newVestingParamsObject }
                 );
 
-                Logger.info('Updated vesting params', newVestingParamsObject);
+                verbose('Updated vesting params', newVestingParamsObject);
             } else {
                 const vestingParams = new VestingParams(newVestingParamsObject);
                 await vestingParams.save();
 
-                Logger.info('Created vesting params: ', vestingParams.toObject());
+                verbose('Created vesting params: ', vestingParams.toObject());
             }
         }
     }
@@ -687,12 +679,12 @@ class Main {
         if (withdrawObject) {
             await Withdrawal.updateOne({ _id: withdrawObject._id }, { $set: newWithdrawObject });
 
-            Logger.info('Updated withdraw object of user', from, ':', newWithdrawObject);
+            verbose('Updated withdraw object of user', from, ':', newWithdrawObject);
         } else {
             const withdraw = new Withdrawal(newWithdrawObject);
             await withdraw.save();
 
-            Logger.info('Created withdraw object: ', withdraw.toObject());
+            verbose('Created withdraw object: ', withdraw.toObject());
         }
     }
 
@@ -702,7 +694,7 @@ class Main {
         const withdrawObject = await Withdrawal.findOne({ owner });
         if (withdrawObject) {
             await Withdrawal.deleteOne({ _id: withdrawObject._id });
-            Logger.info('Deleted withdraw object of user', owner, ':', withdrawObject);
+            verbose('Deleted withdraw object of user', owner, ':', withdrawObject);
         }
     }
 
@@ -729,10 +721,10 @@ class Main {
 
             await Withdrawal.updateOne({ _id: withdrawObject._id }, { $set: newWithdrawObject });
 
-            Logger.info('Updated withdraw object of user', receiver, ':', newWithdrawObject);
+            verbose('Updated withdraw object of user', receiver, ':', newWithdrawObject);
         } else {
             await Withdrawal.deleteOne({ _id: withdrawObject._id });
-            Logger.info('Deleted withdraw object of user', receiver, ':', withdrawObject);
+            verbose('Deleted withdraw object of user', receiver, ':', withdrawObject);
         }
     }
 
@@ -762,7 +754,7 @@ class Main {
                     $set: newDelegateVoteInfo,
                 }
             );
-            Logger.info(
+            verbose(
                 `Changed delegate vote for ${recipient}: ${JSON.stringify(
                     newDelegateVoteInfo,
                     null,
@@ -776,7 +768,7 @@ class Main {
             };
 
             await DelegateVote.create(newDelegateVoteInfo);
-            Logger.info(
+            verbose(
                 `Created delegate vote for ${recipient}: ${JSON.stringify(
                     newDelegateVoteInfo,
                     null,

@@ -66,6 +66,8 @@ Golos_wallet -- сервис, который предоставляет удоб
 -   `GLS_MONGO_CONNECT` - строка подключения к базе MongoDB.  
     Дефолтное значение - `mongodb://mongo/admin`
 
+-   `GLS_VERBOSE_LOGS` - включает расширенные логи, по умолчанию выключен.
+
 ## API
 
 ### getBalance
