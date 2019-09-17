@@ -114,11 +114,38 @@ class Wallet extends BasicController {
             $or: orFilter,
         });
 
-        const delegations = await DelegationModel.find(
-            filter,
-            { _id: false, from: true, to: true, quantity: true, interestRate: true },
-            { lean: true }
-        );
+        const delegations = await DelegationModel.aggregate([
+            {
+                $match: filter,
+            },
+            {
+                $lookup: {
+                    from: 'usermetas',
+                    localField: 'from',
+                    foreignField: 'userId',
+                    as: 'fromAccount',
+                },
+            },
+            {
+                $lookup: {
+                    from: 'usermetas',
+                    localField: 'to',
+                    foreignField: 'userId',
+                    as: 'toAccount',
+                },
+            },
+            {
+                $project: {
+                    _id: false,
+                    from: true,
+                    to: true,
+                    'fromAccount.username': true,
+                    'toAccount.username': true,
+                    quantity: true,
+                    interestRate: true,
+                },
+            },
+        ]);
 
         for (const delegation of delegations) {
             const gestsQuantity = delegation.quantity;
@@ -129,6 +156,15 @@ class Wallet extends BasicController {
             quantity.GOLOS = await this.convertVestingToToken({ vesting: gestsQuantity });
 
             delegation.quantity = quantity;
+
+            delegation.fromUsername =
+                (delegation.fromAccount.length && delegation.fromAccount[0].username) || null;
+
+            delegation.toUsername =
+                (delegation.toAccount.length && delegation.toAccount[0].username) || null;
+
+            delete delegation.fromAccount;
+            delete delegation.toAccount;
         }
 
         return delegations;
