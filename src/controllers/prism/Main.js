@@ -106,6 +106,7 @@ class Main {
                 action.receiver === 'gls.vesting' &&
                 (action.action === 'transfer' ||
                     action.action === 'delegate' ||
+                    action.action === 'undelegate' ||
                     action.action === 'timeoutconv' ||
                     action.action === 'withdraw' ||
                     action.action === 'stopwithdraw') &&
