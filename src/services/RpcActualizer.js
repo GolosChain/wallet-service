@@ -1,4 +1,4 @@
-const core = require('gls-core-service');
+const core = require('cyberway-core-service');
 const fetch = require('node-fetch');
 const env = require('../data/env');
 const BasicService = core.services.Basic;

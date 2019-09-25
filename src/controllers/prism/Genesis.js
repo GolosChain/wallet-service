@@ -1,4 +1,4 @@
-const core = require('gls-core-service');
+const core = require('cyberway-core-service');
 const { Logger, metrics, BulkSaver } = core.utils;
 const UserMetaModel = require('../../models/UserMeta');
 const BalanceModel = require('../../models/Balance');
