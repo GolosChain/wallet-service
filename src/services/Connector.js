@@ -1,4 +1,4 @@
-const core = require('gls-core-service');
+const core = require('cyberway-core-service');
 const BasicConnector = core.services.Connector;
 const Wallet = require('../controllers/Wallet');
 
