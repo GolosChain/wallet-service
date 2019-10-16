@@ -544,7 +544,7 @@ class Main {
 
     async _handleVestingStatEvent(event) {
         // Ensure given event is stat event
-        if (!(event.code === 'gls.vesting' && event === 'stat')) {
+        if (!(event.code === 'gls.vesting' && event.event === 'stat')) {
             return;
         }
 
@@ -557,7 +557,7 @@ class Main {
         const statObject = await VestingStat.findOne({ sym });
 
         if (statObject) {
-            await statObject.updateOne({ _id: statObject._id }, { $set: newStats });
+            await VestingStat.updateOne({ sym }, { $set: newStats });
 
             verbose('Updated', sym, 'token info:', newStats);
         } else {
