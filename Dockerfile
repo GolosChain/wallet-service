@@ -2,7 +2,7 @@ FROM node:10-alpine as builder
 
 WORKDIR /app
 
-COPY .npmrc package.json package-lock.json ./
+COPY package.json package-lock.json ./
 
 RUN npm install --only=production
 
