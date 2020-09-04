@@ -32,7 +32,7 @@ module.exports = MongoDB.makeModel(
                     name: 1,
                 },
                 options: {
-                    unique: true,
+                    // unique: true,
                     background: true,
                 },
             },

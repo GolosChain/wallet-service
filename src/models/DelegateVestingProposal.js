@@ -60,7 +60,7 @@ module.exports = MongoDB.makeModel(
                     proposalId: 1,
                 },
                 options: {
-                    unique: true,
+                    // unique: true,
                 },
             },
             {

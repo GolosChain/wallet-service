@@ -24,7 +24,7 @@ module.exports = MongoDB.makeModel(
                     userId: 1,
                 },
                 options: {
-                    unique: true,
+                    // unique: true,
                     background: true,
                 },
             },

@@ -21,7 +21,7 @@ module.exports = MongoDB.makeModel(
                     sym: 1,
                 },
                 options: {
-                    unique: true,
+                    // unique: true,
                     background: true,
                 },
             },
